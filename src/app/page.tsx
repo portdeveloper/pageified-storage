@@ -5,6 +5,7 @@ import PageMappingSection from "@/components/PageMappingSection";
 import MerkleTreeSection from "@/components/MerkleTreeSection";
 import GasCalculatorSection from "@/components/GasCalculatorSection";
 import UniswapV2Section from "@/components/UniswapV2Section";
+import CherryPickedSection from "@/components/CherryPickedSection";
 import TakeawaysSection from "@/components/TakeawaysSection";
 import CompatibilitySection from "@/components/CompatibilitySection";
 import FooterSection from "@/components/FooterSection";
@@ -14,6 +15,7 @@ export default function Home() {
     <main>
       <HeroSection />
       <UniswapV2Section />
+      <CherryPickedSection />
       <ProblemSection />
       <SolutionSection />
       <PageMappingSection />
