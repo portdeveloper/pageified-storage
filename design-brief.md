@@ -2,7 +2,7 @@
 
 ## TL;DR for Variant
 
-A scroll-driven, single-page interactive explainer for MIP-8 (a blockchain storage proposal). The page tells a story in two halves: first the problem — the EVM reads 32-byte storage slots individually, but hardware always fetches 4KB pages (128 slots), wasting 128x bandwidth; Keccak hashing scatters logically adjacent struct fields across different disk pages, so 4 related reads = 4 cold reads = 8400 gas — visualized as an interactive grid where users click SLOAD and watch slots light up on scattered pages. Then the solution — MIP-8 groups 128 consecutive slots into a page so touching one slot warms all 128; same 4 reads now cost 1 cold + 3 warm = 2400 gas — visualized as one page grid that warms entirely on first click. The recurring visual motif is an 8x16 grid (128 cells = one page) shown in different states: cold (neutral), warm (teal wash), and highlighted (active slot). Additional sections include an animated slot-to-page mapping visualizer, a BLAKE3 Merkle tree where clicking a slot highlights its proof path, a side-by-side gas calculator with scenario picker, and developer takeaway cards. No Monad branding — neutral, brand-agnostic design with warm tones for "problem" sections transitioning to cool tones for "solution" sections, like Stripe docs energy. Fully interactive (click slots, toggle scenarios, drag sliders), not just animated illustrations.
+A scroll-driven, single-page interactive explainer for MIP-8 (a blockchain storage proposal). The page tells a story in two halves: first the problem - the EVM reads 32-byte storage slots individually, but MIP-8 is motivated by page-sized backend I/O around 4KB (128 slots), creating roughly 128x bandwidth underutilization for single-slot reads; hashing in the trie/backend destroys locality for logically adjacent storage, so a worst-case illustration can show 4 related reads turning into 4 cold reads = 8400 gas. Then the solution - MIP-8 groups 128 consecutive slots into a page so touching one slot warms the page for the rest of the transaction; the same 4-read illustration becomes 1 cold + 3 warm = 2400 gas when you reuse today&apos;s EIP-2929 read constants as an example. The recurring visual motif is an 8x16 grid (128 cells = one page) shown in different states: cold (neutral), warm (teal wash), and highlighted (active slot). Additional sections include an animated slot-to-page mapping visualizer, a BLAKE3 page-commitment tree where clicking a slot highlights its proof path, a side-by-side gas calculator with scenario picker, and developer takeaway cards. No Monad branding - neutral, brand-agnostic design with warm tones for "problem" sections transitioning to cool tones for "solution" sections. Fully interactive (click slots, toggle scenarios, drag sliders), not just animated illustrations.
 
 ---
 
@@ -22,20 +22,20 @@ A single-page interactive explainer for MIP-8 (Monad's page-ified storage propos
 ### Section 1 — Hero
 **"What if your storage model matched your hardware?"**
 
-Subtext: MIP-8 aligns EVM storage with how disks actually work — 4KB pages, not 32-byte slots.
+Subtext: MIP-8 aligns EVM storage with page-sized backend I/O - 4KB pages, not 32-byte slots.
 
-A subtle animation: a single 32-byte slot being read, but a full 4KB page lighting up around it to show what the disk *actually* fetches. The wasted bandwidth fades out.
+A subtle animation: a single 32-byte slot being read, but a full 4KB page lighting up around it to show what the storage engine may still touch. The wasted bandwidth fades out.
 
 ---
 
 ### Section 2 — The Problem: "Hashing destroys locality"
 **Interactive visualization: Scattered Slots**
 
-Show a contract with a struct containing 4 fields (slots 0, 1, 2, 3). On Ethereum's MPT, Keccak hashing scatters these across random disk pages.
+Show a contract with a struct containing 4 fields (slots 0, 1, 2, 3). In the trie/backend, hashing destroys locality; use a worst-case illustration where these land on different backend pages.
 
 - **Visual:** A grid of ~8 pages (each an 8x16 grid of 128 cells). Four slots are highlighted in orange/red, each on a *different* page. Lines connect them back to the original struct definition on the left.
 - **Interaction:** User clicks "SLOAD slot 0" → Page A lights up, a cold read counter increments (2100 gas). Click "SLOAD slot 1" → Page B lights up, another cold read (2100 gas). Repeat for slots 2, 3. Total: 4 cold reads, 4 pages loaded, 8400 gas.
-- **Callout stat:** "128x bandwidth wasted per read — you asked for 32 bytes, the disk fetched 4096"
+- **Callout stat:** "128x bandwidth underutilization per read - you asked for 32 bytes, the backend may have touched 4096"
 
 ---
 
@@ -66,11 +66,11 @@ Visual: a number line of slots (0–255+) with bracket markers showing Page 0 (s
 
 Show how a 4096-byte page is committed:
 1. 128 slots pair up into 64 leaf nodes
-2. BLAKE3 compression builds a binary tree (6 levels)
+2. BLAKE3 compression builds a binary tree (6 parent levels)
 3. Final 32-byte root = the page commitment
 
-- **Interaction:** User clicks a single slot → the inclusion proof path highlights (the slot, its sibling, and 6 parent hashes up to the root). A sidebar shows proof size: ~256 bytes.
-- **Callout:** "Single-word proofs with zero overhead — empty slots are just zero"
+- **Interaction:** User clicks a single slot -> the inclusion proof path highlights (the word, its sibling, and 6 parent hashes up to the root). A sidebar shows page-local witness size: ~257 bytes if the word index is encoded in 1 byte, plus the page&apos;s MPT proof.
+- **Callout:** "Single-word proofs for sparsely populated mapping-like pages can stay close to today&apos;s size because empty slots are zero"
 
 ---
 
@@ -81,9 +81,9 @@ Two columns: "Current EVM" vs "MIP-8"
 
 User picks a scenario from a dropdown or builds their own:
 - "Read 4 struct fields" → shows gas breakdown
-- "Write to 3 slots in same page" → shows I/O cost + state growth cost
-- "First write to a new page" → shows PAGE_WRITE_COST
-- "Access a mapping (random key)" → shows that mappings still work fine (different pages, cold reads — no worse than today)
+- "Write to 3 slots in same page" → shows qualitative page I/O + state growth cost
+- "First write to a new page" → shows PAGE_WRITE_COST qualitatively, because MIP-8 does not fix final constants
+- "Access a mapping (random key)" → shows that mappings still work fine (usually different pages, cold reads - no worse than today)
 
 Each scenario animates the page grids and accumulates gas in a running counter.
 
@@ -94,7 +94,7 @@ Each scenario animates the page grids and accumulates gas in a running counter.
 
 1. **Structs get cheaper** — Solidity packs struct fields into consecutive slots. Under MIP-8, accessing your whole struct often costs 1 cold read + N warm reads instead of N cold reads.
 
-2. **Mappings stay the same** — Mapping keys hash to random pages (by design). MIP-8 doesn't make this worse — it just stops pretending sequential storage is random.
+2. **Mappings change less** - Mapping keys hash to random pages (by design). MIP-8 usually neither helps nor hurts truly random access; it mostly rewards contiguous layouts.
 
 3. **New optimization patterns** — Page-aware arrays, assembly-level tricks for packing related data into the same 128-slot page. A new design space for gas optimization.
 
@@ -103,7 +103,7 @@ Each scenario animates the page grids and accumulates gas in a running counter.
 ### Section 8 — Backwards Compatibility
 Short text section, no heavy visuals needed.
 
-"EVM semantics are unchanged. Only gas costs change. Most contracts get cheaper automatically because Solidity already packs state variables contiguously. The only contracts affected negatively are those hardcoding specific gas values for opcodes."
+"At the opcode level, EVM semantics are unchanged: SLOAD still returns 32 bytes and SSTORE still writes 32 bytes. What changes is the commitment/proof layer and the gas model, which become page-aware. Contracts with contiguous access patterns often get cheaper; contracts that hardcode opcode-gas assumptions are the main compatibility risk."
 
 ---
 
@@ -111,7 +111,7 @@ Short text section, no heavy visuals needed.
 Links to:
 - Full MIP-8 text (GitHub)
 - Forum discussion (forum.monad.xyz)
-- MIP-9 teaser: "Next up: optimizing proof sizes with flexible fanout trees"
+- MIP-9 note: "MIP-8 future directions mention flexible fanout trees as a possible follow-on"
 - Monad socials
 
 ---

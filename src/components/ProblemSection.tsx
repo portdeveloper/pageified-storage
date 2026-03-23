@@ -8,12 +8,12 @@ const COLS = 16;
 const ROWS = 8;
 const TOTAL = COLS * ROWS;
 
-// 4 struct fields scattered across 4 different pages
+// Illustrative worst case: 4 related fields lose backend locality
 const PAGES = [
-  { label: "Page 0x7a2f…", slot: 17 },
-  { label: "Page 0x3e81…", slot: 94 },
-  { label: "Page 0xb4c5…", slot: 42 },
-  { label: "Page 0x91d7…", slot: 109 },
+  { label: "Backend page 0x7a2f...", slot: 17 },
+  { label: "Backend page 0x3e81...", slot: 94 },
+  { label: "Backend page 0xb4c5...", slot: 42 },
+  { label: "Backend page 0x91d7...", slot: 109 },
 ];
 
 const FIELD_NAMES = ["owner", "balance", "timestamp", "approved"];
@@ -57,10 +57,10 @@ export default function ProblemSection() {
           Hashing destroys locality
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
-          Ethereum&apos;s Merkle Patricia Trie hashes storage keys. Slots 0, 1,
-          2, 3 of your struct end up on completely different pages. Each one
-          triggers an independent disk read — even though they&apos;re logically
-          adjacent.
+          Ethereum&apos;s trie/database path hashes storage keys, so logically
+          contiguous slots lose backend locality. In a worst-case pattern like
+          this illustration, four related fields can end up on four different
+          backend pages even though they are adjacent in Solidity.
         </p>
 
         {/* Struct definition */}
@@ -213,10 +213,10 @@ export default function ProblemSection() {
               className="ml-auto"
             >
               <p className="font-mono text-xs text-problem-accent font-semibold">
-                4 fields = 4 pages = 4 cold reads
+                In this illustration: 4 fields = 4 pages = 4 cold reads
               </p>
               <p className="font-mono text-[10px] text-text-tertiary">
-                128× more data loaded than used
+                128x more data touched than returned
               </p>
             </motion.div>
           )}

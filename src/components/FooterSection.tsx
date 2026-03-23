@@ -36,8 +36,9 @@ export default function FooterSection() {
               What&apos;s next
             </p>
             <p className="text-sm text-surface/60">
-              MIP-9 is expected to build on this foundation with flexible
-              fanout trees for smaller proofs and faster writes.
+              MIP-8&apos;s future-directions section points to MIP-9 as a possible
+              follow-on exploring flexible fanout trees for smaller proofs and
+              optimized storage writes.
             </p>
           </div>
         </div>

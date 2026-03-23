@@ -59,9 +59,9 @@ export default function HeroSection() {
           your hardware?
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          You ask for 32 bytes. The disk reads 4,096.
+          You ask for 32 bytes. The storage engine may still touch 4,096.
           <br />
-          MIP-8 makes the EVM stop pretending otherwise.
+          MIP-8 makes the EVM account for that page-sized reality.
         </p>
       </motion.div>
 
@@ -79,7 +79,7 @@ export default function HeroSection() {
               {activeSlot !== null ? `SLOAD slot ${activeSlot}` : "waiting..."}
               {showPage && (
                 <span className="text-solution-accent ml-2">
-                  → disk fetches entire 4KB page
+                  - backend may fetch an entire 4KB page
                 </span>
               )}
             </p>
@@ -125,7 +125,7 @@ export default function HeroSection() {
                 animate={{ opacity: 1 }}
                 className="font-mono text-[10px] text-problem-accent"
               >
-                127 slots go unused
+                127 sibling slots stay unused in this example
               </motion.p>
             )}
           </div>
