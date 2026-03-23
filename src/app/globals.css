@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Problem palette — warm */
+  --color-problem-bg: #fdf6ef;
+  --color-problem-accent: #c4653a;
+  --color-problem-accent-light: #f0d9c8;
+  --color-problem-muted: #a8856e;
+  --color-problem-cell: #ede0d4;
+  --color-problem-cell-hover: #dbc9b8;
+
+  /* Solution palette — cool */
+  --color-solution-bg: #f0f7f5;
+  --color-solution-accent: #2a7d6a;
+  --color-solution-accent-light: #c8e6df;
+  --color-solution-muted: #6da396;
+  --color-solution-cell: #d4e8e2;
+  --color-solution-cell-hover: #b8d9cf;
+
+  /* Neutral */
+  --color-surface: #f8f6f3;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2ddd7;
+  --color-text-primary: #1a1714;
+  --color-text-secondary: #6b6259;
+  --color-text-tertiary: #9b9084;
+}
+
+:root {
+  --background: #f8f6f3;
+  --foreground: #1a1714;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c4b8a8;
+  border-radius: 3px;
+}
+
+/* Grid cell transitions */
+.cell-transition {
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Slot highlight pulse */
+@keyframes slot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.slot-pulse {
+  animation: slot-pulse 1.5s ease-in-out infinite;
+}
+
+/* Warm cascade */
+@keyframes warm-cascade {
+  from { background-color: var(--color-solution-cell); }
+  to { background-color: var(--color-solution-accent-light); }
+}
+
+/* Gas counter */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.gas-appear {
+  animation: count-up 0.3s ease-out forwards;
+}
+
+/* Section fade in */
+.section-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.section-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
