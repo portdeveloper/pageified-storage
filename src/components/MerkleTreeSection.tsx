@@ -103,15 +103,16 @@ export default function MerkleTreeSection() {
           BLAKE3 page commitments
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
-          Each 4,096-byte page is committed via a binary Merkle tree using
-          BLAKE3. 128 slots pair into 64 leaves, compressed through 6 levels
-          into a single 32-byte root.
+          Each 4,096-byte page is committed by a fixed binary tree built from
+          the BLAKE3 compression function. 128 slots pair into 64 leaves, which
+          hash through 6 parent levels into a single 32-byte root.
         </p>
         <p className="text-base text-text-secondary font-light max-w-2xl leading-relaxed mb-10">
-          Click any slot below to see its inclusion proof path. The proof
-          contains a word index, the target slot, its sibling, and one hash
-          per level — ~257 bytes for the page proof, plus a standard MPT
-          proof for the page itself.
+          Click any slot below to see its inclusion proof path. The page-local
+          witness contains a caller-supplied word index, the 32-byte word, its
+          32-byte sibling, and one sibling hash per parent level. If the index
+          is encoded in 1 byte, that is about 257 bytes before the MPT proof
+          for the page commitment.
         </p>
 
         {/* Slot selector */}
@@ -190,9 +191,20 @@ export default function MerkleTreeSection() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3 rounded-md bg-solution-bg">
                     <p className="font-mono text-[10px] text-text-tertiary">
-                      Target word
+                      Word index
                     </p>
                     <p className="font-mono text-sm font-semibold text-solution-accent">
+                      1 byte typical
+                    </p>
+                    <p className="font-mono text-[9px] text-text-tertiary mt-0.5">
+                      caller-supplied
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-md bg-problem-bg">
+                    <p className="font-mono text-[10px] text-text-tertiary">
+                      Target word
+                    </p>
+                    <p className="font-mono text-sm font-semibold text-problem-accent">
                       32 bytes
                     </p>
                   </div>
@@ -204,26 +216,22 @@ export default function MerkleTreeSection() {
                       32 bytes
                     </p>
                   </div>
-                  <div className="p-3 rounded-md bg-problem-bg">
+                  <div className="p-3 rounded-md bg-surface">
                     <p className="font-mono text-[10px] text-text-tertiary">
                       Parent siblings
                     </p>
-                    <p className="font-mono text-sm font-semibold text-problem-accent">
-                      6 × 32 bytes
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-md bg-surface">
-                    <p className="font-mono text-[10px] text-text-tertiary">
-                      Page proof
-                    </p>
                     <p className="font-mono text-sm font-semibold text-text-primary">
-                      257 bytes
+                      6 x 32 bytes
                     </p>
                     <p className="font-mono text-[9px] text-text-tertiary mt-0.5">
-                      + MPT path
+                      pair-leaf to root
                     </p>
                   </div>
                 </div>
+                <p className="font-mono text-[10px] text-text-tertiary mt-3">
+                  About 257 bytes with a 1-byte index, plus the MPT proof for
+                  the page commitment.
+                </p>
               </div>
             </motion.div>
           )}

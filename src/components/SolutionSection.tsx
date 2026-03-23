@@ -62,9 +62,10 @@ export default function SolutionSection() {
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
           MIP-8 groups 128 consecutive slots into a page. Touch one slot, and
-          the rest of the page becomes warm — because the hardware already loaded
-          them. This demo uses today&apos;s 2,100/100 cold-vs-warm read constants as
-          an illustration, though the MIP leaves the final page-level costs open.
+          the rest of that page becomes warm for the transaction. This demo uses
+          today&apos;s 2,100/100 cold-vs-warm read constants only as an illustration;
+          the MIP defines abstract page-level cost parameters instead of fixing
+          those numbers.
         </p>
 
         {/* Interactive buttons */}
@@ -116,7 +117,7 @@ export default function SolutionSection() {
         >
           <div className="flex items-center gap-2 mb-3">
             <p className="font-mono text-xs text-text-tertiary">
-              Page 0 — your struct lives here
+              Example page - contiguous fields fit here
             </p>
             {pageWarmed && (
               <motion.span
@@ -158,7 +159,7 @@ export default function SolutionSection() {
           </div>
           <p className="font-mono text-[10px] text-text-tertiary mt-2">
             {pageWarmed
-              ? "All 128 slots warm — in this example, subsequent reads use the 100-gas warm cost"
+              ? "All 128 slots are warm for this transaction - in this example, subsequent reads use the 100-gas warm cost"
               : "Click a slot — watch the whole page warm up"}
           </p>
         </div>

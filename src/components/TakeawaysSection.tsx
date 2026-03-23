@@ -15,7 +15,7 @@ const CARDS = [
     ),
     title: "Structs get cheaper",
     description:
-      "Solidity packs struct fields into consecutive slots. Under MIP-8, reading a contiguous layout like a struct or array run often costs 1 cold page touch + N warm reads instead of N cold reads. These layouts benefit automatically; mapping-heavy access patterns mostly behave like they do today.",
+      "Solidity stores struct members and array elements contiguously. Under MIP-8, a contiguous run that fits in one page is typically 1 cold page touch plus N warm slot accesses instead of N cold slot accesses.",
     color: "text-solution-accent",
     bg: "bg-solution-bg",
     border: "border-solution-accent-light",
@@ -29,9 +29,9 @@ const CARDS = [
         <path d="M11 15L21 9M11 17L21 23" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
-    title: "Mappings stay the same",
+    title: "Mappings change less",
     description:
-      "Mapping keys hash to random pages by design. MIP-8 doesn't make this worse — it just stops pretending sequential storage is random. Random access remains random; contiguous access is now recognized and rewarded.",
+      "Mappings still derive storage locations from keccak256, so unrelated keys almost always land on different pages. MIP-8 rarely helps or hurts truly random access; it mostly rewards contiguous layouts.",
     color: "text-text-primary",
     bg: "bg-surface-elevated",
     border: "border-border",
@@ -46,7 +46,7 @@ const CARDS = [
     ),
     title: "New optimization patterns",
     description:
-      "Page-aware arrays, assembly-level tricks for packing related data into the same 128-slot page. A new design space opens for gas optimization that aligns with how your hardware actually works.",
+      "Page-aware arrays, careful packing, and low-level layouts that keep related data inside the same 128-slot page open a new optimization space for page-aware gas costs.",
     color: "text-solution-accent",
     bg: "bg-solution-bg",
     border: "border-solution-accent-light",
