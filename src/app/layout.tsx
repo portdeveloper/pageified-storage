@@ -17,7 +17,7 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "MIP-8: Page-ified Storage",
   description:
-    "An interactive explainer for MIP-8 — aligning EVM storage with hardware reality",
+    "An interactive explainer for MIP-8: aligning EVM storage with hardware reality",
 };
 
 export default function RootLayout({

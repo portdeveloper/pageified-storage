@@ -6,7 +6,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Problem palette — warm */
+  /* Problem palette - warm */
   --color-problem-bg: #fdf6ef;
   --color-problem-accent: #c4653a;
   --color-problem-accent-light: #f0d9c8;
@@ -14,7 +14,7 @@
   --color-problem-cell: #ede0d4;
   --color-problem-cell-hover: #dbc9b8;
 
-  /* Solution palette — cool */
+  /* Solution palette - cool */
   --color-solution-bg: #f0f7f5;
   --color-solution-accent: #2a7d6a;
   --color-solution-accent-light: #c8e6df;

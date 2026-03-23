@@ -17,7 +17,7 @@ const PAGES = [
 ];
 
 const FIELD_NAMES = ["owner", "balance", "timestamp", "approved"];
-const COLD_COST = 2100;
+const COLD_COST = 8100;
 
 export default function ProblemSection() {
   const { ref, isVisible } = useInView(0.1);

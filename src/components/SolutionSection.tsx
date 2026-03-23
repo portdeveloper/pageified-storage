@@ -9,7 +9,7 @@ const ROWS = 8;
 const TOTAL = COLS * ROWS;
 
 const FIELD_NAMES = ["owner", "balance", "timestamp", "approved"];
-const COLD_COST = 2100;
+const COLD_COST = 8100;
 const WARM_COST = 100;
 
 export default function SolutionSection() {
@@ -26,7 +26,7 @@ export default function SolutionSection() {
       setPageWarmed(true);
       setGasUsed((prev) => prev + COLD_COST);
       setLastAction(
-        `SLOAD ${FIELD_NAMES[fieldIndex]} → cold read (${COLD_COST} gas) — page warmed!`
+        `SLOAD ${FIELD_NAMES[fieldIndex]} → cold read (${COLD_COST} gas), page warmed!`
       );
     } else {
       setGasUsed((prev) => prev + WARM_COST);
@@ -63,9 +63,7 @@ export default function SolutionSection() {
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
           MIP-8 groups 128 consecutive slots into a page. Touch one slot, and
           the rest of that page becomes warm for the transaction. This demo uses
-          today&apos;s 2,100/100 cold-vs-warm read constants only as an illustration;
-          the MIP defines abstract page-level cost parameters instead of fixing
-          those numbers.
+          Monad&apos;s 8,100/100 cold-vs-warm read constants for illustration.
         </p>
 
         {/* Interactive buttons */}
@@ -160,7 +158,7 @@ export default function SolutionSection() {
           <p className="font-mono text-[10px] text-text-tertiary mt-2">
             {pageWarmed
               ? "All 128 slots are warm for this transaction - in this example, subsequent reads use the 100-gas warm cost"
-              : "Click a slot — watch the whole page warm up"}
+              : "Click a slot, watch the whole page warm up"}
           </p>
         </div>
 
@@ -201,7 +199,7 @@ export default function SolutionSection() {
               <div className="flex items-center gap-3">
                 <div>
                   <p className="font-mono text-xs text-problem-accent line-through">
-                    8,400 gas
+                    32,400 gas
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">
                     Current EVM
@@ -210,13 +208,13 @@ export default function SolutionSection() {
                 <span className="text-text-tertiary">→</span>
                 <div>
                   <p className="font-mono text-xs text-solution-accent font-semibold">
-                    2,400 gas
+                    8,400 gas
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">MIP-8 example</p>
                 </div>
                 <div className="px-2 py-1 rounded-md bg-solution-accent-light">
                   <p className="font-mono text-sm font-semibold text-solution-accent">
-                    71% cheaper here
+                    74% cheaper here
                   </p>
                 </div>
               </div>

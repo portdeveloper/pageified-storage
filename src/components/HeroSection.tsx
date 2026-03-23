@@ -99,7 +99,7 @@ export default function HeroSection() {
               return (
                 <motion.div
                   key={i}
-                  className={`w-4 h-4 sm:w-5 sm:h-5 rounded-sm ${bg}`}
+                  className={`aspect-square rounded-sm ${bg}`}
                   animate={{
                     backgroundColor: isActive
                       ? undefined
@@ -119,15 +119,13 @@ export default function HeroSection() {
             <p className="font-mono text-[10px] text-text-tertiary">
               128 slots × 32 bytes = 4,096 bytes = 1 page
             </p>
-            {showPage && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="font-mono text-[10px] text-problem-accent"
-              >
-                127 sibling slots stay unused in this example
-              </motion.p>
-            )}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: showPage ? 1 : 0 }}
+              className="font-mono text-[10px] text-problem-accent"
+            >
+              127 sibling slots stay unused in this example
+            </motion.p>
           </div>
         </div>
       </motion.div>
