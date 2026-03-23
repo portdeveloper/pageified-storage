@@ -20,43 +20,43 @@ const SCENARIOS: Scenario[] = [
   {
     name: "Read 4 struct fields",
     description: "Loading 4 contiguous struct fields that fit in one page",
-    currentGas: 8400,
-    mip8Gas: 2400,
-    currentBreakdown: "4 × 2,100 (distinct cold slots under EIP-2929)",
-    mip8Breakdown: "1 × 2,100 (first page touch) + 3 × 100 (warm reads in same page)",
+    currentGas: 32400,
+    mip8Gas: 8400,
+    currentBreakdown: "4 × 8,100 (distinct cold slots on Monad)",
+    mip8Breakdown: "1 × 8,100 (first page touch) + 3 × 100 (warm reads in same page)",
   },
   {
     name: "Read 8 array entries",
     description: "Iterating over 8 consecutive array slots (e.g. an order book)",
-    currentGas: 16800,
-    mip8Gas: 2800,
-    currentBreakdown: "8 × 2,100 (distinct cold slots under EIP-2929)",
-    mip8Breakdown: "1 × 2,100 (first page touch) + 7 × 100 (warm reads in same page)",
+    currentGas: 64800,
+    mip8Gas: 8800,
+    currentBreakdown: "8 × 8,100 (distinct cold slots on Monad)",
+    mip8Breakdown: "1 × 8,100 (first page touch) + 7 × 100 (warm reads in same page)",
   },
   {
     name: "Read 8 mapping entries",
     description: "Looking up 8 unrelated mapping keys",
-    currentGas: 16800,
-    mip8Gas: 16800,
-    currentBreakdown: "8 × 2,100 (distinct cold slots)",
-    mip8Breakdown: "8 × 2,100 (typically 8 different pages)",
+    currentGas: 64800,
+    mip8Gas: 64800,
+    currentBreakdown: "8 × 8,100 (distinct cold slots)",
+    mip8Breakdown: "8 × 8,100 (typically 8 different pages)",
   },
   {
     name: "Read ERC-20 transfer data",
     description:
       "sender balance, receiver balance, allowance - 3 hashed lookups that usually hit different pages",
-    currentGas: 6300,
-    mip8Gas: 6300,
-    currentBreakdown: "3 × 2,100 (distinct cold slots)",
-    mip8Breakdown: "3 × 2,100 (usually 3 different pages)",
+    currentGas: 24300,
+    mip8Gas: 24300,
+    currentBreakdown: "3 × 8,100 (distinct cold slots)",
+    mip8Breakdown: "3 × 8,100 (usually 3 different pages)",
   },
   {
     name: "Initialize new struct (5 slots)",
     description:
       "First writes to 5 contiguous slots on one page",
-    currentGas: 110500,
+    currentGas: 140500,
     mip8Gas: null,
-    currentBreakdown: "5 × (20,000 set + 2,100 cold access) under EIP-2200/EIP-2929",
+    currentBreakdown: "5 × (20,000 set + 8,100 cold access) on Monad",
     mip8Breakdown: "PAGE_WRITE_COST once for the page, then BASE_SSTORE_COST / NEW_SLOT_COST per slot as defined by MIP-8",
     mip8Label: "variable",
     note:
@@ -102,8 +102,8 @@ export default function GasCalculatorSection() {
           versus MIP-8&apos;s page-aware model.
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-2xl leading-relaxed mb-10">
-          The read examples use today&apos;s EIP-2929 constants for illustration
-          (2,100 cold / 100 warm) and assume the accessed run fits in one page.
+          The read examples use Monad&apos;s gas constants
+          (8,100 cold / 100 warm) and assume the accessed run fits in one page.
           The write example is qualitative because MIP-8 defines abstract
           page-write and state-growth parameters instead of fixed numbers.
         </p>
