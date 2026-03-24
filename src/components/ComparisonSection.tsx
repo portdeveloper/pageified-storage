@@ -68,8 +68,8 @@ export default function ComparisonSection() {
         </p>
 
         {/* Struct + buttons */}
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <div className="bg-surface-elevated rounded-lg border border-border px-4 py-3 font-mono text-sm">
+        <div className="space-y-4 mb-6">
+          <div className="bg-surface-elevated rounded-lg border border-border px-4 py-3 font-mono text-sm inline-block">
             <span className="text-text-tertiary">struct Token {"{"}</span>
             {FIELD_NAMES.map((name, i) => (
               <span key={name}>
@@ -88,7 +88,7 @@ export default function ComparisonSection() {
             ))}
             <span className="text-text-tertiary"> {"}"}</span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {FIELD_NAMES.map((name, i) => (
               <button
                 key={name}
@@ -103,14 +103,16 @@ export default function ComparisonSection() {
                 SLOAD {name}
               </button>
             ))}
-            {loadedSlots.length > 0 && (
-              <button
-                onClick={reset}
-                className="font-mono text-xs px-3 py-2 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
-              >
-                reset
-              </button>
-            )}
+            <button
+              onClick={reset}
+              className={`font-mono text-xs px-3 py-2 transition-colors cursor-pointer ${
+                loadedSlots.length > 0
+                  ? "text-text-tertiary hover:text-text-primary"
+                  : "text-transparent pointer-events-none"
+              }`}
+            >
+              reset
+            </button>
           </div>
         </div>
 
