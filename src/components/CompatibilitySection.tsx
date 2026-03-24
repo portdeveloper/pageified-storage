@@ -37,6 +37,21 @@ export default function CompatibilitySection() {
           </p>
         </div>
 
+        {/* BLAKE3 footnote */}
+        <div className="mt-10 p-4 bg-surface-elevated rounded-lg border border-border">
+          <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-2">
+            Under the hood
+          </p>
+          <p className="text-sm text-text-secondary font-light leading-relaxed">
+            Each 4,096-byte page is committed via a fixed binary tree built from
+            the BLAKE3 compression function. 128 slots pair into 64 leaves,
+            which hash through 6 levels into a single 32-byte root. An inclusion
+            proof for any slot is about 257 bytes (1-byte index + target word +
+            sibling word + 6 parent hashes), plus the MPT proof for the page
+            commitment.
+          </p>
+        </div>
+
         {/* Visual separator */}
         <div className="mt-16 flex items-center gap-4">
           <div className="flex-1 h-px bg-border" />
