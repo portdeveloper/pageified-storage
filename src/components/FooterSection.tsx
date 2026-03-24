@@ -3,7 +3,7 @@
 export default function FooterSection() {
   return (
     <footer className="py-16 px-6 bg-text-primary text-surface">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
           <div>
             <p className="font-mono text-xs tracking-wider uppercase text-surface/50 mb-3">

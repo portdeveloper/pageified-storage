@@ -1,0 +1,303 @@
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { useInView } from "./useInView";
+
+const COLS = 16;
+const TOTAL = COLS * 8;
+
+const PAGES = [
+  { label: "page 0x7a2f...", slot: 17 },
+  { label: "page 0x3e81...", slot: 94 },
+  { label: "page 0xb4c5...", slot: 42 },
+  { label: "page 0x91d7...", slot: 109 },
+];
+
+const FIELD_NAMES = ["owner", "balance", "timestamp", "approved"];
+const COLD_COST = 8100;
+const WARM_COST = 100;
+
+export default function ComparisonSection() {
+  const { ref, isVisible } = useInView(0.1);
+  const [loadedSlots, setLoadedSlots] = useState<number[]>([]);
+  const [pageWarmed, setPageWarmed] = useState(false);
+
+  const currentGas = loadedSlots.length * COLD_COST;
+  const mip8Gas = loadedSlots.length === 0
+    ? 0
+    : COLD_COST + (loadedSlots.length - 1) * WARM_COST;
+
+  const handleLoad = (fieldIndex: number) => {
+    if (loadedSlots.includes(fieldIndex)) return;
+    setLoadedSlots((prev) => [...prev, fieldIndex]);
+    if (!pageWarmed) setPageWarmed(true);
+  };
+
+  const reset = () => {
+    setLoadedSlots([]);
+    setPageWarmed(false);
+  };
+
+  const allLoaded = loadedSlots.length === 4;
+  const savings = currentGas > 0
+    ? Math.round(((currentGas - mip8Gas) / currentGas) * 100)
+    : 0;
+
+  return (
+    <section ref={ref} className="py-24 px-6 bg-surface relative">
+      <div
+        className={`max-w-5xl mx-auto section-reveal ${
+          isVisible ? "visible" : ""
+        }`}
+      >
+        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-3">
+          The core problem
+        </p>
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
+          Same struct, different cost model
+        </h2>
+        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
+          Four fields of the same Solidity struct. On the left, each field
+          hashes to a different backend page. On the right, MIP-8 groups them
+          into one page.
+        </p>
+        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
+          Click each field to load it and compare the gas cost side by side.
+          Uses Monad&apos;s 8,100/100 cold-vs-warm constants.
+        </p>
+
+        {/* Struct + buttons */}
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <div className="bg-surface-elevated rounded-lg border border-border px-4 py-3 font-mono text-sm">
+            <span className="text-text-tertiary">struct Token {"{"}</span>
+            {FIELD_NAMES.map((name, i) => (
+              <span key={name}>
+                {" "}
+                <span
+                  className={
+                    loadedSlots.includes(i)
+                      ? "text-text-primary font-semibold"
+                      : "text-text-tertiary"
+                  }
+                >
+                  {name}
+                </span>
+                {i < 3 ? "," : ""}
+              </span>
+            ))}
+            <span className="text-text-tertiary"> {"}"}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {FIELD_NAMES.map((name, i) => (
+              <button
+                key={name}
+                onClick={() => handleLoad(i)}
+                disabled={loadedSlots.includes(i)}
+                className={`font-mono text-xs px-3 py-2 rounded-md border transition-all ${
+                  loadedSlots.includes(i)
+                    ? "bg-text-primary text-surface border-text-primary cursor-default"
+                    : "bg-surface-elevated border-border hover:border-text-secondary cursor-pointer"
+                }`}
+              >
+                SLOAD {name}
+              </button>
+            ))}
+            {loadedSlots.length > 0 && (
+              <button
+                onClick={reset}
+                className="font-mono text-xs px-3 py-2 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+              >
+                reset
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          {/* Left: Current EVM (problem) */}
+          <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-mono text-xs text-problem-muted uppercase tracking-wider">
+                Current EVM
+              </p>
+              <p className="font-mono text-xs text-problem-muted">
+                {loadedSlots.length} cold read{loadedSlots.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+
+            {/* 4 mini page grids */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {PAGES.map((page, pageIndex) => {
+                const isLoaded = loadedSlots.includes(pageIndex);
+                return (
+                  <div
+                    key={page.label}
+                    className={`rounded-md p-2 border transition-all duration-300 ${
+                      isLoaded
+                        ? "border-problem-accent bg-problem-bg"
+                        : "border-problem-cell bg-problem-bg/50"
+                    }`}
+                  >
+                    <p className="font-mono text-[8px] text-text-tertiary mb-1">
+                      {page.label}
+                    </p>
+                    <div
+                      className="grid gap-[1px]"
+                      style={{
+                        gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+                      }}
+                    >
+                      {Array.from({ length: TOTAL }, (_, i) => {
+                        const isTarget = i === page.slot;
+                        return (
+                          <div
+                            key={i}
+                            className={`aspect-square rounded-[1px] transition-colors duration-300 ${
+                              isTarget && isLoaded
+                                ? "bg-problem-accent"
+                                : "bg-problem-cell"
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Gas */}
+            <div className="flex items-center justify-between pt-3 border-t border-problem-cell-hover">
+              <p className="font-mono text-xs text-text-tertiary">
+                {loadedSlots.length} x 8,100
+              </p>
+              <motion.p
+                key={`current-${currentGas}`}
+                initial={{ scale: currentGas > 0 ? 1.15 : 1 }}
+                animate={{ scale: 1 }}
+                className="font-mono text-2xl font-semibold text-problem-accent tabular-nums"
+              >
+                {currentGas.toLocaleString()}
+              </motion.p>
+            </div>
+          </div>
+
+          {/* Right: MIP-8 (solution) */}
+          <div className="bg-solution-bg rounded-xl border border-solution-accent-light p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-mono text-xs text-solution-muted uppercase tracking-wider">
+                MIP-8
+              </p>
+              <p className="font-mono text-xs text-solution-muted">
+                {loadedSlots.length > 0 ? "1 cold" : "0"}{loadedSlots.length > 1 ? ` + ${loadedSlots.length - 1} warm` : ""}
+              </p>
+            </div>
+
+            {/* Single page grid */}
+            <div
+              className={`rounded-md p-2 border-2 border-dashed transition-all duration-500 mb-4 ${
+                pageWarmed ? "border-solution-accent" : "border-solution-cell"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-mono text-[8px] text-text-tertiary">
+                  page 0 (contiguous)
+                </p>
+                {pageWarmed && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="font-mono text-[8px] px-1.5 py-0.5 rounded-full bg-solution-accent text-white"
+                  >
+                    WARM
+                  </motion.span>
+                )}
+              </div>
+              <div
+                className="grid gap-[1px]"
+                style={{
+                  gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+                }}
+              >
+                {Array.from({ length: TOTAL }, (_, i) => {
+                  const isField = i < 4;
+                  const fieldLoaded = isField && loadedSlots.includes(i);
+
+                  let bg = "bg-solution-cell";
+                  if (fieldLoaded) bg = "bg-solution-accent";
+                  else if (isField && pageWarmed) bg = "bg-solution-accent-light";
+                  else if (pageWarmed) bg = "bg-solution-accent-light/50";
+
+                  return (
+                    <motion.div
+                      key={i}
+                      className={`aspect-square rounded-[1px] ${bg}`}
+                      transition={{
+                        delay: pageWarmed && !fieldLoaded ? i * 0.002 : 0,
+                        duration: 0.3,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Spacer to align with the 4-grid layout above */}
+            <div className="flex-1" />
+
+            {/* Gas */}
+            <div className="flex items-center justify-between pt-3 border-t border-solution-accent-light">
+              <p className="font-mono text-xs text-text-tertiary">
+                {loadedSlots.length > 0
+                  ? `8,100 + ${Math.max(0, loadedSlots.length - 1)} x 100`
+                  : "0"}
+              </p>
+              <motion.p
+                key={`mip8-${mip8Gas}`}
+                initial={{ scale: mip8Gas > 0 ? 1.15 : 1 }}
+                animate={{ scale: 1 }}
+                className="font-mono text-2xl font-semibold text-solution-accent tabular-nums"
+              >
+                {mip8Gas.toLocaleString()}
+              </motion.p>
+            </div>
+          </div>
+        </div>
+
+        {/* Savings bar */}
+        <AnimatePresence>
+          {allLoaded && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-surface-elevated rounded-lg border border-border p-4"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-mono text-xs text-text-tertiary">
+                  4 fields, same struct
+                </p>
+                <p className="font-mono text-lg font-semibold text-solution-accent">
+                  {savings}% cheaper with MIP-8
+                </p>
+              </div>
+              <div className="w-full h-3 bg-problem-cell rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(mip8Gas / currentGas) * 100}%` }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  className="h-full bg-solution-accent rounded-full"
+                />
+              </div>
+              <div className="flex justify-between mt-1 font-mono text-[10px] text-text-tertiary">
+                <span>MIP-8: {mip8Gas.toLocaleString()}</span>
+                <span>Current: {currentGas.toLocaleString()}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}

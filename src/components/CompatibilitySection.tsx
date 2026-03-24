@@ -8,7 +8,7 @@ export default function CompatibilitySection() {
   return (
     <section ref={ref} className="py-24 px-6 bg-surface relative">
       <div
-        className={`max-w-3xl mx-auto section-reveal ${
+        className={`max-w-5xl mx-auto section-reveal ${
           isVisible ? "visible" : ""
         }`}
       >

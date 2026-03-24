@@ -46,7 +46,7 @@ export default function ProblemSection() {
       className="min-h-screen py-24 px-6 bg-problem-bg relative"
     >
       <div
-        className={`max-w-4xl mx-auto section-reveal ${
+        className={`max-w-5xl mx-auto section-reveal ${
           isVisible ? "visible" : ""
         }`}
       >

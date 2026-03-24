@@ -1,6 +1,5 @@
 import HeroSection from "@/components/HeroSection";
-import ProblemSection from "@/components/ProblemSection";
-import SolutionSection from "@/components/SolutionSection";
+import ComparisonSection from "@/components/ComparisonSection";
 import PageMappingSection from "@/components/PageMappingSection";
 import GasCalculatorSection from "@/components/GasCalculatorSection";
 import CherryPickedSection from "@/components/CherryPickedSection";
@@ -13,8 +12,7 @@ export default function Home() {
   return (
     <main>
       <HeroSection />
-      <ProblemSection />
-      <SolutionSection />
+      <ComparisonSection />
       <GasCalculatorSection />
       <StepperSection />
       <CherryPickedSection />
