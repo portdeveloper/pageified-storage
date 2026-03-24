@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { name: "MIP-8", href: "/mip-8", ready: true },
-  { name: "MIP-3", href: "/mip-3", ready: true },
+  { name: "MIP-8", href: "/mip-8", ready: true, beta: false },
+  { name: "MIP-3", href: "/mip-3", ready: true, beta: true },
+  { name: "MIP-4", href: "/mip-4", ready: true, beta: true },
 ];
 
 export default function MipNav() {
@@ -38,6 +39,9 @@ export default function MipNav() {
                 {tab.name}
                 {!tab.ready && (
                   <span className="ml-1.5 text-[10px] opacity-50">soon</span>
+                )}
+                {tab.beta && (
+                  <span className="ml-1.5 text-[10px] opacity-50">beta</span>
                 )}
               </Link>
             );
