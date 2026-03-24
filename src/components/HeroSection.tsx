@@ -67,7 +67,7 @@ export default function HeroSection() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-16 relative z-10"
+        className="mt-16 mb-16 relative z-10"
       >
         <div className="bg-surface-elevated rounded-xl p-5 shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-3">
