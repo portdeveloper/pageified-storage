@@ -15,7 +15,7 @@ const CARDS = [
     ),
     title: "Structs get cheaper",
     description:
-      "Solidity stores struct members and array elements contiguously. Under MIP-8, a contiguous run that fits in one page is typically 1 cold page touch plus N warm slot accesses instead of N cold slot accesses.",
+      "Solidity stores struct members and array elements contiguously. Under MIP-8, a contiguous run that fits in one page is typically 1 cold page touch plus N - 1 warm slot accesses instead of N cold slot accesses.",
     color: "text-solution-accent",
     bg: "bg-solution-bg",
     border: "border-solution-accent-light",
