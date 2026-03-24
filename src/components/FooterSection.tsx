@@ -1,6 +1,32 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
+const FOOTER_DATA: Record<string, { specUrl: string; specLabel: string; forumUrl: string; note: string }> = {
+  "/mip-8": {
+    specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-8.md",
+    specLabel: "MIP-8 on GitHub",
+    forumUrl: "https://forum.monad.xyz/t/mip-8-page-ified-storage-state/407",
+    note: "MIP-8's future-directions section points to MIP-9 as a possible follow-on exploring flexible fanout trees for smaller proofs and optimized storage writes.",
+  },
+  "/mip-3": {
+    specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-3.md",
+    specLabel: "MIP-3 on GitHub",
+    forumUrl: "https://forum.monad.xyz/t/mip-3-linear-evm-memory-cost/362",
+    note: "MIP-3 shipped as part of the MONAD_NINE network upgrade. It replaces the quadratic memory cost model with a linear one and introduces a shared 8 MB memory pool.",
+  },
+  "/mip-4": {
+    specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-4.md",
+    specLabel: "MIP-4 on GitHub",
+    forumUrl: "https://forum.monad.xyz/t/mip-4-reserve-balance-introspection/363",
+    note: "MIP-4 shipped as part of the MONAD_NINE network upgrade. The precompile at 0x1001 lets contracts detect reserve balance violations mid-execution.",
+  },
+};
+
 export default function FooterSection() {
+  const pathname = usePathname();
+  const data = FOOTER_DATA[pathname] || FOOTER_DATA["/mip-8"];
+
   return (
     <footer className="py-16 px-6 bg-text-primary text-surface">
       <div className="max-w-5xl mx-auto">
@@ -10,12 +36,12 @@ export default function FooterSection() {
               Read the spec
             </p>
             <a
-              href="https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-8.md"
+              href={data.specUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-surface/80 hover:text-surface transition-colors underline underline-offset-4 decoration-surface/20 hover:decoration-surface/60"
             >
-              MIP-8 on GitHub →
+              {data.specLabel} →
             </a>
           </div>
           <div>
@@ -23,7 +49,7 @@ export default function FooterSection() {
               Join the discussion
             </p>
             <a
-              href="https://forum.monad.xyz/t/mip-8-page-ified-storage-state/407"
+              href={data.forumUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-surface/80 hover:text-surface transition-colors underline underline-offset-4 decoration-surface/20 hover:decoration-surface/60"
@@ -33,12 +59,10 @@ export default function FooterSection() {
           </div>
           <div>
             <p className="font-mono text-xs tracking-wider uppercase text-surface/50 mb-3">
-              What&apos;s next
+              About
             </p>
             <p className="text-sm text-surface/60">
-              MIP-8&apos;s future-directions section points to MIP-9 as a possible
-              follow-on exploring flexible fanout trees for smaller proofs and
-              optimized storage writes.
+              {data.note}
             </p>
           </div>
         </div>

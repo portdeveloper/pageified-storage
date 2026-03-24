@@ -21,17 +21,19 @@ export default function Mip3CompatibilitySection() {
             <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MSTORE</span>,{" "}
             <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MSTORE8</span>,{" "}
             <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MCOPY</span>.
-            Only the gas cost of expansion changes.
+            What changes: expansion gas becomes linear, an 8 MB hard cap is
+            enforced, and child calls share a memory pool with their parent
+            instead of getting isolated memory.
           </p>
           <p>
             Existing contracts get cheaper, not broken. Average memory usage is
-            around 2 KB, which drops from 198 gas to 32 gas. The only contracts
+            around 2 KB, which drops from 200 gas to 32 gas. The only contracts
             at risk are those hardcoding gas assumptions about memory expansion costs.
           </p>
           <p>
-            When the 8 MB limit is exceeded, the call reverts (returning unspent
-            gas to the parent), rather than causing an exceptional halt. This
-            preserves compatibility with ERC-4337 bundlers that catch reverts.
+            When the 8 MB limit is exceeded, the call terminates with an
+            out-of-gas error, consuming all gas in the immediate call frame.
+            No gas is returned to the parent context.
           </p>
         </div>
 
