@@ -389,7 +389,8 @@ export default function StepperSection() {
           <div className="lg:col-span-2 space-y-4">
             {/* Page grids */}
             {uniquePages.map((pageNum) => {
-              const isWarmed = pageMap.has(pageNum);
+              const pageSlots = pageMap.get(pageNum);
+              const isWarmed = pageSlots !== undefined && pageSlots.size > 1;
               const pageBase = pageNum * 128;
 
               // Show first 64 slots (4 rows) for compact view
