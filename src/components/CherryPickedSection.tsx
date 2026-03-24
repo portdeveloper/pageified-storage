@@ -37,9 +37,6 @@ export default function CherryPickedSection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-solution-muted uppercase mb-3">
-          Optimized example
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-2">
           Design for pages, get 10X+
         </h2>
@@ -76,7 +73,7 @@ export default function CherryPickedSection() {
             </div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-problem-accent" />
-              <p className="font-mono text-[10px] text-text-tertiary">
+              <p className="font-mono text-xs text-text-tertiary">
                 Each token ID hashes to a different page
               </p>
             </div>
@@ -84,7 +81,7 @@ export default function CherryPickedSection() {
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: 4 }, (_, pageIdx) => (
                 <div key={pageIdx} className="bg-problem-bg rounded-md p-2">
-                  <p className="font-mono text-[8px] text-text-tertiary mb-1">
+                  <p className="font-mono text-xs text-text-tertiary mb-1">
                     page {pageIdx === 0 ? "0x7a.." : pageIdx === 1 ? "0x3e.." : pageIdx === 2 ? "0xb4.." : "0x91.."}
                   </p>
                   <div className="grid grid-cols-4 gap-[1px]">
@@ -103,7 +100,7 @@ export default function CherryPickedSection() {
                 </div>
               ))}
             </div>
-            <p className="font-mono text-[10px] text-problem-accent mt-3">
+            <p className="font-mono text-xs text-problem-accent mt-3">
               {batchSize} tokens = {batchSize} cold reads = {current.toLocaleString()} gas
             </p>
           </div>
@@ -126,13 +123,13 @@ export default function CherryPickedSection() {
             </div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-solution-accent" />
-              <p className="font-mono text-[10px] text-text-tertiary">
+              <p className="font-mono text-xs text-text-tertiary">
                 All token balances in one page
               </p>
             </div>
             {/* Single page visualization */}
             <div className="bg-solution-bg rounded-md p-2">
-              <p className="font-mono text-[8px] text-text-tertiary mb-1">
+              <p className="font-mono text-xs text-text-tertiary mb-1">
                 page 0
               </p>
               <div className="grid grid-cols-16 gap-[1px]" style={{ gridTemplateColumns: "repeat(16, minmax(0, 1fr))" }}>
@@ -153,7 +150,7 @@ export default function CherryPickedSection() {
                 })}
               </div>
             </div>
-            <p className="font-mono text-[10px] text-solution-accent mt-3">
+            <p className="font-mono text-xs text-solution-accent mt-3">
               {batchSize} tokens = 1 cold + {batchSize - 1} warm = {mip8.toLocaleString()} gas
             </p>
           </div>
@@ -190,7 +187,7 @@ export default function CherryPickedSection() {
             onChange={(e) => setBatchSize(Number(e.target.value))}
             className="w-full accent-solution-accent cursor-pointer"
           />
-          <div className="flex justify-between font-mono text-[10px] text-text-tertiary mt-1">
+          <div className="flex justify-between font-mono text-xs text-text-tertiary mt-1">
             <span>2</span>
             <span>12 (10X threshold)</span>
             <span>64</span>
@@ -213,7 +210,7 @@ export default function CherryPickedSection() {
               {current.toLocaleString()}
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">gas</p>
-            <p className="font-mono text-[10px] text-text-tertiary mt-2">
+            <p className="font-mono text-xs text-text-tertiary mt-2">
               {batchSize} x 8,100 (all cold)
             </p>
           </div>
@@ -232,7 +229,7 @@ export default function CherryPickedSection() {
               {mip8.toLocaleString()}
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">gas</p>
-            <p className="font-mono text-[10px] text-text-tertiary mt-2">
+            <p className="font-mono text-xs text-text-tertiary mt-2">
               8,100 + {batchSize - 1} x 100
             </p>
           </div>
@@ -253,7 +250,7 @@ export default function CherryPickedSection() {
               {improvement.toFixed(1)}x
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">cheaper</p>
-            <p className="font-mono text-[10px] text-text-tertiary mt-2">
+            <p className="font-mono text-xs text-text-tertiary mt-2">
               {savings}% gas saved
             </p>
           </div>
@@ -285,11 +282,11 @@ export default function CherryPickedSection() {
               className="h-full bg-solution-accent rounded-full"
             />
           </div>
-          <div className="flex justify-between mt-1 font-mono text-[10px] text-text-tertiary">
+          <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
             <span>Page-aware + MIP-8: {mip8.toLocaleString()}</span>
             <span>Standard: {current.toLocaleString()}</span>
           </div>
-          <p className="font-mono text-[10px] text-text-tertiary mt-3">
+          <p className="font-mono text-xs text-text-tertiary mt-3">
             This example shows a page-aware ERC-1155 that stores token balances
             in a contiguous array instead of a double mapping. With MIP-8, batch
             reads from the same page scale at 100 gas per additional slot instead

@@ -284,9 +284,6 @@ export default function StepperSection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-3">
-          Step-through debugger
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-2">
           Watch storage accesses in real time
         </h2>
@@ -324,7 +321,7 @@ export default function StepperSection() {
               <p className="font-mono text-xs text-text-tertiary">
                 {example.name}
               </p>
-              <p className="font-mono text-[10px] text-text-tertiary">
+              <p className="font-mono text-xs text-text-tertiary">
                 {opLog.length} unique slots accessed
               </p>
             </div>
@@ -348,7 +345,7 @@ export default function StepperSection() {
                     }`}
                   >
                     {/* Line number */}
-                    <span className="font-mono text-[10px] text-text-tertiary w-5 text-right shrink-0 select-none tabular-nums pt-0.5">
+                    <span className="font-mono text-xs text-text-tertiary w-5 text-right shrink-0 select-none tabular-nums pt-0.5">
                       {idx + 1}
                     </span>
                     {/* Code */}
@@ -373,7 +370,7 @@ export default function StepperSection() {
                       <motion.span
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className={`shrink-0 font-mono text-[9px] px-1.5 py-0.5 rounded-full mt-0.5 ${
+                        className={`shrink-0 font-mono text-xs px-1.5 py-0.5 rounded-full mt-0.5 ${
                           isActive
                             ? "bg-solution-accent text-white"
                             : "bg-solution-accent-light text-solution-accent"
@@ -407,7 +404,7 @@ export default function StepperSection() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <p className="font-mono text-[10px] text-text-tertiary">
+                    <p className="font-mono text-xs text-text-tertiary">
                       page {pageNum}
                       {pageNum > 0 && (
                         <span className="text-text-tertiary">
@@ -419,7 +416,7 @@ export default function StepperSection() {
                       <motion.span
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-solution-accent text-white"
+                        className="font-mono text-xs px-2 py-0.5 rounded-full bg-solution-accent text-white"
                       >
                         WARM
                       </motion.span>
@@ -461,7 +458,7 @@ export default function StepperSection() {
 
             {/* Op log */}
             <div className="bg-surface-elevated rounded-xl border border-border p-4 max-h-[180px] overflow-y-auto">
-              <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+              <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-2">
                 Access log
               </p>
               {opLog.length === 0 && (
@@ -538,13 +535,13 @@ export default function StepperSection() {
                   className="flex items-center gap-4"
                 >
                   <div className="text-right">
-                    <p className="font-mono text-[10px] text-text-tertiary">Current</p>
+                    <p className="font-mono text-xs text-text-tertiary">Current</p>
                     <p className="font-mono text-sm font-semibold text-problem-accent tabular-nums">
                       {currentGas.toLocaleString()}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono text-[10px] text-text-tertiary">MIP-8</p>
+                    <p className="font-mono text-xs text-text-tertiary">MIP-8</p>
                     <p className="font-mono text-sm font-semibold text-solution-accent tabular-nums">
                       {mip8Gas.toLocaleString()}
                     </p>
@@ -581,7 +578,7 @@ export default function StepperSection() {
             </div>
             <div className="grid grid-cols-2 gap-4 mt-3">
               <div>
-                <p className="font-mono text-[10px] text-text-tertiary">
+                <p className="font-mono text-xs text-text-tertiary">
                   Current: {uniquePages.length} page{uniquePages.length > 1 ? "s" : ""}, all slots cold
                 </p>
                 <p className="font-mono text-sm text-problem-accent font-semibold">
@@ -589,7 +586,7 @@ export default function StepperSection() {
                 </p>
               </div>
               <div>
-                <p className="font-mono text-[10px] text-text-tertiary">
+                <p className="font-mono text-xs text-text-tertiary">
                   MIP-8: {pageMap.size} page{pageMap.size > 1 ? "s" : ""} cold, rest warm
                 </p>
                 <p className="font-mono text-sm text-solution-accent font-semibold">

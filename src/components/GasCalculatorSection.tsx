@@ -91,9 +91,6 @@ export default function GasCalculatorSection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-3">
-          Gas economics
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           Compare the cost
         </h2>
@@ -206,19 +203,19 @@ export default function GasCalculatorSection() {
                   className="h-full bg-solution-accent rounded-full"
                 />
               </div>
-              <div className="flex justify-between mt-1 font-mono text-[10px] text-text-tertiary">
+              <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
                 <span>MIP-8</span>
                 <span>Current EVM</span>
               </div>
             </>
           ) : (
-            <p className="font-mono text-[10px] text-text-tertiary">
+            <p className="font-mono text-xs text-text-tertiary">
               MIP-8 specifies the shape of the write formula, but not final
               protocol constants.
             </p>
           )}
           {scenario.note && (
-            <p className="font-mono text-[10px] text-text-tertiary mt-3">
+            <p className="font-mono text-xs text-text-tertiary mt-3">
               {scenario.note}
             </p>
           )}

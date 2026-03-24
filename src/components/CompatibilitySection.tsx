@@ -12,9 +12,6 @@ export default function CompatibilitySection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-3">
-          Compatibility
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">
           Execution stays compatible
         </h2>
@@ -39,9 +36,6 @@ export default function CompatibilitySection() {
 
         {/* BLAKE3 footnote */}
         <div className="mt-10 p-4 bg-surface-elevated rounded-lg border border-border">
-          <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-2">
-            Under the hood
-          </p>
           <p className="text-sm text-text-secondary font-light leading-relaxed">
             Each 4,096-byte page is committed via a fixed binary tree built from
             the BLAKE3 compression function. 128 slots pair into 64 leaves,
@@ -52,14 +46,6 @@ export default function CompatibilitySection() {
           </p>
         </div>
 
-        {/* Visual separator */}
-        <div className="mt-16 flex items-center gap-4">
-          <div className="flex-1 h-px bg-border" />
-          <p className="font-mono text-xs text-text-tertiary">
-            MIP-8 · Page-ified Storage State
-          </p>
-          <div className="flex-1 h-px bg-border" />
-        </div>
       </div>
     </section>
   );
