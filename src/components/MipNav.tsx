@@ -19,7 +19,7 @@ export default function MipNav() {
           href="/"
           className="font-mono text-xs text-text-tertiary hover:text-text-primary transition-colors"
         >
-          MIP Explainers
+          MIP Land
         </Link>
         <div className="flex items-center gap-1">
           {TABS.map((tab) => {

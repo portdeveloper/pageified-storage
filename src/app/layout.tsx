@@ -16,7 +16,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Monad MIP Explainers",
+  title: "MIP Land",
   description: "Interactive explainers for Monad Improvement Proposals",
 };
 
