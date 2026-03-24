@@ -278,7 +278,7 @@ export default function StepperSection() {
   const uniquePages = Array.from(allPages.keys()).sort((a, b) => a - b);
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-surface relative">
+    <section ref={ref} className="py-24 px-6 bg-surface-elevated relative">
       <div
         className={`max-w-5xl mx-auto section-reveal ${
           isVisible ? "visible" : ""
