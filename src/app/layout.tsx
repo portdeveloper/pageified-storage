@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import MipNav from "@/components/MipNav";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -15,9 +16,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MIP-8: Page-ified Storage",
-  description:
-    "An interactive explainer for MIP-8: aligning EVM storage with hardware reality",
+  title: "Monad MIP Explainers",
+  description: "Interactive explainers for Monad Improvement Proposals",
 };
 
 export default function RootLayout({
@@ -30,7 +30,10 @@ export default function RootLayout({
       lang="en"
       className={`${plexSans.variable} ${plexMono.variable} antialiased`}
     >
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <MipNav />
+        {children}
+      </body>
     </html>
   );
 }
