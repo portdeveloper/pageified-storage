@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { name: "MIP-8", href: "/mip-8", ready: true },
-  { name: "MIP-3", href: "/mip-3", ready: false },
+  { name: "MIP-3", href: "/mip-3", ready: true },
 ];
 
 export default function MipNav() {
