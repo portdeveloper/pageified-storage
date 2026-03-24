@@ -21,7 +21,7 @@ const SLIDER_STEPS = 200;
 const THRESHOLDS = [
   { bytes: 2 * 1024, label: "2 KB", sub: "avg usage" },
   { bytes: 2 * 1024 * 1024, label: "2 MB", sub: "historical max" },
-  { bytes: 3.85 * 1024 * 1024, label: "~3.85 MB", sub: "ETH block limit" },
+  { bytes: 3.76 * 1024 * 1024, label: "~3.76 MB", sub: "ETH block limit" },
   { bytes: 8 * 1024 * 1024, label: "8 MB", sub: "MIP-3 cap" },
 ];
 
