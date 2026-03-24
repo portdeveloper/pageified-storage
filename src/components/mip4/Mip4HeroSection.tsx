@@ -56,8 +56,8 @@ export default function Mip4HeroSection() {
           <span className="font-semibold italic">mid-execution</span>
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          Monad reserves 10 MON per account for gas fees.
-          MIP-4 lets contracts check if that line has been crossed.
+          Monad reserves 10 MON per EOA to ensure solvency across async execution.
+          MIP-4 lets contracts check if that threshold has been crossed.
         </p>
       </motion.div>
 
