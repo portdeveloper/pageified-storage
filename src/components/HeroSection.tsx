@@ -36,7 +36,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <section className="min-h-[75vh] flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Subtle grain overlay */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
@@ -48,7 +48,7 @@ export default function HeroSection() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center max-w-3xl relative z-10"
+        className="text-center max-w-3xl relative z-10 mt-30"
       >
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
           What if your storage model{" "}
@@ -56,7 +56,7 @@ export default function HeroSection() {
           your hardware?
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          Storage engine may touch 4,096 bytes even when you are asking for 32 bytes.
+          The storage engine touches 4,096 bytes for a 32-byte read.
           <br />
           MIP-8 makes the EVM account for that page-sized reality.
         </p>
@@ -127,21 +127,6 @@ export default function HeroSection() {
         </div>
       </motion.div>
 
-      {/* Scroll hint */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2 }}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-8 h-12 rounded-full border-2 border-text-tertiary/30 flex items-start justify-center pt-2"
-        >
-          <div className="w-1 h-2 rounded-full bg-text-tertiary/40" />
-        </motion.div>
-      </motion.div>
     </section>
   );
 }
