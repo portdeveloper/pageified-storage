@@ -29,8 +29,8 @@ export default function AsyncPipelineSection() {
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
           Without protection, a user could appear solvent on stale state but
-          have already spent their funds. The 10 MON reserve prevents this by
-          capping how much gas fee an account can commit across pending blocks.
+          have already spent their funds. The 10 MON reserve ensures EOAs
+          remain solvent across the async execution gap.
         </p>
 
         {/* Pipeline visualization */}
