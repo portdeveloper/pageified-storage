@@ -18,7 +18,7 @@ const USER_OPS: UserOp[] = [
   { id: 5, label: "Swap 0.1 MON → WETH", causesViolation: false },
 ];
 
-type OpStatus = "pending" | "executing" | "success" | "failed" | "reverted";
+type OpStatus = "pending" | "executing" | "success" | "failed" | "flagged";
 
 export default function BundlerComparisonSection() {
   const { ref, isVisible } = useInView(0.1);
@@ -57,7 +57,7 @@ export default function BundlerComparisonSection() {
     const nextStep = step + 1;
 
     if (mode === "without") {
-      // Without MIP-4: process until violation, then all fail
+      // Without MIP-4: process until violation, then all fail. No diagnostics.
       if (nextStep >= USER_OPS.length) {
         setIsPlaying(false);
         return;
@@ -71,13 +71,11 @@ export default function BundlerComparisonSection() {
           return next;
         });
 
-        // After a brief "executing" phase, resolve
         setTimeout(() => {
           if (op.causesViolation) {
-            // Everything fails
             setOpStatuses(USER_OPS.map(() => "failed"));
             setMessage(
-              "Reserve violation at UserOp #3. Entire transaction reverts. All 5 ops lost."
+              "Reserve violation. Entire bundle reverts. Bundler has no way to know which UserOp caused it."
             );
             setIsPlaying(false);
           } else {
@@ -91,11 +89,8 @@ export default function BundlerComparisonSection() {
       }, 800);
       return () => clearTimeout(timer);
     } else {
-      // With MIP-4: process each, check reserve, revert only the bad one
+      // With MIP-4: bundle still fails, but bundler can identify the offending op
       if (nextStep >= USER_OPS.length) {
-        setMessage(
-          "4 of 5 UserOps succeeded. Only the violating op was reverted."
-        );
         setIsPlaying(false);
         return;
       }
@@ -110,21 +105,24 @@ export default function BundlerComparisonSection() {
 
         setTimeout(() => {
           if (op.causesViolation) {
+            // Bundle still fails, but the violating op is identified
             setOpStatuses((prev) => {
-              const next = [...prev];
-              next[nextStep] = "reverted";
+              const next = prev.map((s) =>
+                s === "success" ? "failed" : s
+              );
+              next[nextStep] = "flagged";
               return next;
             });
-            setMessage("dippedIntoReserve() → true. Reverting UserOp #3 only.");
+            setMessage(
+              "dippedIntoReserve() → true after UserOp #3. Bundle still reverts, but the offending op is now identified. Bundler excludes it from future bundles."
+            );
+            setIsPlaying(false);
           } else {
             setOpStatuses((prev) => {
               const next = [...prev];
               next[nextStep] = "success";
               return next;
             });
-            if (nextStep > 0 && USER_OPS[nextStep - 1]?.causesViolation) {
-              setMessage(null); // Clear the violation message
-            }
           }
         }, 600);
       }, 800);
@@ -134,7 +132,7 @@ export default function BundlerComparisonSection() {
 
   const finished =
     step >= USER_OPS.length - 1 ||
-    (mode === "without" && opStatuses.some((s) => s === "failed"));
+    opStatuses.some((s) => s === "failed" || s === "flagged");
 
   return (
     <section ref={ref} className="py-24 px-6 bg-surface relative">
@@ -146,10 +144,14 @@ export default function BundlerComparisonSection() {
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           The bundler problem
         </h2>
-        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
+        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
           An ERC-4337 bundler processes multiple UserOperations in one
-          transaction. Without MIP-4, a single reserve violation kills the
-          entire bundle.
+          transaction. A single reserve violation reverts the entire bundle.
+        </p>
+        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
+          Without MIP-4, the bundler has no way to know which UserOp caused the
+          failure. With MIP-4, the bundler can call dippedIntoReserve() after
+          each op to identify the offender and exclude it from future bundles.
         </p>
 
         {/* Mode switcher */}
@@ -184,7 +186,7 @@ export default function BundlerComparisonSection() {
             </p>
             {mode === "with" && (
               <p className="font-mono text-xs text-solution-accent">
-                dippedIntoReserve() checked after each op
+                dippedIntoReserve() checked after each op returns
               </p>
             )}
           </div>
@@ -202,8 +204,8 @@ export default function BundlerComparisonSection() {
                       ? "border-solution-accent-light bg-solution-bg"
                       : status === "failed"
                       ? "border-problem-cell-hover bg-problem-bg"
-                      : status === "reverted"
-                      ? "border-problem-cell-hover bg-problem-bg"
+                      : status === "flagged"
+                      ? "border-problem-accent bg-problem-bg"
                       : "border-border bg-surface-elevated"
                   }`}
                 >
@@ -214,8 +216,8 @@ export default function BundlerComparisonSection() {
                         ? "bg-solution-accent text-white"
                         : status === "failed"
                         ? "bg-problem-accent text-white"
-                        : status === "reverted"
-                        ? "bg-problem-accent/60 text-white"
+                        : status === "flagged"
+                        ? "bg-problem-accent text-white"
                         : status === "executing"
                         ? "bg-text-primary text-surface animate-pulse"
                         : "bg-border text-text-tertiary"
@@ -223,7 +225,7 @@ export default function BundlerComparisonSection() {
                   >
                     {status === "success"
                       ? "\u2713"
-                      : status === "failed" || status === "reverted"
+                      : status === "failed" || status === "flagged"
                       ? "\u2717"
                       : op.id}
                   </div>
@@ -232,8 +234,8 @@ export default function BundlerComparisonSection() {
                     className={`font-mono text-sm ${
                       status === "failed"
                         ? "text-problem-accent line-through"
-                        : status === "reverted"
-                        ? "text-problem-accent line-through"
+                        : status === "flagged"
+                        ? "text-problem-accent font-semibold"
                         : status === "success"
                         ? "text-solution-accent"
                         : "text-text-primary"
@@ -242,13 +244,13 @@ export default function BundlerComparisonSection() {
                     UserOp #{op.id}: {op.label}
                   </p>
 
-                  {status === "reverted" && (
+                  {status === "flagged" && (
                     <motion.span
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
+                      className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent text-white"
                     >
-                      reverted only
+                      identified
                     </motion.span>
                   )}
                   {status === "failed" && mode === "without" && (
@@ -258,6 +260,15 @@ export default function BundlerComparisonSection() {
                       className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
                     >
                       lost
+                    </motion.span>
+                  )}
+                  {status === "failed" && mode === "with" && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
+                    >
+                      reverted
                     </motion.span>
                   )}
                 </motion.div>
