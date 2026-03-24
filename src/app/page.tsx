@@ -1,25 +1,5 @@
-import HeroSection from "@/components/HeroSection";
-import ComparisonSection from "@/components/ComparisonSection";
-import PageMappingSection from "@/components/PageMappingSection";
-import GasCalculatorSection from "@/components/GasCalculatorSection";
-import CherryPickedSection from "@/components/CherryPickedSection";
-import StepperSection from "@/components/StepperSection";
-import TakeawaysSection from "@/components/TakeawaysSection";
-import CompatibilitySection from "@/components/CompatibilitySection";
-import FooterSection from "@/components/FooterSection";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main>
-      <HeroSection />
-      <ComparisonSection />
-      <GasCalculatorSection />
-      <StepperSection />
-      <CherryPickedSection />
-      <PageMappingSection />
-      <TakeawaysSection />
-      <CompatibilitySection />
-      <FooterSection />
-    </main>
-  );
+  redirect("/mip-8");
 }
