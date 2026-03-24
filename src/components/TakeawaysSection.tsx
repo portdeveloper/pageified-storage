@@ -63,9 +63,6 @@ export default function TakeawaysSection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-solution-muted uppercase mb-3">
-          For developers
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-10">
           What this means for you
         </h2>

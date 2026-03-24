@@ -43,12 +43,17 @@ export default function FooterSection() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-surface/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="pt-8 border-t border-surface/10 flex items-center justify-center">
           <p className="font-mono text-xs text-surface/30">
-            An independent educational resource. Not affiliated with any project.
-          </p>
-          <p className="font-mono text-xs text-surface/30">
-            CC0 · Public Domain
+            made by{" "}
+            <a
+              href="https://x.com/port_dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-surface/50 hover:text-surface transition-colors underline underline-offset-2"
+            >
+              port
+            </a>
           </p>
         </div>
       </div>

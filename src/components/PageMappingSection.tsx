@@ -26,9 +26,6 @@ export default function PageMappingSection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-3">
-          How it works
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           Slot → Page mapping
         </h2>
@@ -53,7 +50,7 @@ export default function PageMappingSection() {
                 onChange={(e) => setSlotInput(Number(e.target.value))}
                 className="w-full accent-solution-accent cursor-pointer"
               />
-              <div className="flex justify-between font-mono text-[10px] text-text-tertiary mt-1">
+              <div className="flex justify-between font-mono text-xs text-text-tertiary mt-1">
                 <span>0</span>
                 <span>127</span>
                 <span>255</span>
@@ -118,7 +115,7 @@ export default function PageMappingSection() {
             {Array.from({ length: VISIBLE_PAGES }, (_, pageIdx) => (
               <div key={pageIdx} className="flex-1">
                 <p
-                  className={`font-mono text-[10px] mb-1 ${
+                  className={`font-mono text-xs mb-1 ${
                     pageIdx === pageIndex
                       ? "text-solution-accent font-semibold"
                       : "text-text-tertiary"

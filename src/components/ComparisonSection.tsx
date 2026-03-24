@@ -51,9 +51,6 @@ export default function ComparisonSection() {
           isVisible ? "visible" : ""
         }`}
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-3">
-          The core problem
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           Same struct, different cost model
         </h2>
@@ -142,7 +139,7 @@ export default function ComparisonSection() {
                         : "border-problem-cell bg-problem-bg/50"
                     }`}
                   >
-                    <p className="font-mono text-[8px] text-text-tertiary mb-1">
+                    <p className="font-mono text-xs text-text-tertiary mb-1">
                       {page.label}
                     </p>
                     <div
@@ -204,14 +201,14 @@ export default function ComparisonSection() {
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
-                <p className="font-mono text-[8px] text-text-tertiary">
+                <p className="font-mono text-xs text-text-tertiary">
                   page 0 (contiguous)
                 </p>
                 {pageWarmed && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="font-mono text-[8px] px-1.5 py-0.5 rounded-full bg-solution-accent text-white"
+                    className="font-mono text-xs px-1.5 py-0.5 rounded-full bg-solution-accent text-white"
                   >
                     WARM
                   </motion.span>
@@ -292,7 +289,7 @@ export default function ComparisonSection() {
                   className="h-full bg-solution-accent rounded-full"
                 />
               </div>
-              <div className="flex justify-between mt-1 font-mono text-[10px] text-text-tertiary">
+              <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
                 <span>MIP-8: {mip8Gas.toLocaleString()}</span>
                 <span>Current: {currentGas.toLocaleString()}</span>
               </div>

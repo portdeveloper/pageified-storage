@@ -50,16 +50,13 @@ export default function HeroSection() {
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="text-center max-w-3xl relative z-10"
       >
-        <p className="font-mono text-xs tracking-[0.2em] text-text-tertiary uppercase mb-6">
-          MIP-8
-        </p>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
           What if your storage model{" "}
           <span className="font-semibold italic">matched</span>{" "}
           your hardware?
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          You ask for 32 bytes. The storage engine may still touch 4,096.
+          Storage engine may touch 4,096 bytes even when you are asking for 32 bytes.
           <br />
           MIP-8 makes the EVM account for that page-sized reality.
         </p>
@@ -115,14 +112,14 @@ export default function HeroSection() {
               );
             })}
           </div>
-          <div className="flex items-center justify-between mt-3">
-            <p className="font-mono text-[10px] text-text-tertiary">
+          <div className="flex items-center justify-between gap-4 mt-3">
+            <p className="font-mono text-xs text-text-tertiary">
               128 slots × 32 bytes = 4,096 bytes = 1 page
             </p>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: showPage ? 1 : 0 }}
-              className="font-mono text-[10px] text-problem-accent"
+              className="font-mono text-xs text-problem-accent text-right"
             >
               127 sibling slots stay unused in this example
             </motion.p>
