@@ -55,9 +55,10 @@ export default function ComparisonSection() {
           Same struct, different cost model
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Four fields of the same Solidity struct. On the left, each field
-          hashes to a different backend page. On the right, MIP-8 groups them
-          into one page.
+          Solidity lays out struct fields at contiguous slots, but the
+          trie/backend hashes each slot to a different physical location. On the
+          left, each field lands on a separate backend page. On the right,
+          MIP-8 groups contiguous slots into one page.
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
           Click each field to load it and compare the gas cost side by side.
