@@ -62,7 +62,8 @@ export default function ComparisonSection() {
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
           Click each field to load it and compare the gas cost side by side.
-          Uses Monad&apos;s 8,100/100 cold-vs-warm constants.
+          Monad&apos;s cold storage cost is 8,100 gas (vs 2,100 on Ethereum) to
+          reflect the higher cost of state reads from disk.
         </p>
 
         {/* Struct + buttons */}
@@ -116,11 +117,11 @@ export default function ComparisonSection() {
 
         {/* Side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          {/* Left: Current EVM (problem) */}
+          {/* Left: Monad (current) (problem) */}
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-5">
             <div className="flex items-center justify-between mb-4">
               <p className="font-mono text-xs text-problem-muted uppercase tracking-wider">
-                Current EVM
+                Monad (current)
               </p>
               <p className="font-mono text-xs text-problem-muted">
                 {loadedSlots.length} cold read{loadedSlots.length !== 1 ? "s" : ""}
@@ -292,7 +293,7 @@ export default function ComparisonSection() {
               </div>
               <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
                 <span>MIP-8: {mip8Gas.toLocaleString()}</span>
-                <span>Current: {currentGas.toLocaleString()}</span>
+                <span>Monad: {currentGas.toLocaleString()}</span>
               </div>
             </motion.div>
           )}
