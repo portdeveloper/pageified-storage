@@ -1,5 +1,6 @@
-// Solidity compilation utilities
-// Loads solc-js compiler from CDN for browser-side compilation
+// Solidity compilation utilities using web-solc (web worker based)
+
+import { fetchAndLoadSolc, type WebSolc } from "web-solc";
 
 export interface StorageVar {
   label: string;
@@ -41,52 +42,25 @@ function parseStorageLayout(layout: {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cachedSolc: any = null;
+let cachedCompiler: WebSolc | null = null;
+let loadingPromise: Promise<WebSolc> | null = null;
 
-async function loadSolc() {
-  if (cachedSolc) return cachedSolc;
+export async function getCompiler(): Promise<WebSolc> {
+  if (cachedCompiler) return cachedCompiler;
+  if (loadingPromise) return loadingPromise;
 
-  // Load solc-js via the browser wrapper
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src =
-      "https://binaries.soliditylang.org/bin/soljson-v0.8.28+commit.7893614a.js";
-    script.onload = () => {
-      // solc-js attaches to window.Module
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const w = window as any;
-      if (w.Module) {
-        // Use the solc wrapper
-        const wrapScript = document.createElement("script");
-        wrapScript.src =
-          "https://cdn.jsdelivr.net/npm/solc@0.8.28/wrapper.js";
-        wrapScript.onload = () => {
-          if (w.solc && w.solc.cwrap) {
-            cachedSolc = w.solc;
-            resolve(cachedSolc);
-          } else if (w.wrapper) {
-            cachedSolc = w.wrapper(w.Module);
-            resolve(cachedSolc);
-          } else {
-            reject(new Error("Failed to load solc wrapper"));
-          }
-        };
-        wrapScript.onerror = () => reject(new Error("Failed to load solc wrapper"));
-        document.head.appendChild(wrapScript);
-      } else {
-        reject(new Error("Failed to load solc binary"));
-      }
-    };
-    script.onerror = () => reject(new Error("Failed to load solc binary"));
-    document.head.appendChild(script);
-  });
+  loadingPromise = fetchAndLoadSolc("^0.8.25");
+  cachedCompiler = await loadingPromise;
+  loadingPromise = null;
+  return cachedCompiler;
 }
 
-export async function compileSolidity(source: string): Promise<CompilationResult> {
-  let solc;
+export async function compileSolidity(
+  source: string
+): Promise<CompilationResult> {
+  let solc: WebSolc;
   try {
-    solc = await loadSolc();
+    solc = await getCompiler();
   } catch {
     return {
       success: false,
@@ -95,7 +69,7 @@ export async function compileSolidity(source: string): Promise<CompilationResult
   }
 
   const input = {
-    language: "Solidity",
+    language: "Solidity" as const,
     sources: {
       "Contract.sol": { content: source },
     },
@@ -108,10 +82,10 @@ export async function compileSolidity(source: string): Promise<CompilationResult
     },
   };
 
-  let output;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let output: any;
   try {
-    const result = solc.compile(JSON.stringify(input));
-    output = JSON.parse(result);
+    output = await solc.compile(input);
   } catch (e) {
     return {
       success: false,
@@ -155,7 +129,6 @@ export async function compileSolidity(source: string): Promise<CompilationResult
     }
   }
 
-  // No storage layout found
   return {
     success: true,
     contractName: contractNames[0],
