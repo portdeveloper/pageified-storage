@@ -347,9 +347,9 @@ export default function AnalyzerPage() {
 
                         {/* Variable list */}
                         <div className="space-y-1">
-                          {vars.map((v) => (
+                          {vars.map((v, vi) => (
                             <label
-                              key={v.slot}
+                              key={`${v.slot}-${v.label}`}
                               className="flex items-center gap-3 py-1 px-2 rounded hover:bg-surface cursor-pointer transition-colors"
                             >
                               <input
