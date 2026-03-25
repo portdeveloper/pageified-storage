@@ -21,7 +21,7 @@ export default function MipNav() {
         >
           MIP Land
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-1">
           {TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
             return (
@@ -47,6 +47,16 @@ export default function MipNav() {
             );
           })}
         </div>
+        <Link
+          href="/analyzer"
+          className={`font-mono text-xs px-3 py-1.5 rounded-md transition-all ${
+            pathname === "/analyzer"
+              ? "bg-text-primary text-surface"
+              : "text-text-secondary hover:text-text-primary hover:bg-surface"
+          }`}
+        >
+          Analyzer
+        </Link>
       </div>
     </nav>
   );
