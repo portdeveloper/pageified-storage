@@ -96,12 +96,13 @@ export default function GasCalculatorSection() {
           Compare the cost
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-2">
-          Select a scenario to see the gas breakdown under current EVM rules
-          versus MIP-8&apos;s page-aware model.
+          Select a scenario to see the gas breakdown under Monad&apos;s current
+          model versus MIP-8&apos;s page-aware model.
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-2xl leading-relaxed mb-10">
-          The read examples use Monad&apos;s gas constants
-          (8,100 cold / 100 warm) and assume the accessed run fits in one page.
+          The read examples use Monad&apos;s gas constants (8,100 cold / 100 warm).
+          Ethereum uses 2,100 / 100. The cold cost difference reflects Monad&apos;s
+          higher disk I/O cost. All examples assume the accessed run fits in one page.
           The write example is qualitative because MIP-8 defines abstract
           page-write and state-growth parameters instead of fixed numbers.
         </p>
@@ -130,10 +131,10 @@ export default function GasCalculatorSection() {
 
         {/* Side by side comparison */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          {/* Current EVM */}
+          {/* Monad (current) */}
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-6">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-4">
-              Current EVM
+              Monad (current)
             </p>
             <motion.p
               key={`current-${selectedIdx}`}
@@ -206,7 +207,7 @@ export default function GasCalculatorSection() {
               </div>
               <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
                 <span>MIP-8</span>
-                <span>Current EVM</span>
+                <span>Monad (current)</span>
               </div>
             </>
           ) : (

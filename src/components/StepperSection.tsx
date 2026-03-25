@@ -200,7 +200,7 @@ export default function StepperSection() {
 
       if (isFirstTouchSlot) {
         touched.add(op.slot);
-        // Current EVM: every new slot is cold
+        // Monad (current): every new slot is cold
         cGas += COLD_COST;
         // MIP-8: cold only if page is new
         mGas += isFirstTouchPage ? COLD_COST : WARM_COST;
@@ -536,7 +536,7 @@ export default function StepperSection() {
                   className="flex items-center gap-4"
                 >
                   <div className="text-right">
-                    <p className="font-mono text-xs text-text-tertiary">Current</p>
+                    <p className="font-mono text-xs text-text-tertiary">Monad</p>
                     <p className="font-mono text-sm font-semibold text-problem-accent tabular-nums">
                       {currentGas.toLocaleString()}
                     </p>
@@ -580,7 +580,7 @@ export default function StepperSection() {
             <div className="grid grid-cols-2 gap-4 mt-3">
               <div>
                 <p className="font-mono text-xs text-text-tertiary">
-                  Current: {uniquePages.length} page{uniquePages.length > 1 ? "s" : ""}, all slots cold
+                  Monad (current): {uniquePages.length} page{uniquePages.length > 1 ? "s" : ""}, all slots cold
                 </p>
                 <p className="font-mono text-sm text-problem-accent font-semibold">
                   {currentGas.toLocaleString()} gas
