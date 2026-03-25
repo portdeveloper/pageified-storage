@@ -62,8 +62,9 @@ export default function ComparisonSection() {
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
           Click each field to load it and compare the gas cost side by side.
-          Monad&apos;s cold storage cost is 8,100 gas (vs 2,100 on Ethereum) to
-          reflect the higher cost of state reads from disk.
+          Monad charges 8,100 gas per cold read (vs 2,100 on Ethereum).
+          Gas is cheaper per unit on Monad, so the higher unit count better
+          reflects actual disk I/O cost without increasing dollar cost.
         </p>
 
         {/* Struct + buttons */}
