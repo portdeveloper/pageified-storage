@@ -55,6 +55,10 @@ export async function getCompiler(): Promise<WebSolc> {
   return cachedCompiler;
 }
 
+export async function loadCompiler(): Promise<void> {
+  await getCompiler();
+}
+
 export async function compileSolidity(
   source: string
 ): Promise<CompilationResult> {
@@ -85,7 +89,12 @@ export async function compileSolidity(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let output: any;
   try {
-    output = await solc.compile(input);
+    // Race compilation against a 30s timeout
+    const compilePromise = solc.compile(input);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Compilation timed out (30s). The contract may have unresolvable imports.")), 30000)
+    );
+    output = await Promise.race([compilePromise, timeoutPromise]);
   } catch (e) {
     return {
       success: false,
