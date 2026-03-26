@@ -14,25 +14,25 @@ const SAMPLE_CONTRACT = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 contract LendingPool {
-    // Admin slots (page 0)
-    address public owner;           // slot 0
-    address public guardian;        // slot 1
-    bool public paused;             // slot 2
-    uint256 public totalDeposits;   // slot 3
-    uint256 public totalBorrows;    // slot 4
-    uint256 public reserveFactor;   // slot 5
-    uint256 public liquidationBonus;// slot 6
-    uint256 public borrowIndex;     // slot 7
-    uint256 public supplyIndex;     // slot 8
-    uint256 public lastUpdateBlock; // slot 9
-    uint256 public interestRate;    // slot 10
-    uint256 public utilizationRate; // slot 11
-    address public oracle;          // slot 12
-    address public interestModel;   // slot 13
-    uint256 public maxLTV;          // slot 14
-    uint256 public minDebt;         // slot 15
+    // State variables (page 0)
+    address public owner;
+    address public guardian;
+    bool public paused;
+    uint256 public totalDeposits;
+    uint256 public totalBorrows;
+    uint256 public reserveFactor;
+    uint256 public liquidationBonus;
+    uint256 public borrowIndex;
+    uint256 public supplyIndex;
+    uint256 public lastUpdateBlock;
+    uint256 public interestRate;
+    uint256 public utilizationRate;
+    address public oracle;
+    address public interestModel;
+    uint256 public maxLTV;
+    uint256 public minDebt;
 
-    // User data (mappings - scattered)
+    // Mappings (values are scattered across pages)
     mapping(address => uint256) public deposits;
     mapping(address => uint256) public borrows;
     mapping(address => uint256) public collateral;
@@ -47,26 +47,40 @@ contract LendingPool {
 
 type Tab = "paste" | "github";
 
+function isMapping(type: string): boolean {
+  return type.startsWith("mapping(");
+}
+
 export default function AnalyzerPage() {
   const [tab, setTab] = useState<Tab>("paste");
   const [source, setSource] = useState(SAMPLE_CONTRACT);
   const [githubUrl, setGithubUrl] = useState("");
   const [compiling, setCompiling] = useState(false);
+  const [loadingCompiler, setLoadingCompiler] = useState(false);
   const [result, setResult] = useState<CompilationResult | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const handleCompile = useCallback(async () => {
     setCompiling(true);
+    setLoadingCompiler(true);
     setResult(null);
     setSelectedSlots(new Set());
     setFetchError(null);
     try {
+      // getCompiler() is called inside compileSolidity - first call downloads ~8MB
+      setLoadingCompiler(false);
       const res = await compileSolidity(source);
       setResult(res);
-      // Auto-select all by default
+      // Auto-select non-mapping variables by default
       if (res.storageLayout) {
-        setSelectedSlots(new Set(res.storageLayout.map((v) => v.slot)));
+        setSelectedSlots(
+          new Set(
+            res.storageLayout
+              .filter((v) => !isMapping(v.type))
+              .map((v) => v.slot)
+          )
+        );
       }
     } catch (e) {
       setResult({
@@ -75,12 +89,11 @@ export default function AnalyzerPage() {
       });
     }
     setCompiling(false);
+    setLoadingCompiler(false);
   }, [source]);
 
   const handleFetchGithub = useCallback(async () => {
     setFetchError(null);
-    // Parse GitHub URL to raw content
-    // Supports: github.com/owner/repo/blob/branch/path/to/File.sol
     const match = githubUrl.match(
       /github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+\.sol)/
     );
@@ -114,7 +127,13 @@ export default function AnalyzerPage() {
 
   const selectAll = useCallback(() => {
     if (result?.storageLayout) {
-      setSelectedSlots(new Set(result.storageLayout.map((v) => v.slot)));
+      setSelectedSlots(
+        new Set(
+          result.storageLayout
+            .filter((v) => !isMapping(v.type))
+            .map((v) => v.slot)
+        )
+      );
     }
   }, [result]);
 
@@ -130,8 +149,19 @@ export default function AnalyzerPage() {
 
   const gas = useMemo(() => calculateGas(selectedVars), [selectedVars]);
 
+  const uniqueSelectedSlots = useMemo(
+    () => new Set(selectedVars.map((v) => v.slot)).size,
+    [selectedVars]
+  );
+
+  const uniqueSelectedPages = useMemo(
+    () => new Set(selectedVars.map((v) => v.page)).size,
+    [selectedVars]
+  );
+
   const pages = useMemo(
-    () => (result?.storageLayout ? groupByPage(result.storageLayout) : new Map()),
+    () =>
+      result?.storageLayout ? groupByPage(result.storageLayout) : new Map(),
     [result]
   );
 
@@ -206,7 +236,9 @@ export default function AnalyzerPage() {
             </button>
           </div>
           {fetchError && (
-            <p className="font-mono text-xs text-problem-accent">{fetchError}</p>
+            <p className="font-mono text-xs text-problem-accent">
+              {fetchError}
+            </p>
           )}
         </div>
       )}
@@ -221,7 +253,11 @@ export default function AnalyzerPage() {
             : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
         }`}
       >
-        {compiling ? "Compiling..." : "Compile & Analyze"}
+        {loadingCompiler
+          ? "Loading compiler (~8MB)..."
+          : compiling
+          ? "Compiling..."
+          : "Compile & Analyze"}
       </button>
 
       {/* Errors */}
@@ -297,6 +333,7 @@ export default function AnalyzerPage() {
                     const selectedInPage = vars.filter((v: StorageVar) =>
                       selectedSlots.has(v.slot)
                     );
+
                     return (
                       <div
                         key={pageNum}
@@ -315,7 +352,13 @@ export default function AnalyzerPage() {
                           </p>
                           {selectedInPage.length > 0 && (
                             <span className="font-mono text-xs text-solution-accent">
-                              {selectedInPage.length} selected
+                              {new Set(selectedInPage.map((v) => v.slot)).size}{" "}
+                              slot
+                              {new Set(selectedInPage.map((v) => v.slot))
+                                .size !== 1
+                                ? "s"
+                                : ""}{" "}
+                              selected
                             </span>
                           )}
                         </div>
@@ -324,12 +367,15 @@ export default function AnalyzerPage() {
                         <div
                           className="grid gap-[1px] mb-3"
                           style={{
-                            gridTemplateColumns: "repeat(16, minmax(0, 1fr))",
+                            gridTemplateColumns:
+                              "repeat(16, minmax(0, 1fr))",
                           }}
                         >
-                          {Array.from({ length: Math.min(32, 128) }, (_, i) => {
+                          {Array.from({ length: 32 }, (_, i) => {
                             const absSlot = pageBase + i;
-                            const hasVar = vars.some((v) => v.slot === absSlot);
+                            const hasVar = vars.some(
+                              (v) => v.slot === absSlot
+                            );
                             const isSelected = selectedSlots.has(absSlot);
 
                             let bg = "bg-border/30";
@@ -347,34 +393,46 @@ export default function AnalyzerPage() {
 
                         {/* Variable list */}
                         <div className="space-y-1">
-                          {vars.map((v, vi) => (
-                            <label
-                              key={`${v.slot}-${v.label}`}
-                              className="flex items-center gap-3 py-1 px-2 rounded hover:bg-surface cursor-pointer transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedSlots.has(v.slot)}
-                                onChange={() => toggleSlot(v.slot)}
-                                className="accent-solution-accent"
-                              />
-                              <span className="font-mono text-xs text-text-tertiary w-12 tabular-nums">
-                                slot {v.slot}
-                              </span>
-                              <span
-                                className={`font-mono text-xs ${
-                                  selectedSlots.has(v.slot)
-                                    ? "text-solution-accent font-semibold"
-                                    : "text-text-primary"
+                          {vars.map((v) => {
+                            const mapping = isMapping(v.type);
+                            return (
+                              <label
+                                key={`${v.slot}-${v.label}`}
+                                className={`flex items-center gap-3 py-1 px-2 rounded cursor-pointer transition-colors ${
+                                  mapping
+                                    ? "opacity-60 hover:opacity-80"
+                                    : "hover:bg-surface"
                                 }`}
                               >
-                                {v.label}
-                              </span>
-                              <span className="font-mono text-xs text-text-tertiary ml-auto">
-                                {v.type}
-                              </span>
-                            </label>
-                          ))}
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSlots.has(v.slot)}
+                                  onChange={() => toggleSlot(v.slot)}
+                                  className="accent-solution-accent"
+                                />
+                                <span className="font-mono text-xs text-text-tertiary w-12 tabular-nums">
+                                  slot {v.slot}
+                                </span>
+                                <span
+                                  className={`font-mono text-xs ${
+                                    selectedSlots.has(v.slot) && !mapping
+                                      ? "text-solution-accent font-semibold"
+                                      : "text-text-primary"
+                                  }`}
+                                >
+                                  {v.label}
+                                </span>
+                                <span className="font-mono text-xs text-text-tertiary ml-auto">
+                                  {v.type}
+                                </span>
+                                {mapping && (
+                                  <span className="font-mono text-xs text-problem-muted">
+                                    scattered
+                                  </span>
+                                )}
+                              </label>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -401,17 +459,14 @@ export default function AnalyzerPage() {
                 {/* Selected count */}
                 <div className="bg-surface-elevated rounded-xl border border-border p-4 mb-4">
                   <p className="font-mono text-xs text-text-tertiary mb-1">
-                    Selected variables
+                    Unique slots selected
                   </p>
                   <p className="font-mono text-2xl font-semibold text-text-primary tabular-nums">
-                    {selectedVars.length}
+                    {uniqueSelectedSlots}
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">
-                    across{" "}
-                    {new Set(selectedVars.map((v) => v.page)).size} page
-                    {new Set(selectedVars.map((v) => v.page)).size !== 1
-                      ? "s"
-                      : ""}
+                    across {uniqueSelectedPages} page
+                    {uniqueSelectedPages !== 1 ? "s" : ""}
                   </p>
                 </div>
 
@@ -429,7 +484,7 @@ export default function AnalyzerPage() {
                     {gas.currentGas.toLocaleString()}
                   </motion.p>
                   <p className="font-mono text-xs text-text-tertiary">
-                    {selectedVars.length} x 8,100 gas
+                    {uniqueSelectedSlots} x 8,100 gas
                   </p>
                 </div>
 
@@ -447,13 +502,9 @@ export default function AnalyzerPage() {
                     {gas.mip8Gas.toLocaleString()}
                   </motion.p>
                   <p className="font-mono text-xs text-text-tertiary">
-                    {new Set(selectedVars.map((v) => v.page)).size} x 8,100 +{" "}
-                    {Math.max(
-                      0,
-                      selectedVars.length -
-                        new Set(selectedVars.map((v) => v.page)).size
-                    )}{" "}
-                    x 100
+                    {uniqueSelectedPages} x 8,100 +{" "}
+                    {Math.max(0, uniqueSelectedSlots - uniqueSelectedPages)} x
+                    100
                   </p>
                 </div>
 
@@ -496,6 +547,18 @@ export default function AnalyzerPage() {
                       </p>
                     )}
                   </motion.div>
+                )}
+
+                {/* Mapping note */}
+                {result.storageLayout.some((v) => isMapping(v.type)) && (
+                  <div className="mt-4 p-3 bg-surface rounded-lg border border-border">
+                    <p className="font-mono text-xs text-text-tertiary">
+                      Mapping values are stored at hashed locations and
+                      typically land on different pages. They are excluded from
+                      &quot;Select all&quot; since they don&apos;t benefit from
+                      page grouping.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
