@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useCallback } from "react";
 import {
+  loadCompiler,
   compileSolidity,
   groupByPage,
   calculateGas,
@@ -68,7 +69,7 @@ export default function AnalyzerPage() {
     setSelectedSlots(new Set());
     setFetchError(null);
     try {
-      // getCompiler() is called inside compileSolidity - first call downloads ~8MB
+      await loadCompiler();
       setLoadingCompiler(false);
       const res = await compileSolidity(source);
       setResult(res);
