@@ -62,9 +62,7 @@ export default function ComparisonSection() {
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
           Click each field to load it and compare the gas cost side by side.
-          Monad charges 8,100 gas per cold read (vs 2,100 on Ethereum).
-          Gas is cheaper per unit on Monad, so the higher unit count better
-          reflects actual disk I/O cost without increasing dollar cost.
+          Cold read costs 8,100 gas, warm read costs 100 gas on Monad.
         </p>
 
         {/* Struct + buttons */}

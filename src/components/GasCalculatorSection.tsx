@@ -100,10 +100,8 @@ export default function GasCalculatorSection() {
           model versus MIP-8&apos;s page-aware model.
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-2xl leading-relaxed mb-10">
-          The read examples use Monad&apos;s gas constants (8,100 cold / 100 warm).
-          Ethereum uses 2,100 / 100. Gas is cheaper per unit on Monad, so the
-          higher unit count better reflects actual I/O cost.
-          All examples assume the accessed run fits in one page.
+          The read examples use Monad&apos;s gas constants (8,100 cold / 100 warm)
+          and assume the accessed run fits in one page.
           The write example is qualitative because MIP-8 defines abstract
           page-write and state-growth parameters instead of fixed numbers.
         </p>
