@@ -22,9 +22,13 @@ export default function AnalyzerSection() {
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           Try your own contract
         </h2>
-        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-8">
+        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
           Paste a GitHub repo URL or Solidity source to see how your
           contract&apos;s storage layout maps to pages.
+        </p>
+        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
+          Works best with small-to-medium repos. Large repos with many
+          dependencies (e.g. Aave, Chainlink) may time out.
         </p>
 
         <div className="flex gap-2">
