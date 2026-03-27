@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   analyzeSource,
   analyzeGithub,
@@ -45,13 +46,23 @@ function isMapping(type: string): boolean {
 }
 
 export default function AnalyzerPage() {
-  const [tab, setTab] = useState<Tab>("paste");
-  const [source, setSource] = useState(SAMPLE_SOURCE);
-  const [githubUrl, setGithubUrl] = useState("");
+  const searchParams = useSearchParams();
+  const queryInput = searchParams.get("q") || "";
+
+  const [tab, setTab] = useState<Tab>(
+    queryInput.includes("github.com") ? "github" : "paste"
+  );
+  const [source, setSource] = useState(
+    queryInput && !queryInput.includes("github.com") ? queryInput : SAMPLE_SOURCE
+  );
+  const [githubUrl, setGithubUrl] = useState(
+    queryInput.includes("github.com") ? queryInput : ""
+  );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CompilationResult | null>(null);
   const [selectedContract, setSelectedContract] = useState(0);
   const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
 
   const contract: ContractResult | null =
     result?.contracts?.[selectedContract] ?? null;
@@ -88,6 +99,14 @@ export default function AnalyzerPage() {
     }
     setLoading(false);
   }, [tab, source, githubUrl]);
+
+  // Auto-analyze when navigated with ?q= param
+  useEffect(() => {
+    if (queryInput && !autoAnalyzed) {
+      setAutoAnalyzed(true);
+      handleAnalyze();
+    }
+  }, [queryInput, autoAnalyzed, handleAnalyze]);
 
   const handleSelectContract = useCallback(
     (idx: number) => {
