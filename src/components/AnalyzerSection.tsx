@@ -12,7 +12,6 @@ import {
   type CompilationResult,
   type ContractResult,
 } from "./analyzer/solc-utils";
-import Link from "next/link";
 
 function isMapping(type: string): boolean {
   return type.startsWith("mapping(");
@@ -103,10 +102,7 @@ export default function AnalyzerSection() {
           storage layout maps to pages.
         </p>
         <p className="text-sm text-text-tertiary font-light mb-8">
-          Compiled with Foundry on the backend. Full import resolution.{" "}
-          <Link href="/analyzer" className="text-solution-accent hover:underline">
-            Full analyzer →
-          </Link>
+          Supports GitHub repo URLs and single-file Solidity source.
         </p>
 
         {/* Input */}
