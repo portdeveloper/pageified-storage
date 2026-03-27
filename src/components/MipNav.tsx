@@ -47,16 +47,6 @@ export default function MipNav() {
             );
           })}
         </div>
-        <Link
-          href="/analyzer"
-          className={`font-mono text-xs px-3 py-1.5 rounded-md transition-all ${
-            pathname === "/analyzer"
-              ? "bg-text-primary text-surface"
-              : "text-text-secondary hover:text-text-primary hover:bg-surface"
-          }`}
-        >
-          Analyzer
-        </Link>
       </div>
     </nav>
   );
