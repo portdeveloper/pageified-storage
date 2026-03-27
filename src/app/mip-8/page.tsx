@@ -5,6 +5,7 @@ import PageMappingSection from "@/components/PageMappingSection";
 import GasCalculatorSection from "@/components/GasCalculatorSection";
 import CherryPickedSection from "@/components/CherryPickedSection";
 import StepperSection from "@/components/StepperSection";
+import AnalyzerSection from "@/components/AnalyzerSection";
 import TakeawaysSection from "@/components/TakeawaysSection";
 import CompatibilitySection from "@/components/CompatibilitySection";
 import FooterSection from "@/components/FooterSection";
@@ -24,6 +25,7 @@ export default function Mip8Page() {
       <StepperSection />
       <CherryPickedSection />
       <PageMappingSection />
+      <AnalyzerSection />
       <TakeawaysSection />
       <CompatibilitySection />
       <FooterSection />
