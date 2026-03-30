@@ -11,15 +11,44 @@ export interface StorageVar {
   page: number; // slot >> 7
 }
 
+export interface AbiFunction {
+  type: "function" | "constructor";
+  name?: string;
+  inputs: Array<{ name: string; type: string }>;
+  outputs?: Array<{ name: string; type: string }>;
+  stateMutability?: string;
+}
+
 export interface ContractResult {
   name: string;
   file: string;
   storageLayout: StorageVar[];
+  abi: AbiFunction[];
 }
 
 export interface CompilationResult {
   success: boolean;
   contracts?: ContractResult[];
+  errors?: string[];
+}
+
+export interface TraceSlot {
+  slot: number;
+  slotHex: string;
+}
+
+export interface TraceResult {
+  success: boolean;
+  trace?: {
+    reads: TraceSlot[];
+    writes: TraceSlot[];
+    uniqueSlots: number[];
+    uniquePages: number[];
+    gasEstimate: {
+      current: number;
+      mip8: number;
+    };
+  };
   errors?: string[];
 }
 
@@ -41,6 +70,22 @@ export async function analyzeGithub(githubUrl: string): Promise<CompilationResul
   });
   const data = await res.json();
   return addPageInfo(data);
+}
+
+export async function traceFunction(opts: {
+  source?: string;
+  githubUrl?: string;
+  contractName: string;
+  functionSig: string;
+  args?: string[];
+  constructorArgs?: string[];
+}): Promise<TraceResult> {
+  const res = await fetch(`${BACKEND_URL}/trace`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(opts),
+  });
+  return res.json();
 }
 
 function addPageInfo(data: CompilationResult): CompilationResult {

@@ -6,11 +6,14 @@ import { useSearchParams } from "next/navigation";
 import {
   analyzeSource,
   analyzeGithub,
+  traceFunction,
   groupByPage,
   calculateGas,
   type StorageVar,
   type CompilationResult,
   type ContractResult,
+  type AbiFunction,
+  type TraceResult,
 } from "./solc-utils";
 
 const SAMPLE_SOURCE = `// SPDX-License-Identifier: MIT
@@ -64,8 +67,35 @@ export default function AnalyzerPage() {
   const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
 
+  // Trace state
+  const [selectedFunction, setSelectedFunction] = useState<string>("");
+  const [fnArgs, setFnArgs] = useState<string[]>([]);
+  const [constructorArgs, setConstructorArgs] = useState<string[]>([]);
+  const [tracing, setTracing] = useState(false);
+  const [traceResult, setTraceResult] = useState<TraceResult | null>(null);
+  const [traceMode, setTraceMode] = useState(false); // true = showing traced slots
+
   const contract: ContractResult | null =
     result?.contracts?.[selectedContract] ?? null;
+
+  // Get callable functions from ABI (exclude view/pure for meaningful traces)
+  const functions = useMemo(() => {
+    if (!contract?.abi) return [];
+    return contract.abi.filter(
+      (f): f is AbiFunction & { name: string } =>
+        f.type === "function" && !!f.name
+    );
+  }, [contract]);
+
+  const selectedFnAbi = useMemo(
+    () => functions.find((f) => f.name === selectedFunction),
+    [functions, selectedFunction]
+  );
+
+  const constructorAbi = useMemo(() => {
+    if (!contract?.abi) return null;
+    return contract.abi.find((f) => f.type === "constructor") ?? null;
+  }, [contract]);
 
   const handleAnalyze = useCallback(async () => {
     setLoading(true);
@@ -111,6 +141,11 @@ export default function AnalyzerPage() {
   const handleSelectContract = useCallback(
     (idx: number) => {
       setSelectedContract(idx);
+      setTraceResult(null);
+      setTraceMode(false);
+      setSelectedFunction("");
+      setFnArgs([]);
+      setConstructorArgs([]);
       const c = result?.contracts?.[idx];
       if (c) {
         setSelectedSlots(
@@ -124,6 +159,53 @@ export default function AnalyzerPage() {
     },
     [result]
   );
+
+  const handleTrace = useCallback(async () => {
+    if (!contract || !selectedFunction) return;
+    setTracing(true);
+    setTraceResult(null);
+
+    // Build the function signature: "name(type1,type2)"
+    const fnAbi = functions.find((f) => f.name === selectedFunction);
+    if (!fnAbi) return;
+    const sig = `${fnAbi.name}(${fnAbi.inputs.map((i) => i.type).join(",")})`;
+
+    try {
+      const res = await traceFunction({
+        source: tab === "paste" ? source : undefined,
+        githubUrl: tab === "github" ? githubUrl.trim() : undefined,
+        contractName: contract.name,
+        functionSig: sig,
+        args: fnArgs.filter((a) => a.trim() !== ""),
+        constructorArgs: constructorArgs.filter((a) => a.trim() !== ""),
+      });
+
+      setTraceResult(res);
+
+      // If trace succeeded, auto-select the traced slots
+      if (res.success && res.trace) {
+        setSelectedSlots(new Set(res.trace.uniqueSlots));
+        setTraceMode(true);
+      }
+    } catch (e) {
+      setTraceResult({
+        success: false,
+        errors: [
+          e instanceof Error ? e.message : "Failed to connect to trace service",
+        ],
+      });
+    }
+    setTracing(false);
+  }, [
+    contract,
+    selectedFunction,
+    functions,
+    tab,
+    source,
+    githubUrl,
+    fnArgs,
+    constructorArgs,
+  ]);
 
   const toggleSlot = useCallback((slot: number) => {
     setSelectedSlots((prev) => {
@@ -153,10 +235,40 @@ export default function AnalyzerPage() {
     [contract, selectedSlots]
   );
 
-  const gas = useMemo(() => calculateGas(selectedVars), [selectedVars]);
-  const uniqueSelectedSlots = useMemo(() => new Set(selectedVars.map((v) => v.slot)).size, [selectedVars]);
-  const uniqueSelectedPages = useMemo(() => new Set(selectedVars.map((v) => v.page)).size, [selectedVars]);
+  // In trace mode, use the trace's gas estimate (includes hashed mapping slots)
+  // In manual mode, use the checkbox-based calculation
+  const gas = useMemo(() => {
+    if (traceMode && traceResult?.trace) {
+      const t = traceResult.trace;
+      const current = t.gasEstimate.current;
+      const mip8 = t.gasEstimate.mip8;
+      const savings = current > 0 ? Math.round(((current - mip8) / current) * 100) : 0;
+      const ratio = mip8 > 0 ? current / mip8 : 1;
+      return { currentGas: current, mip8Gas: mip8, savings, ratio };
+    }
+    return calculateGas(selectedVars);
+  }, [traceMode, traceResult, selectedVars]);
+
+  const uniqueSelectedSlots = useMemo(() => {
+    if (traceMode && traceResult?.trace) return traceResult.trace.uniqueSlots.length;
+    return new Set(selectedVars.map((v) => v.slot)).size;
+  }, [traceMode, traceResult, selectedVars]);
+
+  const uniqueSelectedPages = useMemo(() => {
+    if (traceMode && traceResult?.trace) return traceResult.trace.uniquePages.length;
+    return new Set(selectedVars.map((v) => v.page)).size;
+  }, [traceMode, traceResult, selectedVars]);
   const pages = useMemo(() => (contract ? groupByPage(contract.storageLayout) : new Map()), [contract]);
+
+  // Sets for traced read/write slots (for visual distinction)
+  const tracedReadSlots = useMemo(
+    () => new Set(traceResult?.trace?.reads.map((r) => r.slot) ?? []),
+    [traceResult]
+  );
+  const tracedWriteSlots = useMemo(
+    () => new Set(traceResult?.trace?.writes.map((w) => w.slot) ?? []),
+    [traceResult]
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
@@ -285,6 +397,151 @@ export default function AnalyzerPage() {
                 </p>
               </div>
 
+              {/* Function trace panel */}
+              {functions.length > 0 && (
+                <div className="bg-surface-elevated border border-border rounded-xl p-4 mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-solution-accent animate-pulse" />
+                    <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider">
+                      Execution trace
+                    </p>
+                    <span className="font-mono text-xs text-text-tertiary ml-auto">
+                      Deploy &rarr; call &rarr; trace SLOAD/SSTORE opcodes
+                    </span>
+                  </div>
+
+                  {/* Constructor args (if needed) */}
+                  {constructorAbi && constructorAbi.inputs.length > 0 && (
+                    <div className="mb-3">
+                      <p className="font-mono text-xs text-text-tertiary mb-1">
+                        Constructor args
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {constructorAbi.inputs.map((input, i) => (
+                          <input
+                            key={`ctor-${i}`}
+                            type="text"
+                            value={constructorArgs[i] || ""}
+                            onChange={(e) => {
+                              const next = [...constructorArgs];
+                              next[i] = e.target.value;
+                              setConstructorArgs(next);
+                            }}
+                            placeholder={`${input.name}: ${input.type}`}
+                            className="font-mono text-xs bg-surface border border-border rounded-md px-3 py-2 focus:outline-none focus:border-text-secondary flex-1 min-w-[140px]"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-end gap-2">
+                    {/* Function selector */}
+                    <div className="flex-1 min-w-[200px]">
+                      <select
+                        value={selectedFunction}
+                        onChange={(e) => {
+                          setSelectedFunction(e.target.value);
+                          setTraceResult(null);
+                          setTraceMode(false);
+                          const fn = functions.find(
+                            (f) => f.name === e.target.value
+                          );
+                          setFnArgs(fn ? fn.inputs.map(() => "") : []);
+                        }}
+                        className="w-full font-mono text-xs bg-surface border border-border rounded-md px-3 py-2 focus:outline-none focus:border-text-secondary cursor-pointer"
+                      >
+                        <option value="">Select a function...</option>
+                        {functions.map((f) => (
+                          <option key={f.name} value={f.name}>
+                            {f.name}({f.inputs.map((i) => i.type).join(", ")})
+                            {f.stateMutability === "view" ||
+                            f.stateMutability === "pure"
+                              ? " [view]"
+                              : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Function args */}
+                    {selectedFnAbi?.inputs.map((input, i) => (
+                      <input
+                        key={`arg-${i}`}
+                        type="text"
+                        value={fnArgs[i] || ""}
+                        onChange={(e) => {
+                          const next = [...fnArgs];
+                          next[i] = e.target.value;
+                          setFnArgs(next);
+                        }}
+                        placeholder={`${input.name}: ${input.type}`}
+                        className="font-mono text-xs bg-surface border border-border rounded-md px-3 py-2 focus:outline-none focus:border-text-secondary flex-1 min-w-[120px]"
+                      />
+                    ))}
+
+                    {/* Trace button */}
+                    <button
+                      onClick={handleTrace}
+                      disabled={!selectedFunction || tracing}
+                      className={`font-mono text-xs px-4 py-2 rounded-md border transition-all whitespace-nowrap ${
+                        !selectedFunction || tracing
+                          ? "bg-surface border-border text-text-tertiary cursor-default"
+                          : "bg-text-primary text-surface border-text-primary hover:bg-text-primary/90 cursor-pointer"
+                      }`}
+                    >
+                      {tracing ? "Tracing..." : "Trace"}
+                    </button>
+                  </div>
+
+                  {/* Trace errors */}
+                  {traceResult && !traceResult.success && traceResult.errors && (
+                    <div className="mt-3 p-3 rounded-lg bg-problem-bg border border-problem-cell-hover">
+                      {traceResult.errors.map((err, i) => (
+                        <pre
+                          key={i}
+                          className="font-mono text-xs text-problem-accent whitespace-pre-wrap"
+                        >
+                          {err}
+                        </pre>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Trace results summary */}
+                  {traceResult?.success && traceResult.trace && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 flex flex-wrap items-center gap-3"
+                    >
+                      <span className="font-mono text-xs text-solution-accent font-semibold">
+                        Traced {traceResult.trace.reads.length} SLOAD
+                        {traceResult.trace.reads.length !== 1 ? "s" : ""},{" "}
+                        {traceResult.trace.writes.length} SSTORE
+                        {traceResult.trace.writes.length !== 1 ? "s" : ""}
+                      </span>
+                      <span className="font-mono text-xs text-text-tertiary">
+                        {traceResult.trace.uniqueSlots.length} unique slots
+                        across {traceResult.trace.uniquePages.length} page
+                        {traceResult.trace.uniquePages.length !== 1 ? "s" : ""}
+                      </span>
+                      {traceMode && (
+                        <button
+                          onClick={() => {
+                            setTraceMode(false);
+                            selectAll();
+                          }}
+                          className="font-mono text-xs text-text-tertiary hover:underline cursor-pointer ml-auto"
+                        >
+                          Back to manual selection
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Layout */}
                 <div className="lg:col-span-2">
@@ -332,16 +589,32 @@ export default function AnalyzerPage() {
                                 const absSlot = pageBase + i;
                                 const hasVar = vars.some((v) => v.slot === absSlot);
                                 const isSelected = selectedSlots.has(absSlot);
+                                const isRead = traceMode && tracedReadSlots.has(absSlot);
+                                const isWrite = traceMode && tracedWriteSlots.has(absSlot);
                                 let bg = "bg-border/30";
-                                if (isSelected) bg = "bg-solution-accent";
+                                if (isWrite && isRead) bg = "bg-amber-400";
+                                else if (isWrite) bg = "bg-amber-500";
+                                else if (isSelected) bg = "bg-solution-accent";
                                 else if (hasVar) bg = "bg-solution-accent-light";
-                                return <div key={i} className={`aspect-square rounded-[1px] ${bg}`} />;
+                                return (
+                                  <div
+                                    key={i}
+                                    className={`aspect-square rounded-[1px] ${bg}`}
+                                    title={
+                                      traceMode
+                                        ? `slot ${absSlot}${isRead ? " SLOAD" : ""}${isWrite ? " SSTORE" : ""}`
+                                        : `slot ${absSlot}`
+                                    }
+                                  />
+                                );
                               })}
                             </div>
 
                             <div className="space-y-1">
                               {vars.map((v) => {
                                 const mapping = isMapping(v.type);
+                                const isRead = traceMode && tracedReadSlots.has(v.slot);
+                                const isWrite = traceMode && tracedWriteSlots.has(v.slot);
                                 return (
                                   <label
                                     key={`${v.slot}-${v.label}`}
@@ -352,8 +625,10 @@ export default function AnalyzerPage() {
                                     <input type="checkbox" checked={selectedSlots.has(v.slot)} onChange={() => toggleSlot(v.slot)} className="accent-solution-accent" />
                                     <span className="font-mono text-xs text-text-tertiary w-12 tabular-nums">slot {v.slot}</span>
                                     <span className={`font-mono text-xs ${selectedSlots.has(v.slot) && !mapping ? "text-solution-accent font-semibold" : "text-text-primary"}`}>{v.label}</span>
+                                    {isRead && <span className="font-mono text-xs text-solution-accent bg-solution-bg px-1.5 py-0.5 rounded">SLOAD</span>}
+                                    {isWrite && <span className="font-mono text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">SSTORE</span>}
                                     <span className="font-mono text-xs text-text-tertiary ml-auto">{v.type}</span>
-                                    {mapping && <span className="font-mono text-xs text-problem-muted">scattered</span>}
+                                    {mapping && !traceMode && <span className="font-mono text-xs text-problem-muted">scattered</span>}
                                   </label>
                                 );
                               })}
@@ -375,7 +650,14 @@ export default function AnalyzerPage() {
                 {/* Gas sidebar */}
                 <div className="space-y-4">
                   <div className="sticky top-16">
-                    <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-3">Gas comparison</p>
+                    <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-3">
+                      Gas comparison
+                      {traceMode && (
+                        <span className="text-solution-accent ml-2 normal-case">
+                          (from trace)
+                        </span>
+                      )}
+                    </p>
 
                     <div className="bg-surface-elevated rounded-xl border border-border p-4 mb-4">
                       <p className="font-mono text-xs text-text-tertiary mb-1">Unique slots selected</p>
