@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   analyzeSource,
@@ -44,6 +44,80 @@ contract LendingPool {
 
 type Tab = "paste" | "github";
 
+interface ProgressStep {
+  label: string;
+  pct: number;
+  delayMs: number; // time before advancing to next step
+}
+
+const ANALYZE_STEPS: ProgressStep[] = [
+  { label: "Sending to backend", pct: 5, delayMs: 800 },
+  { label: "Cloning repository", pct: 15, delayMs: 4000 },
+  { label: "Compiling with Foundry", pct: 40, delayMs: 8000 },
+  { label: "Extracting storage layouts", pct: 75, delayMs: 3000 },
+  { label: "Processing results", pct: 90, delayMs: 5000 },
+];
+
+const ANALYZE_PASTE_STEPS: ProgressStep[] = [
+  { label: "Sending to backend", pct: 5, delayMs: 800 },
+  { label: "Initializing Forge project", pct: 20, delayMs: 2000 },
+  { label: "Compiling with Foundry", pct: 50, delayMs: 5000 },
+  { label: "Extracting storage layouts", pct: 80, delayMs: 2000 },
+  { label: "Processing results", pct: 92, delayMs: 5000 },
+];
+
+const TRACE_STEPS: ProgressStep[] = [
+  { label: "Building project", pct: 5, delayMs: 1500 },
+  { label: "Compiling with Foundry", pct: 20, delayMs: 6000 },
+  { label: "Starting local EVM", pct: 45, delayMs: 2000 },
+  { label: "Deploying contract", pct: 60, delayMs: 2000 },
+  { label: "Executing function", pct: 72, delayMs: 1500 },
+  { label: "Tracing SLOAD/SSTORE opcodes", pct: 85, delayMs: 3000 },
+  { label: "Parsing trace results", pct: 95, delayMs: 5000 },
+];
+
+function useProgress(steps: ProgressStep[]) {
+  const [stepIdx, setStepIdx] = useState(-1); // -1 = not running
+  const [done, setDone] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const start = useCallback(() => {
+    setStepIdx(0);
+    setDone(false);
+  }, []);
+
+  const finish = useCallback(() => {
+    setDone(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  const reset = useCallback(() => {
+    setStepIdx(-1);
+    setDone(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  // Auto-advance through steps
+  useEffect(() => {
+    if (stepIdx < 0 || done) return;
+    if (stepIdx >= steps.length - 1) return; // stay on last step until finish()
+
+    timerRef.current = setTimeout(() => {
+      setStepIdx((i) => Math.min(i + 1, steps.length - 1));
+    }, steps[stepIdx].delayMs);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [stepIdx, done, steps]);
+
+  const active = stepIdx >= 0 && !done;
+  const current = stepIdx >= 0 ? steps[Math.min(stepIdx, steps.length - 1)] : null;
+  const pct = done ? 100 : current?.pct ?? 0;
+
+  return { start, finish, reset, active, pct, label: current?.label ?? "", stepIdx };
+}
+
 function isMapping(type: string): boolean {
   return type.startsWith("mapping(");
 }
@@ -75,6 +149,12 @@ export default function AnalyzerPage() {
   const [traceResult, setTraceResult] = useState<TraceResult | null>(null);
   const [traceMode, setTraceMode] = useState(false); // true = showing traced slots
 
+  // Progress tracking
+  const analyzeProgress = useProgress(
+    tab === "github" ? ANALYZE_STEPS : ANALYZE_PASTE_STEPS
+  );
+  const traceProgress = useProgress(TRACE_STEPS);
+
   const contract: ContractResult | null =
     result?.contracts?.[selectedContract] ?? null;
 
@@ -102,6 +182,7 @@ export default function AnalyzerPage() {
     setResult(null);
     setSelectedSlots(new Set());
     setSelectedContract(0);
+    analyzeProgress.start();
     try {
       const res =
         tab === "github" && githubUrl.trim()
@@ -127,8 +208,9 @@ export default function AnalyzerPage() {
         errors: [e instanceof Error ? e.message : "Failed to connect to analyzer service"],
       });
     }
+    analyzeProgress.finish();
     setLoading(false);
-  }, [tab, source, githubUrl]);
+  }, [tab, source, githubUrl, analyzeProgress]);
 
   // Auto-analyze when navigated with ?q= param
   useEffect(() => {
@@ -164,6 +246,7 @@ export default function AnalyzerPage() {
     if (!contract || !selectedFunction) return;
     setTracing(true);
     setTraceResult(null);
+    traceProgress.start();
 
     // Build the function signature: "name(type1,type2)"
     const fnAbi = functions.find((f) => f.name === selectedFunction);
@@ -195,6 +278,7 @@ export default function AnalyzerPage() {
         ],
       });
     }
+    traceProgress.finish();
     setTracing(false);
   }, [
     contract,
@@ -205,6 +289,7 @@ export default function AnalyzerPage() {
     githubUrl,
     fnArgs,
     constructorArgs,
+    traceProgress,
   ]);
 
   const toggleSlot = useCallback((slot: number) => {
@@ -328,18 +413,48 @@ export default function AnalyzerPage() {
         </div>
       )}
 
-      {/* Analyze button */}
-      <button
-        onClick={handleAnalyze}
-        disabled={loading}
-        className={`font-mono text-xs px-6 py-3 rounded-lg border transition-all mb-8 ${
-          loading
-            ? "bg-surface-elevated border-border text-text-tertiary cursor-default"
-            : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
-        }`}
-      >
-        {loading ? "Analyzing..." : "Analyze"}
-      </button>
+      {/* Analyze button + progress */}
+      <div className="mb-8">
+        <button
+          onClick={handleAnalyze}
+          disabled={loading}
+          className={`font-mono text-xs px-6 py-3 rounded-lg border transition-all ${
+            loading
+              ? "bg-surface-elevated border-border text-text-tertiary cursor-default"
+              : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
+          }`}
+        >
+          {loading ? "Analyzing..." : "Analyze"}
+        </button>
+
+        <AnimatePresence>
+          {analyzeProgress.active && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 max-w-md"
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-mono text-xs text-text-secondary">
+                  {analyzeProgress.label}
+                </span>
+                <span className="font-mono text-xs text-text-tertiary tabular-nums">
+                  {analyzeProgress.pct}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-border/40 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-solution-accent rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${analyzeProgress.pct}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Errors */}
       <AnimatePresence>
@@ -493,6 +608,35 @@ export default function AnalyzerPage() {
                       {tracing ? "Tracing..." : "Trace"}
                     </button>
                   </div>
+
+                  {/* Trace progress */}
+                  <AnimatePresence>
+                    {traceProgress.active && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3"
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-mono text-xs text-text-secondary">
+                            {traceProgress.label}
+                          </span>
+                          <span className="font-mono text-xs text-text-tertiary tabular-nums">
+                            {traceProgress.pct}%
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-border/40 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-text-primary rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${traceProgress.pct}%` }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Trace errors */}
                   {traceResult && !traceResult.success && traceResult.errors && (
