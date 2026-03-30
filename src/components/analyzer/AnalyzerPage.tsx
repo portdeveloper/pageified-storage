@@ -44,6 +44,14 @@ contract LendingPool {
 
 type Tab = "paste" | "github";
 
+const POPULAR_REPOS = [
+  { name: "Uniswap V2", url: "https://github.com/Uniswap/v2-core" },
+  { name: "Uniswap V3", url: "https://github.com/Uniswap/v3-core" },
+  { name: "solmate", url: "https://github.com/transmissions11/solmate" },
+  { name: "OpenZeppelin", url: "https://github.com/OpenZeppelin/openzeppelin-contracts" },
+  { name: "Compound V3 (Comet)", url: "https://github.com/compound-finance/comet" },
+];
+
 interface ProgressStep {
   label: string;
   pct: number;
@@ -211,6 +219,46 @@ export default function AnalyzerPage() {
     analyzeProgress.finish();
     setLoading(false);
   }, [tab, source, githubUrl, analyzeProgress]);
+
+  const handleQuickRepo = useCallback(
+    async (url: string) => {
+      setTab("github");
+      setGithubUrl(url);
+      setLoading(true);
+      setResult(null);
+      setSelectedSlots(new Set());
+      setSelectedContract(0);
+      analyzeProgress.start();
+      try {
+        const res = await analyzeGithub(url);
+        setResult(res);
+        const first = res.contracts?.find((c) => c.storageLayout.length > 0);
+        if (first) {
+          const idx = res.contracts!.indexOf(first);
+          setSelectedContract(idx);
+          setSelectedSlots(
+            new Set(
+              first.storageLayout
+                .filter((v) => !isMapping(v.type))
+                .map((v) => v.slot)
+            )
+          );
+        }
+      } catch (e) {
+        setResult({
+          success: false,
+          errors: [
+            e instanceof Error
+              ? e.message
+              : "Failed to connect to analyzer service",
+          ],
+        });
+      }
+      analyzeProgress.finish();
+      setLoading(false);
+    },
+    [analyzeProgress]
+  );
 
   // Auto-analyze when navigated with ?q= param
   useEffect(() => {
@@ -412,6 +460,21 @@ export default function AnalyzerPage() {
           />
         </div>
       )}
+
+      {/* Popular repos */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="font-mono text-xs text-text-tertiary">Try:</span>
+        {POPULAR_REPOS.map((repo) => (
+          <button
+            key={repo.url}
+            onClick={() => handleQuickRepo(repo.url)}
+            disabled={loading}
+            className="font-mono text-xs px-2.5 py-1 rounded-md border border-border bg-surface-elevated hover:border-text-secondary hover:bg-surface transition-all cursor-pointer disabled:opacity-50 disabled:cursor-default"
+          >
+            {repo.name}
+          </button>
+        ))}
+      </div>
 
       {/* Analyze button + progress */}
       <div className="mb-8">
