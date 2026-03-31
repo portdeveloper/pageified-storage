@@ -135,7 +135,7 @@ export default function Mip3HeroSection() {
                 <motion.div
                   className="h-full bg-solution-accent rounded-full"
                   animate={{
-                    width: `${Math.min(100, (mip3Gas / ethMemoryCost(TARGET_BYTES)) * 100)}%`,
+                    width: `${Math.max(mip3Gas > 0 ? 1.5 : 0, Math.min(100, (mip3Gas / mip3MemoryCost(TARGET_BYTES)) * 100))}%`,
                   }}
                   transition={{ duration: 0.05 }}
                 />

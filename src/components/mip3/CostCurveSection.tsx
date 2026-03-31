@@ -21,7 +21,7 @@ const SLIDER_STEPS = 200;
 const THRESHOLDS = [
   { bytes: 2 * 1024, label: "2 KB", sub: "avg usage" },
   { bytes: 2 * 1024 * 1024, label: "2 MB", sub: "historical max" },
-  { bytes: 3.76 * 1024 * 1024, label: "~3.76 MB", sub: "ETH block limit" },
+  { bytes: 3.75 * 1024 * 1024, label: "~3.75 MB", sub: "ETH block limit" },
   { bytes: 8 * 1024 * 1024, label: "8 MB", sub: "MIP-3 cap" },
 ];
 
@@ -175,9 +175,11 @@ export default function CostCurveSection() {
               animate={{ scale: 1 }}
               className="font-mono text-2xl sm:text-3xl font-semibold text-solution-accent tabular-nums"
             >
-              {formatGas(mip3Gas)}
+              {mip3Gas === 0 ? "0" : formatGas(mip3Gas)}
             </motion.p>
-            <p className="font-mono text-xs text-text-tertiary mt-1">gas</p>
+            <p className="font-mono text-xs text-text-tertiary mt-1">
+              {mip3Gas === 0 ? "free (< 1 word)" : "gas"}
+            </p>
           </div>
 
           {/* Ratio */}
@@ -190,13 +192,13 @@ export default function CostCurveSection() {
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
               className={`font-mono text-2xl sm:text-3xl font-semibold tabular-nums ${
-                ratio >= 10 ? "text-solution-accent" : "text-text-primary"
+                ratio >= 10 || mip3Gas === 0 ? "text-solution-accent" : "text-text-primary"
               }`}
             >
-              {ethImpossible ? "∞" : `${ratio.toFixed(ratio >= 100 ? 0 : 1)}x`}
+              {ethImpossible ? "∞" : mip3Gas === 0 ? "free" : `${ratio.toFixed(ratio >= 100 ? 0 : 1)}x`}
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">
-              {ethImpossible ? "only possible with MIP-3" : `${savings}% cheaper`}
+              {ethImpossible ? "only possible with MIP-3" : mip3Gas === 0 ? "no memory expansion cost" : `${savings}% cheaper`}
             </p>
           </div>
         </div>

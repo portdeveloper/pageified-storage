@@ -31,9 +31,9 @@ export default function Mip3CompatibilitySection() {
             at risk are those hardcoding gas assumptions about memory expansion costs.
           </p>
           <p>
-            When the 8 MB limit is exceeded, the call reverts. In the
-            current monad-revm implementation, this is handled as an
-            out-of-gas error within the call frame.
+            When the 8 MB limit is exceeded, the call fails with an
+            out-of-gas error within the call frame — not a Solidity-level
+            revert, so no return data is produced.
           </p>
         </div>
 

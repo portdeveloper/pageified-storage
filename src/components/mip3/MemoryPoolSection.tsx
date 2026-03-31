@@ -48,7 +48,7 @@ const DEMO_STEPS: { action: string; frames: CallFrame[] }[] = [
     frames: [{ name: "Contract A", allocMB: 1, color: "bg-problem-accent" }],
   },
   {
-    action: "A calls D. D can use up to 7 MB",
+    action: "A calls D. D allocates 4 MB (7 MB available)",
     frames: [
       { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
       { name: "Contract D", allocMB: 4, color: "bg-solution-muted" },
