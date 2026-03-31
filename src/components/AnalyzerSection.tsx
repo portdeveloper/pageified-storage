@@ -26,10 +26,28 @@ export default function AnalyzerSection() {
           Paste a GitHub repo URL or Solidity source to see how your
           contract&apos;s storage layout maps to pages.
         </p>
-        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
+        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-6">
           Works best with small-to-medium repos. Large repos with many
           dependencies (e.g. Aave, Chainlink) may time out.
         </p>
+
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="font-mono text-xs text-text-tertiary">Try:</span>
+          {[
+            { name: "Uniswap V2", url: "https://github.com/Uniswap/v2-core" },
+            { name: "Uniswap V3", url: "https://github.com/Uniswap/v3-core" },
+            { name: "solmate", url: "https://github.com/transmissions11/solmate" },
+            { name: "OpenZeppelin", url: "https://github.com/OpenZeppelin/openzeppelin-contracts" },
+          ].map((repo) => (
+            <button
+              key={repo.url}
+              onClick={() => router.push(`/analyzer?q=${encodeURIComponent(repo.url)}`)}
+              className="font-mono text-xs px-2.5 py-1 rounded-md border border-border bg-surface hover:border-text-secondary hover:bg-surface-elevated transition-all cursor-pointer"
+            >
+              {repo.name}
+            </button>
+          ))}
+        </div>
 
         <div className="flex gap-2">
           <input
