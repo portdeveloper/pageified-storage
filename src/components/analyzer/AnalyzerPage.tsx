@@ -49,7 +49,6 @@ const POPULAR_REPOS = [
   { name: "Uniswap V3", url: "https://github.com/Uniswap/v3-core" },
   { name: "solmate", url: "https://github.com/transmissions11/solmate" },
   { name: "OpenZeppelin", url: "https://github.com/OpenZeppelin/openzeppelin-contracts" },
-  { name: "Compound V3 (Comet)", url: "https://github.com/compound-finance/comet" },
 ];
 
 interface ProgressStep {
