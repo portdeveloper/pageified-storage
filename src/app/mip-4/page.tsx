@@ -9,7 +9,12 @@ import FooterSection from "@/components/FooterSection";
 export const metadata: Metadata = {
   title: "MIP-4: Reserve Balance Introspection",
   description:
-    "An interactive explainer for MIP-4: detecting reserve balance violations mid-execution on Monad",
+    "An interactive explainer for MIP-4: detecting reserve balance violations mid-execution",
+  openGraph: {
+    title: "MIP-4: Reserve Balance Introspection",
+    description:
+      "An interactive explainer for MIP-4: detecting reserve balance violations mid-execution",
+  },
 };
 
 export default function Mip4Page() {

@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   title: "MIP-8: Page-ified Storage",
   description:
     "An interactive explainer for MIP-8: aligning EVM storage with hardware reality",
+  openGraph: {
+    title: "MIP-8: Page-ified Storage",
+    description:
+      "An interactive explainer for MIP-8: aligning EVM storage with hardware reality",
+  },
 };
 
 export default function Mip8Page() {

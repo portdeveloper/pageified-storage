@@ -4,20 +4,30 @@ import MipNav from "@/components/MipNav";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
-  variable: "--font-geist-sans",
+  variable: "--font-plex-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
 const plexMono = IBM_Plex_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-plex-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "MIP Land",
+  title: {
+    default: "MIP Land",
+    template: "%s | MIP Land",
+  },
   description: "Interactive explainers for Monad Improvement Proposals",
+  openGraph: {
+    siteName: "MIP Land",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({

@@ -10,7 +10,12 @@ import FooterSection from "@/components/FooterSection";
 export const metadata: Metadata = {
   title: "MIP-3: Linear Memory",
   description:
-    "An interactive explainer for MIP-3: linear memory costs on Monad",
+    "An interactive explainer for MIP-3: replacing quadratic memory costs with a linear model",
+  openGraph: {
+    title: "MIP-3: Linear Memory",
+    description:
+      "An interactive explainer for MIP-3: replacing quadratic memory costs with a linear model",
+  },
 };
 
 export default function Mip3Page() {
