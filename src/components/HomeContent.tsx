@@ -155,6 +155,7 @@ const BALANCE_STEPS = [
 
 function MiniBalanceBar() {
   const [step, setStep] = useState(0);
+  const stepRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,12 +163,11 @@ function MiniBalanceBar() {
 
     const tick = () => {
       if (cancelled) return;
-      setStep((s) => {
-        const next = (s + 1) % BALANCE_STEPS.length;
-        const delay = next === 0 ? 2500 : 1200;
-        timer = setTimeout(tick, delay);
-        return next;
-      });
+      const next = (stepRef.current + 1) % BALANCE_STEPS.length;
+      stepRef.current = next;
+      setStep(next);
+      const delay = next === 0 ? 2500 : 1200;
+      timer = setTimeout(tick, delay);
     };
 
     timer = setTimeout(tick, 1500);
