@@ -21,6 +21,12 @@ const FOOTER_DATA: Record<string, { specUrl: string; specLabel: string; forumUrl
     forumUrl: "https://forum.monad.xyz/t/mip-4-reserve-balance-introspection/363",
     note: "MIP-4 shipped as part of the MONAD_NINE network upgrade. The precompile at 0x1001 lets contracts detect reserve balance violations mid-execution.",
   },
+  "/mip-7": {
+    specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-7.md",
+    specLabel: "MIP-7 on GitHub",
+    forumUrl: "https://forum.monad.xyz/t/mip-7-extension-opcodes/",
+    note: "MIP-7 aligns with EIP-8163, which reserves 0xAE on Ethereum L1 for non-L1 extension use. All 256 selectors are currently unassigned; future MIPs will claim specific slots.",
+  },
 };
 
 export default function FooterSection() {
