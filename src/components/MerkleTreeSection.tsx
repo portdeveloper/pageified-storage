@@ -104,8 +104,9 @@ export default function MerkleTreeSection() {
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
           Each 4,096-byte page is committed by a fixed binary tree built from
-          the BLAKE3 compression function. 128 slots pair into 64 leaves, which
-          hash through 6 parent levels into a single 32-byte root.
+          the BLAKE3 compression function. The full tree has 128 slots pairing
+          into 64 leaves across 6 levels. Below is a simplified 16-slot view
+          showing the proof structure.
         </p>
         <p className="text-base text-text-secondary font-light max-w-2xl leading-relaxed mb-10">
           Click any slot below to see its inclusion proof path. The page-local

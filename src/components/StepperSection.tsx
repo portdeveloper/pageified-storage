@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useInView } from "./useInView";
 
 type MobileTab = "code" | "pages" | "log";
@@ -260,10 +260,14 @@ export default function StepperSection() {
     setCurrentStep(-1);
   }, []);
 
-  // Keyboard navigation
+  // Keyboard navigation — only when focus is within this section
+  const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const focused = e.target as Element;
+      if (focused.closest('button, a, select, [role="button"]')) return;
+      if (!sectionRef.current?.contains(document.activeElement) && document.activeElement !== document.body) return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
         handleNext();
@@ -299,7 +303,7 @@ export default function StepperSection() {
   const uniquePages = Array.from(allPages.keys()).sort((a, b) => a - b);
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-surface-elevated relative">
+    <section ref={(el) => { (ref as React.MutableRefObject<HTMLElement | null>).current = el; sectionRef.current = el; }} className="py-24 px-6 bg-surface-elevated relative">
       <div
         className={`max-w-5xl mx-auto section-reveal ${
           isVisible ? "visible" : ""
@@ -577,6 +581,8 @@ export default function StepperSection() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="flex items-center gap-4"
+                  aria-live="polite"
+                  aria-atomic="true"
                 >
                   <div className="text-right">
                     <p className="font-mono text-xs text-text-tertiary">Monad</p>

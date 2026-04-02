@@ -39,10 +39,11 @@ export default function PageMappingSection() {
         <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
             <div className="flex-1">
-              <label className="font-mono text-xs text-text-tertiary block mb-2">
+              <label htmlFor="slot-range" className="font-mono text-xs text-text-tertiary block mb-2">
                 Storage slot
               </label>
               <input
+                id="slot-range"
                 type="range"
                 min={0}
                 max={511}

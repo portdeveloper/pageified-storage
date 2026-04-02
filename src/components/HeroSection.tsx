@@ -89,20 +89,16 @@ export default function HeroSection() {
               const isActive = i === activeSlot;
               const isWarmed = showPage;
 
-              let bg = "bg-[#e8e2da]";
-              if (isActive) bg = "bg-problem-accent";
-              else if (isWarmed) bg = "bg-solution-accent-light";
-
               return (
                 <motion.div
                   key={i}
-                  className={`aspect-square rounded-sm ${bg}`}
+                  className="aspect-square rounded-sm"
                   animate={{
                     backgroundColor: isActive
-                      ? undefined
+                      ? "#c4653a"
                       : isWarmed
-                      ? undefined
-                      : undefined,
+                      ? "#c8e6df"
+                      : "#e8e2da",
                   }}
                   transition={{
                     delay: isWarmed && !isActive ? (i * 0.003) : 0,

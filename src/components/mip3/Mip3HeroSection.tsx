@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Quadratic: words²/512 + 3*words
 function ethMemoryCost(bytes: number): number {
@@ -28,16 +28,17 @@ export default function Mip3HeroSection() {
     return () => clearTimeout(timer);
   }, []);
 
+  const innerTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     if (!running) return;
     if (step >= STEPS) {
       // Reset after pause
       const timer = setTimeout(() => {
         setStep(0);
-        setTimeout(() => setRunning(true), 500);
+        innerTimerRef.current = setTimeout(() => setRunning(true), 500);
       }, 3000);
       setRunning(false);
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); clearTimeout(innerTimerRef.current); };
     }
     const timer = setTimeout(() => setStep((s) => s + 1), STEP_DELAY);
     return () => clearTimeout(timer);

@@ -225,15 +225,19 @@ export default function ComparisonSection() {
                   const isField = i < 4;
                   const fieldLoaded = isField && loadedSlots.includes(i);
 
-                  let bg = "bg-solution-cell";
-                  if (fieldLoaded) bg = "bg-solution-accent";
-                  else if (isField && pageWarmed) bg = "bg-solution-accent-light";
-                  else if (pageWarmed) bg = "bg-solution-accent-light/50";
-
                   return (
                     <motion.div
                       key={i}
-                      className={`aspect-square rounded-[1px] ${bg}`}
+                      className="aspect-square rounded-[1px]"
+                      animate={{
+                        backgroundColor: fieldLoaded
+                          ? "#2a7d6a"
+                          : isField && pageWarmed
+                          ? "#c8e6df"
+                          : pageWarmed
+                          ? "rgba(200, 230, 223, 0.5)"
+                          : "#d4e8e2",
+                      }}
                       transition={{
                         delay: pageWarmed && !fieldLoaded ? i * 0.002 : 0,
                         duration: 0.3,

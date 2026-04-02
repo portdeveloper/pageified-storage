@@ -199,13 +199,13 @@ export default function GasCalculatorSection() {
               <div className="w-full h-3 bg-problem-cell rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${100 - savings}%` }}
+                  animate={{ width: `${savings}%` }}
                   transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full bg-solution-accent rounded-full"
                 />
               </div>
               <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
-                <span>MIP-8</span>
+                <span>Saved</span>
                 <span>Monad (current)</span>
               </div>
             </>

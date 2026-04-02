@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const MIPS = [
   {
@@ -37,26 +37,36 @@ function MiniGrid() {
   const total = cols * rows;
   const [lit, setLit] = useState<Set<number>>(new Set());
 
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   useEffect(() => {
-    // Light up a "page" of cells sequentially
     const pageStart = 12;
     const pageSize = 12;
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < pageSize) {
-        setLit((prev) => new Set([...prev, pageStart + i]));
-        i++;
-      } else {
-        clearInterval(interval);
-        // After a pause, reset and restart
-        setTimeout(() => {
-          setLit(new Set());
-          i = 0;
-        }, 2000);
-      }
-    }, 80);
-    return () => clearInterval(interval);
-  }, [lit.size === 0]); // restart when cleared
+
+    const runCycle = () => {
+      let i = 0;
+      intervalRef.current = setInterval(() => {
+        if (i < pageSize) {
+          setLit((prev) => new Set([...prev, pageStart + i]));
+          i++;
+        } else {
+          clearInterval(intervalRef.current);
+          timeoutRef.current = setTimeout(() => {
+            setLit(new Set());
+            runCycle();
+          }, 2000);
+        }
+      }, 80);
+    };
+
+    runCycle();
+
+    return () => {
+      clearInterval(intervalRef.current);
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   return (
     <div
@@ -109,6 +119,7 @@ export default function HomeContent() {
           >
             <Link
               href={mip.href}
+              aria-label={`Explore ${mip.id}: ${mip.title}`}
               className="group block bg-surface-elevated rounded-xl p-6 border border-border hover:border-text-tertiary/30 transition-all hover:shadow-sm"
             >
               <div className="flex items-start justify-between mb-2">

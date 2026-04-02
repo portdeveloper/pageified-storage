@@ -89,7 +89,7 @@ export default function CostCurveSection() {
         {/* Slider */}
         <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="font-mono text-xs text-text-tertiary">Memory allocation size</p>
+            <label htmlFor="memory-size-range" className="font-mono text-xs text-text-tertiary">Memory allocation size</label>
             <motion.p
               key={currentBytes}
               initial={{ scale: 1.05 }}
@@ -100,6 +100,7 @@ export default function CostCurveSection() {
             </motion.p>
           </div>
           <input
+            id="memory-size-range"
             type="range"
             min={0}
             max={SLIDER_STEPS}
