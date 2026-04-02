@@ -101,7 +101,7 @@ export default function Mip7HeroSection() {
                   title={`0x${i.toString(16).toUpperCase().padStart(2, "0")}`}
                   aria-label={
                     isExtension
-                      ? "0xAE — EXTENSION (click to expand)"
+                      ? "0xAE: EXTENSION (click to expand)"
                       : `0x${i.toString(16).toUpperCase().padStart(2, "0")}`
                   }
                   className={`aspect-square rounded-[2px] relative ${
@@ -145,7 +145,7 @@ export default function Mip7HeroSection() {
             >
               <div className="flex items-center justify-between mb-3">
                 <p className="font-mono text-xs text-solution-accent font-semibold">
-                  0xAE XX — Monad extension selectors
+                  0xAE XX: Monad extension selectors
                 </p>
                 <p className="font-mono text-[10px] text-text-tertiary">
                   all INVALID today

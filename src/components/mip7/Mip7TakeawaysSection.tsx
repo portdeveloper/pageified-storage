@@ -29,7 +29,7 @@ const CARDS = [
     ),
     title: "EVM-portable bytecode",
     description:
-      "Contracts using 0xAE XX on Monad run on Ethereum as INVALID — not as some wrong function. Silent misbehavior is impossible. Bytecode that does work on Monad is predictably inert on Ethereum.",
+      "Contracts using 0xAE XX on Monad run on Ethereum as INVALID, not as some wrong function. Silent misbehavior is impossible. Bytecode that does work on Monad is predictably inert on Ethereum.",
     color: "text-solution-accent",
     bg: "bg-solution-bg",
     border: "border-solution-accent-light",
@@ -44,7 +44,7 @@ const CARDS = [
     ),
     title: "256 slots for future MIPs",
     description:
-      "All 256 selectors are unassigned today. Each future Monad feature claims its own selector via a new MIP. The encoding format never changes — only the dispatch table grows.",
+      "All 256 selectors are unassigned today. Each future Monad feature claims its own selector via a new MIP. The encoding format never changes; only the dispatch table grows.",
     color: "text-text-primary",
     bg: "bg-surface-elevated",
     border: "border-border",

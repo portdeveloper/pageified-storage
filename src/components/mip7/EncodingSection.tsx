@@ -23,8 +23,8 @@ const MODE_B_CELLS: ByteCell[] = [
   { hex: "0xAE", label: "EXTENSION", sub: "opcode", style: "extension" },
   { hex: "0x03", label: "selector", sub: "0x03 (valid)", style: "selector" },
   { hex: "0x63", label: "PUSH4", sub: "frames 4 args", style: "push" },
-  { hex: "0x5B", label: "arg 1", sub: "0x5B — safe!", style: "arg-free" },
-  { hex: "0x60", label: "arg 2", sub: "0x60 — safe!", style: "arg-free" },
+  { hex: "0x5B", label: "arg 1", sub: "0x5B (safe)", style: "arg-free" },
+  { hex: "0x60", label: "arg 2", sub: "0x60 (safe)", style: "arg-free" },
   { hex: "0xAB", label: "arg 3", sub: "any value", style: "arg-free" },
   { hex: "0xFF", label: "arg 4", sub: "any value", style: "arg-free" },
 ];
@@ -184,7 +184,7 @@ export default function EncodingSection() {
                       PUSHn
                     </code>{" "}
                     opcode and correctly eats the next n bytes as its
-                    immediates — including any 0x5B or PUSH-range bytes.
+                    immediates, including any 0x5B or PUSH-range bytes.
                     Analysis and execution agree on which bytes are consumed.
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">
@@ -201,7 +201,7 @@ export default function EncodingSection() {
                 <div className="flex items-start gap-6 flex-wrap">
                   <div>
                     <p className="font-mono text-[10px] text-problem-accent mb-1.5">
-                      Mode A — NOT allowed
+                      Mode A: NOT allowed
                     </p>
                     <div className="flex gap-1.5 items-center">
                       <span className="font-mono text-xs px-2 py-1 rounded bg-text-primary text-surface">0xAE</span>
@@ -212,7 +212,7 @@ export default function EncodingSection() {
                   </div>
                   <div>
                     <p className="font-mono text-[10px] text-solution-accent mb-1.5">
-                      Mode B — safe
+                      Mode B: safe
                     </p>
                     <div className="flex gap-1.5 items-center flex-wrap">
                       <span className="font-mono text-xs px-2 py-1 rounded bg-text-primary text-surface">0xAE</span>

@@ -34,8 +34,8 @@ export default function Mip4DetailsSection() {
           <p>
             The check is global: it evaluates all accounts touched in the
             transaction, not just the caller&apos;s. It returns true if any
-            account&apos;s balance is currently below its reserve threshold —
-            and clears back to false if that balance recovers above the
+            account&apos;s balance is currently below its reserve threshold;
+            it clears back to false if that balance recovers above the
             threshold mid-transaction.
           </p>
         </div>

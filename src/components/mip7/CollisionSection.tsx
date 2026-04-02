@@ -10,7 +10,7 @@ const STEPS = [
     label: "Monad adds an opcode",
     monad: { byte: "0xAB", name: "FAST_HASH", status: "claimed" },
     ethereum: { byte: "0xAB", name: "(unassigned)", status: "free" },
-    message: "Monad adds opcode 0xAB as FAST_HASH — a Monad-specific optimized hash. Works great on Monad.",
+    message: "Monad adds opcode 0xAB as FAST_HASH, a Monad-specific optimized hash. Works great on Monad.",
   },
   {
     id: "eth-claims",
@@ -24,7 +24,7 @@ const STEPS = [
     label: "Same bytecode, different behavior",
     monad: { byte: "0xAB", name: "FAST_HASH", status: "conflict" },
     ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "conflict" },
-    message: "A contract deployed on Monad uses 0xAB. If that bytecode ever runs on Ethereum, 0xAB means something entirely different — no error, just silent wrong behavior.",
+    message: "A contract deployed on Monad uses 0xAB. If that bytecode ever runs on Ethereum, 0xAB means something entirely different. No error, just silent wrong behavior.",
   },
 ];
 
@@ -43,7 +43,7 @@ export default function CollisionSection() {
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
           Ethereum assigns new opcodes with every upgrade. Any slot Monad
-          claims today might be claimed by Ethereum tomorrow — turning the
+          claims today might be claimed by Ethereum tomorrow, turning the
           same bytecode into two different programs on two different chains.
         </p>
 
@@ -209,7 +209,7 @@ export default function CollisionSection() {
               <span className="font-semibold">0xAB</span>, Monad uses{" "}
               <span className="font-semibold">0xAE 0x01</span>. The{" "}
               <span className="font-semibold">0xAE</span> slot is reserved on
-              Ethereum L1 as INVALID — forever. No collision is possible.
+              Ethereum L1 as INVALID forever. No collision is possible.
             </p>
           </motion.div>
         )}

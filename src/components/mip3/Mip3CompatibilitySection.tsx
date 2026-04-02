@@ -32,7 +32,7 @@ export default function Mip3CompatibilitySection() {
           </p>
           <p>
             When the 8 MB limit is exceeded, the call fails with an
-            out-of-gas error within the call frame — not a Solidity-level
+            out-of-gas error within the call frame, not a Solidity-level
             revert, so no return data is produced.
           </p>
         </div>

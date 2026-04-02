@@ -83,31 +83,31 @@ const EXAMPLES: Example[] = [
     name: "PUSH consumes 0x5B",
     bytes: [0x60, 0x5b, 0x5b],
     insight:
-      "PUSH1 (0x60) marks its next byte as immediate data — that 0x5B is NOT a JUMPDEST. The second 0x5B is standalone, so it IS a valid JUMPDEST.",
+      "PUSH1 (0x60) marks its next byte as immediate data. That 0x5B is NOT a JUMPDEST. The second 0x5B is standalone, so it IS a valid JUMPDEST.",
   },
   {
     name: "EXTENSION doesn't eat bytes",
     bytes: [0xae, 0x01, 0x5b],
     insight:
-      "0xAE does not consume any bytes during JUMPDEST analysis. After the selector 0x01, the scanner returns to normal — so 0x5B is a valid JUMPDEST.",
+      "0xAE does not consume any bytes during JUMPDEST analysis. After the selector 0x01, the scanner returns to normal, so 0x5B is a valid JUMPDEST.",
   },
   {
     name: "PUSH-prefix args",
     bytes: [0xae, 0x02, 0x62, 0x5b, 0xa0, 0xff],
     insight:
-      "Selector 0x02 is valid. The PUSH3 (0x62) after it causes analysis to eat the next 3 bytes as PUSH immediates — including 0x5B, which is safely consumed and NOT a JUMPDEST.",
+      "Selector 0x02 is valid. The PUSH3 (0x62) after it causes analysis to eat the next 3 bytes as PUSH immediates, including 0x5B, which is safely consumed and NOT a JUMPDEST.",
   },
   {
     name: "Forbidden: 0x5B selector",
     bytes: [0xae, 0x5b, 0x01],
     insight:
-      "0x5B as a selector would make analysis mark it as a JUMPDEST, but execution treats it as a selector. The two disagree — forbidden. Execution halts with all gas consumed.",
+      "0x5B as a selector would make analysis mark it as a JUMPDEST, but execution treats it as a selector. The two disagree: forbidden. Execution halts with all gas consumed.",
   },
   {
     name: "Forbidden: PUSH selector",
     bytes: [0xae, 0x61, 0xab, 0xcd],
     insight:
-      "PUSH2 (0x61) as a selector: analysis sees PUSH2 and eats 0xAB 0xCD as its immediates. Execution treats them as extension arguments. The byte consumption diverges between chains — forbidden. Halt.",
+      "PUSH2 (0x61) as a selector: analysis sees PUSH2 and eats 0xAB 0xCD as its immediates. Execution treats them as extension arguments. The byte consumption diverges between chains. Forbidden. Halt.",
   },
 ];
 
@@ -263,7 +263,7 @@ export default function JumpdestSection() {
           never alters this analysis.
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          This preserves identical jump destination sets across all EVM chains —
+          This preserves identical jump destination sets across all EVM chains,
           and it's why extension selectors have strict byte-range restrictions.
         </p>
 
@@ -418,7 +418,7 @@ export default function JumpdestSection() {
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {[
-              { role: "extension" as ByteRole, desc: "0xAE — extension gateway" },
+              { role: "extension" as ByteRole, desc: "0xAE: extension gateway" },
               { role: "selector" as ByteRole, desc: "valid selector" },
               { role: "forbidden" as ByteRole, desc: "forbidden selector → halt" },
               { role: "jumpdest" as ByteRole, desc: "valid JUMPDEST ✓" },
