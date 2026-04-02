@@ -50,18 +50,6 @@ const SCENARIOS: Scenario[] = [
     currentBreakdown: "3 × 8,100 (distinct cold slots)",
     mip8Breakdown: "3 × 8,100 (usually 3 different pages)",
   },
-  {
-    name: "Initialize new struct (5 slots)",
-    description:
-      "First writes to 5 contiguous slots on one page",
-    currentGas: 140500,
-    mip8Gas: null,
-    currentBreakdown: "5 × (20,000 set + 8,100 cold access) on Monad",
-    mip8Breakdown: "PAGE_WRITE_COST once for the page, then BASE_SSTORE_COST / NEW_SLOT_COST per slot as defined by MIP-8",
-    mip8Label: "variable",
-    note:
-      "MIP-8 leaves the concrete page-write and new-slot constants open, so there is no authoritative single number yet.",
-  },
 ];
 
 export default function GasCalculatorSection() {
