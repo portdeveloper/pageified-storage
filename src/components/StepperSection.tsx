@@ -1,8 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useInView } from "./useInView";
+
+type MobileTab = "code" | "pages" | "log";
 
 const COLD_COST = 8100;
 const WARM_COST = 100;
@@ -163,6 +165,7 @@ export default function StepperSection() {
   const { ref, isVisible } = useInView(0.1);
   const [exampleIdx, setExampleIdx] = useState(0);
   const [currentStep, setCurrentStep] = useState(-1);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("code");
 
   const example = EXAMPLES[exampleIdx];
 
@@ -241,21 +244,39 @@ export default function StepperSection() {
       ? Math.round(((currentGas - mip8Gas) / currentGas) * 100)
       : 0;
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentStep < totalOps - 1) {
       setCurrentStep((s) => s + 1);
     }
-  };
+  }, [currentStep, totalOps]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentStep > 0) {
       setCurrentStep((s) => s - 1);
     }
-  };
+  }, [currentStep]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCurrentStep(-1);
-  };
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === "r" || e.key === "R") {
+        handleReset();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleNext, handlePrev, handleReset]);
 
   const handleSelectExample = (idx: number) => {
     setExampleIdx(idx);
@@ -314,9 +335,26 @@ export default function StepperSection() {
           {example.description}
         </p>
 
+        {/* Mobile tab switcher */}
+        <div className="flex gap-1 mb-4 lg:hidden">
+          {(["code", "pages", "log"] as MobileTab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              className={`font-mono text-xs px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                mobileTab === tab
+                  ? "bg-text-primary text-surface"
+                  : "text-text-secondary hover:text-text-primary hover:bg-surface"
+              }`}
+            >
+              {tab === "code" ? "Code" : tab === "pages" ? "Pages" : "Log"}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           {/* Code panel - 3 cols */}
-          <div className="lg:col-span-3 bg-surface-elevated rounded-xl border border-border overflow-hidden">
+          <div className={`lg:col-span-3 bg-surface-elevated rounded-xl border border-border overflow-hidden ${mobileTab !== "code" ? "hidden lg:block" : ""}`}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <p className="font-mono text-xs text-text-tertiary">
                 {example.name}
@@ -388,6 +426,7 @@ export default function StepperSection() {
           {/* Right panel - 2 cols */}
           <div className="lg:col-span-2 space-y-4">
             {/* Page grids */}
+            <div className={`space-y-4 ${mobileTab !== "pages" ? "hidden lg:block" : ""}`}>
             {uniquePages.map((pageNum) => {
               const pageSlots = pageMap.get(pageNum);
               const isWarmed = pageSlots !== undefined && pageSlots.size > 1;
@@ -456,9 +495,10 @@ export default function StepperSection() {
                 </div>
               );
             })}
+            </div>
 
             {/* Op log */}
-            <div className="bg-surface-elevated rounded-xl border border-border p-4 max-h-[180px] overflow-y-auto">
+            <div className={`bg-surface-elevated rounded-xl border border-border p-4 max-h-[180px] overflow-y-auto ${mobileTab !== "log" ? "hidden lg:block" : ""}`}>
               <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-2">
                 Access log
               </p>
@@ -526,6 +566,9 @@ export default function StepperSection() {
               Reset
             </button>
           )}
+          <p className="hidden sm:block font-mono text-xs text-text-tertiary/50">
+            ← → keys
+          </p>
           <div className="ml-auto flex items-center gap-4">
             <AnimatePresence mode="wait">
               {currentStep >= 0 && (

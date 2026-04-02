@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useInView } from "../useInView";
 
 const RESERVE = 10;
@@ -116,6 +116,26 @@ export default function TransactionTimelineSection() {
     setCheckResult(anyViolation);
   }, [anyViolation]);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === "r" || e.key === "R") {
+        handleReset();
+      } else if (e.key === "c" || e.key === "C") {
+        handleCheck();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleNext, handlePrev, handleReset, handleCheck]);
+
   const maxBalance = 70; // for bar scaling
   const finished = stepIdx >= STEPS.length - 1;
 
@@ -139,7 +159,7 @@ export default function TransactionTimelineSection() {
         </p>
 
         {/* Account balance bars */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {INITIAL_ACCOUNTS.map((account, i) => {
             const balance = balances[i];
             const violated = violations[i];
@@ -318,6 +338,9 @@ export default function TransactionTimelineSection() {
               Reset
             </button>
           )}
+          <p className="hidden sm:block font-mono text-xs text-text-tertiary/50">
+            ← → keys
+          </p>
           <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
             Step {Math.max(0, stepIdx + 1)} / {STEPS.length}
           </p>

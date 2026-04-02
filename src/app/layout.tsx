@@ -16,6 +16,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://mipland.com"
+  ),
   title: {
     default: "MIP Land",
     template: "%s | MIP Land",
