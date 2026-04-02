@@ -33,8 +33,10 @@ export default function Mip4DetailsSection() {
           </p>
           <p>
             The check is global: it evaluates all accounts touched in the
-            transaction, not just the caller&apos;s. If any account&apos;s balance has
-            dropped below its reserve threshold, it returns true.
+            transaction, not just the caller&apos;s. It returns true if any
+            account&apos;s balance is currently below its reserve threshold —
+            and clears back to false if that balance recovers above the
+            threshold mid-transaction.
           </p>
         </div>
 
@@ -91,7 +93,7 @@ export default function Mip4DetailsSection() {
               <li className="flex items-start gap-2">
                 <span className="text-text-tertiary mt-0.5">&#8226;</span>
                 <span>
-                  <strong>Emptying exception:</strong> first tx in 3 blocks can spend below reserve (lets users withdraw everything)
+                  <strong>Emptying exception:</strong> an undelegated EOA&apos;s first transaction in k blocks may spend below reserve, letting users fully withdraw. EIP-7702-delegated accounts cannot use this exception.
                 </span>
               </li>
               <li className="flex items-start gap-2">

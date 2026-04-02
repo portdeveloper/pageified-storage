@@ -75,7 +75,7 @@ export default function BundlerComparisonSection() {
           if (op.causesViolation) {
             setOpStatuses(USER_OPS.map(() => "failed"));
             setMessage(
-              "Reserve violation. Entire bundle reverts. Bundler has no way to know which UserOp caused it."
+              "Reserve violation. Entire bundle reverts. The bundler receives no on-chain signal identifying which UserOp triggered the failure."
             );
             setIsPlaying(false);
           } else {
