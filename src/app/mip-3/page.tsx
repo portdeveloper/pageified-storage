@@ -5,6 +5,7 @@ import Mip3GasCalculatorSection from "@/components/mip3/Mip3GasCalculatorSection
 import MemoryPoolSection from "@/components/mip3/MemoryPoolSection";
 import Mip3TakeawaysSection from "@/components/mip3/Mip3TakeawaysSection";
 import Mip3CompatibilitySection from "@/components/mip3/Mip3CompatibilitySection";
+import DiscussionCtaSection from "@/components/DiscussionCtaSection";
 import FooterSection from "@/components/FooterSection";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function Mip3Page() {
       <MemoryPoolSection />
       <Mip3TakeawaysSection />
       <Mip3CompatibilitySection />
+      <DiscussionCtaSection />
       <FooterSection />
     </main>
   );

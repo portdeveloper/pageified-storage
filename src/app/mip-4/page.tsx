@@ -4,6 +4,7 @@ import AsyncPipelineSection from "@/components/mip4/AsyncPipelineSection";
 import BundlerComparisonSection from "@/components/mip4/BundlerComparisonSection";
 import TransactionTimelineSection from "@/components/mip4/TransactionTimelineSection";
 import Mip4DetailsSection from "@/components/mip4/Mip4DetailsSection";
+import DiscussionCtaSection from "@/components/DiscussionCtaSection";
 import FooterSection from "@/components/FooterSection";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function Mip4Page() {
       <BundlerComparisonSection />
       <TransactionTimelineSection />
       <Mip4DetailsSection />
+      <DiscussionCtaSection />
       <FooterSection />
     </main>
   );

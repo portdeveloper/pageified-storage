@@ -8,6 +8,7 @@ import StepperSection from "@/components/StepperSection";
 import AnalyzerSection from "@/components/AnalyzerSection";
 import TakeawaysSection from "@/components/TakeawaysSection";
 import CompatibilitySection from "@/components/CompatibilitySection";
+import DiscussionCtaSection from "@/components/DiscussionCtaSection";
 import FooterSection from "@/components/FooterSection";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function Mip8Page() {
       <AnalyzerSection />
       <TakeawaysSection />
       <CompatibilitySection />
+      <DiscussionCtaSection />
       <FooterSection />
     </main>
   );
