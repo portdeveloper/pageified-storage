@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import MipNav from "@/components/MipNav";
+import LanguageBanner from "@/components/LanguageBanner";
+import { LanguageProvider } from "@/i18n/LanguageContext";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -44,8 +46,11 @@ export default function RootLayout({
       className={`${plexSans.variable} ${plexMono.variable} antialiased`}
     >
       <body className="min-h-screen">
-        <MipNav />
-        {children}
+        <LanguageProvider>
+          <LanguageBanner />
+          <MipNav />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

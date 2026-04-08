@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Scenario {
   name: string;
@@ -16,35 +17,34 @@ interface Scenario {
   note?: string;
 }
 
-const SCENARIOS: Scenario[] = [
+const SCENARIO_DATA = [
   {
-    name: "Read 4 struct fields",
-    description: "Loading 4 contiguous struct fields that fit in one page",
+    nameKey: "mip8.gasCalc.scenario1Name",
+    descKey: "mip8.gasCalc.scenario1Desc",
     currentGas: 32400,
     mip8Gas: 8400,
     currentBreakdown: "4 × 8,100 (distinct cold slots on Monad)",
     mip8Breakdown: "1 × 8,100 (first page touch) + 3 × 100 (warm reads in same page)",
   },
   {
-    name: "Read 8 array entries",
-    description: "Iterating over 8 consecutive array slots (e.g. an order book)",
+    nameKey: "mip8.gasCalc.scenario2Name",
+    descKey: "mip8.gasCalc.scenario2Desc",
     currentGas: 64800,
     mip8Gas: 8800,
     currentBreakdown: "8 × 8,100 (distinct cold slots on Monad)",
     mip8Breakdown: "1 × 8,100 (first page touch) + 7 × 100 (warm reads in same page)",
   },
   {
-    name: "Read 8 mapping entries",
-    description: "Looking up 8 unrelated mapping keys",
+    nameKey: "mip8.gasCalc.scenario3Name",
+    descKey: "mip8.gasCalc.scenario3Desc",
     currentGas: 64800,
     mip8Gas: 64800,
     currentBreakdown: "8 × 8,100 (distinct cold slots)",
     mip8Breakdown: "8 × 8,100 (typically 8 different pages)",
   },
   {
-    name: "Read ERC-20 transfer data",
-    description:
-      "sender balance, receiver balance, allowance - 3 hashed lookups that usually hit different pages",
+    nameKey: "mip8.gasCalc.scenario4Name",
+    descKey: "mip8.gasCalc.scenario4Desc",
     currentGas: 24300,
     mip8Gas: 24300,
     currentBreakdown: "3 × 8,100 (distinct cold slots)",
@@ -53,9 +53,20 @@ const SCENARIOS: Scenario[] = [
 ];
 
 export default function GasCalculatorSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const scenario = SCENARIOS[selectedIdx];
+
+  const scenarios: Scenario[] = useMemo(() => SCENARIO_DATA.map((s) => ({
+    name: t(s.nameKey),
+    description: t(s.descKey),
+    currentGas: s.currentGas,
+    mip8Gas: s.mip8Gas,
+    currentBreakdown: s.currentBreakdown,
+    mip8Breakdown: s.mip8Breakdown,
+  })), [t]);
+
+  const scenario = scenarios[selectedIdx];
   const currentGas = scenario.currentGas;
   const mip8Gas = scenario.mip8Gas;
 
@@ -81,22 +92,18 @@ export default function GasCalculatorSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Compare the cost
+          {t("mip8.gasCalc.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-2">
-          Select a scenario to see the gas breakdown under Monad&apos;s current
-          model versus MIP-8&apos;s page-aware model.
+          {t("mip8.gasCalc.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-2xl leading-relaxed mb-10">
-          The read examples use Monad&apos;s gas constants (8,100 cold / 100 warm)
-          and assume the accessed run fits in one page.
-          The write example is qualitative because MIP-8 defines abstract
-          page-write and state-growth parameters instead of fixed numbers.
+          {t("mip8.gasCalc.note")}
         </p>
 
         {/* Scenario picker */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {SCENARIOS.map((s, i) => (
+          {scenarios.map((s, i) => (
             <button
               key={s.name}
               onClick={() => setSelectedIdx(i)}
@@ -121,7 +128,7 @@ export default function GasCalculatorSection() {
           {/* Monad (current) */}
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-6">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-4">
-              Monad (current)
+              {t("mip8.gasCalc.monadCurrent")}
             </p>
             <motion.p
               key={`current-${selectedIdx}`}
@@ -131,7 +138,7 @@ export default function GasCalculatorSection() {
             >
               {currentDisplay}
             </motion.p>
-            <p className="font-mono text-xs text-text-tertiary">gas</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.gasCalc.gas")}</p>
             <div className="mt-4 pt-4 border-t border-problem-cell-hover">
               <p className="font-mono text-xs text-text-secondary">
                 {scenario.currentBreakdown}
@@ -152,7 +159,7 @@ export default function GasCalculatorSection() {
             >
               {mip8Display}
             </motion.p>
-            <p className="font-mono text-xs text-text-tertiary">gas</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.gasCalc.gas")}</p>
             <div className="mt-4 pt-4 border-t border-solution-accent-light">
               <p className="font-mono text-xs text-text-secondary">
                 {scenario.mip8Breakdown}
@@ -164,7 +171,7 @@ export default function GasCalculatorSection() {
         {/* Savings bar */}
         <div className="bg-surface-elevated rounded-lg border border-border p-4">
           <div className="flex items-center justify-between mb-2">
-            <p className="font-mono text-xs text-text-tertiary">Gas savings</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.gasCalc.gasSavings")}</p>
             {savings !== null ? (
               <motion.p
                 key={savings}
@@ -174,11 +181,11 @@ export default function GasCalculatorSection() {
                   savings > 0 ? "text-solution-accent" : "text-text-tertiary"
                 }`}
               >
-                {savings > 0 ? `${savings}% cheaper` : "No change"}
+                {savings > 0 ? `${savings}% ${t("mip8.gasCalc.cheaper")}` : t("mip8.gasCalc.noChange")}
               </motion.p>
             ) : (
               <p className="font-mono text-sm font-semibold text-text-tertiary">
-                Spec leaves this open
+                {t("mip8.gasCalc.specOpen")}
               </p>
             )}
           </div>
@@ -193,14 +200,13 @@ export default function GasCalculatorSection() {
                 />
               </div>
               <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
-                <span>Saved</span>
-                <span>Monad (current)</span>
+                <span>{t("mip8.gasCalc.saved")}</span>
+                <span>{t("mip8.gasCalc.monadCurrent")}</span>
               </div>
             </>
           ) : (
             <p className="font-mono text-xs text-text-tertiary">
-              MIP-8 specifies the shape of the write formula, but not final
-              protocol constants.
+              {t("mip8.gasCalc.specNote")}
             </p>
           )}
           {scenario.note && (

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type MobileTab = "code" | "pages" | "log";
 
@@ -31,8 +32,7 @@ interface Example {
 const EXAMPLES: Example[] = [
   {
     name: "Uniswap V2 swap()",
-    description:
-      "8 unique storage slots (5-12) accessed during swap(), all in one page",
+    description: "", // translated via exampleDescriptions
     lines: [
       { code: "// UniswapV2Pair.sol", indent: 0, highlight: "comment" },
       { code: "function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external lock {", indent: 0, highlight: "fn" },
@@ -97,8 +97,7 @@ const EXAMPLES: Example[] = [
   },
   {
     name: "ERC-1155 batch (page-aware)",
-    description:
-      "20 contiguous balance reads from a page-aware array layout",
+    description: "", // translated via exampleDescriptions
     lines: [
       { code: "// PageAwareERC1155.sol", indent: 0, highlight: "comment" },
       { code: "// Balances stored as contiguous array, not mapping", indent: 0, highlight: "comment" },
@@ -118,8 +117,7 @@ const EXAMPLES: Example[] = [
   },
   {
     name: "ERC-20 transfer()",
-    description:
-      "2 mapping lookups on different pages, plus writes. MIP-8 does not help here",
+    description: "", // translated via exampleDescriptions
     lines: [
       { code: "// OpenZeppelin ERC20.sol", indent: 0, highlight: "comment" },
       { code: "// slot 0: mapping(address => uint256) _balances", indent: 0, highlight: "comment" },
@@ -162,12 +160,19 @@ const EXAMPLES: Example[] = [
 ];
 
 export default function StepperSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [exampleIdx, setExampleIdx] = useState(0);
   const [currentStep, setCurrentStep] = useState(-1);
   const [mobileTab, setMobileTab] = useState<MobileTab>("code");
 
   const example = EXAMPLES[exampleIdx];
+  const exampleDescriptions = useMemo(() => [
+    t("mip8.stepper.uniswapDesc"),
+    t("mip8.stepper.erc1155Desc"),
+    t("mip8.stepper.erc20Desc"),
+  ], [t]);
+  const exampleDescription = exampleDescriptions[exampleIdx];
 
   // Build the list of steps (lines that have storage ops)
   const opSteps = useMemo(
@@ -310,12 +315,10 @@ export default function StepperSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-2">
-          Watch storage accesses in real time
+          {t("mip8.stepper.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          Step through real contract code line by line. Each SLOAD/SSTORE
-          lights up the corresponding storage slot and shows whether it&apos;s a
-          cold or warm access under MIP-8.
+          {t("mip8.stepper.desc")}
         </p>
 
         {/* Example picker */}
@@ -336,7 +339,7 @@ export default function StepperSection() {
         </div>
 
         <p className="text-sm text-text-tertiary font-light mb-6">
-          {example.description}
+          {exampleDescription}
         </p>
 
         {/* Mobile tab switcher */}
@@ -351,7 +354,7 @@ export default function StepperSection() {
                   : "text-text-secondary hover:text-text-primary hover:bg-surface"
               }`}
             >
-              {tab === "code" ? "Code" : tab === "pages" ? "Pages" : "Log"}
+              {tab === "code" ? t("mip8.stepper.code") : tab === "pages" ? t("mip8.stepper.pages") : t("mip8.stepper.log")}
             </button>
           ))}
         </div>
@@ -364,7 +367,7 @@ export default function StepperSection() {
                 {example.name}
               </p>
               <p className="font-mono text-xs text-text-tertiary">
-                {opLog.length} unique slots accessed
+                {opLog.length} {t("mip8.stepper.uniqueSlots")}
               </p>
             </div>
             <div className="p-4 overflow-x-auto max-h-[480px] overflow-y-auto">
@@ -504,11 +507,11 @@ export default function StepperSection() {
             {/* Op log */}
             <div className={`bg-surface-elevated rounded-xl border border-border p-4 max-h-[180px] overflow-y-auto ${mobileTab !== "log" ? "hidden lg:block" : ""}`}>
               <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-2">
-                Access log
+                {t("mip8.stepper.accessLog")}
               </p>
               {opLog.length === 0 && (
                 <p className="font-mono text-xs text-text-tertiary">
-                  Click &quot;Next&quot; to start stepping
+                  {t("mip8.stepper.clickNext")}
                 </p>
               )}
               {opLog.map((entry, i) => (
@@ -549,7 +552,7 @@ export default function StepperSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary cursor-pointer"
             }`}
           >
-            Prev
+            {t("mip8.stepper.prev")}
           </button>
           <button
             onClick={handleNext}
@@ -560,18 +563,18 @@ export default function StepperSection() {
                 : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
             }`}
           >
-            {currentStep < 0 ? "Start" : "Next"}
+            {currentStep < 0 ? t("mip8.stepper.start") : t("mip8.stepper.next")}
           </button>
           {currentStep >= 0 && (
             <button
               onClick={handleReset}
               className="font-mono text-xs px-3 py-2.5 rounded-lg text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
             >
-              Reset
+              {t("mip8.stepper.reset")}
             </button>
           )}
           <p className="hidden sm:block font-mono text-xs text-text-tertiary/50">
-            ← → keys
+            {t("mip8.stepper.keys")}
           </p>
           <div className="ml-auto flex items-center gap-4">
             <AnimatePresence mode="wait">
@@ -618,18 +621,18 @@ export default function StepperSection() {
           >
             <div className="flex items-center justify-between mb-2">
               <p className="font-mono text-xs text-text-tertiary">
-                Total cold-access gas for {example.name}
+                {t("mip8.stepper.totalGasFor")} {example.name}
               </p>
               <p className="font-mono text-lg font-semibold text-solution-accent">
                 {savings > 0
-                  ? `${savings}% cheaper with MIP-8`
-                  : "No change with MIP-8"}
+                  ? `${savings}${t("mip8.stepper.cheaperWithMip8")}`
+                  : t("mip8.stepper.noChangeWithMip8")}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4 mt-3">
               <div>
                 <p className="font-mono text-xs text-text-tertiary">
-                  Monad (current): {uniquePages.length} page{uniquePages.length > 1 ? "s" : ""}, all slots cold
+                  {t("mip8.gasCalc.monadCurrent")}: {uniquePages.length} page{uniquePages.length > 1 ? "s" : ""}, {t("mip8.stepper.allSlotsCold")}
                 </p>
                 <p className="font-mono text-sm text-problem-accent font-semibold">
                   {currentGas.toLocaleString()} gas
@@ -637,7 +640,7 @@ export default function StepperSection() {
               </div>
               <div>
                 <p className="font-mono text-xs text-text-tertiary">
-                  MIP-8: {pageMap.size} page{pageMap.size > 1 ? "s" : ""} cold, rest warm
+                  MIP-8: {pageMap.size} page{pageMap.size > 1 ? "s" : ""} {t("mip8.stepper.cold")}, {t("mip8.stepper.restWarm")}
                 </p>
                 <p className="font-mono text-sm text-solution-accent font-semibold">
                   {mip8Gas.toLocaleString()} gas

@@ -2,16 +2,18 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "../useInView";
-
-const BLOCKS = [
-  { label: "Block N-3", sub: "State known to consensus", status: "stale", balance: "100 MON" },
-  { label: "Block N-2", sub: "Alice spends 95 MON", status: "unknown", balance: "5 MON" },
-  { label: "Block N-1", sub: "Processing...", status: "unknown", balance: "5 MON" },
-  { label: "Block N", sub: "Leader proposes Alice's tx", status: "current", balance: "?" },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function AsyncPipelineSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { t } = useLanguage();
+
+  const BLOCKS = [
+    { label: "Block N-3", sub: t("mip4.asyncPipeline.stateKnown"), status: "stale", balance: "100 MON" },
+    { label: "Block N-2", sub: t("mip4.asyncPipeline.aliceSpends"), status: "unknown", balance: "5 MON" },
+    { label: "Block N-1", sub: t("mip4.asyncPipeline.processing"), status: "unknown", balance: "5 MON" },
+    { label: "Block N", sub: t("mip4.asyncPipeline.leaderProposes"), status: "current", balance: "?" },
+  ];
 
   return (
     <section ref={ref} className="py-24 px-6 bg-surface-alt relative">
@@ -21,16 +23,13 @@ export default function AsyncPipelineSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Why reserve balance exists
+          {t("mip4.asyncPipeline.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Monad separates consensus from execution. When block N is proposed,
-          the leader only has state from block N-3 (~1.2 seconds ago).
+          {t("mip4.asyncPipeline.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          Without protection, a user could appear solvent on stale state but
-          have already spent their funds. The 10 MON reserve ensures EOAs
-          remain solvent across the async execution gap.
+          {t("mip4.asyncPipeline.subDesc")}
         </p>
 
         {/* Pipeline visualization */}
@@ -70,7 +69,7 @@ export default function AsyncPipelineSection() {
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="h-px flex-1 bg-border" />
           <p className="font-mono text-xs text-text-tertiary px-3">
-            Leader sees 100 MON, but Alice actually has 5 MON
+            {t("mip4.asyncPipeline.leaderNote")}
           </p>
           <div className="h-px flex-1 bg-border" />
         </div>
@@ -79,22 +78,18 @@ export default function AsyncPipelineSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-5">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-3">
-              Without reserve
+              {t("mip4.asyncPipeline.withoutReserve")}
             </p>
             <p className="text-sm text-text-secondary font-light leading-relaxed">
-              Alice submits txs that pass consensus validation (she looks
-              solvent) but fail during execution. Network wastes blockspace
-              processing invalid transactions.
+              {t("mip4.asyncPipeline.withoutDesc")}
             </p>
           </div>
           <div className="bg-solution-bg rounded-xl border border-solution-accent-light p-5">
             <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-3">
-              With 10 MON reserve
+              {t("mip4.asyncPipeline.withReserve")}
             </p>
             <p className="text-sm text-text-secondary font-light leading-relaxed">
-              Alice can only commit 10 MON in gas fees across the 3-block
-              window. The leader rejects transactions that would exceed this
-              budget, even on stale state.
+              {t("mip4.asyncPipeline.withDesc")}
             </p>
           </div>
         </div>

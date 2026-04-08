@@ -1,32 +1,34 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-const FOOTER_DATA: Record<string, { specUrl: string; specLabel: string; note: string }> = {
+const FOOTER_DATA: Record<string, { specUrl: string; specLabel: string; noteKey: string }> = {
   "/mip-8": {
     specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-8.md",
     specLabel: "MIP-8 on GitHub",
-    note: "MIP-8's future-directions section points to MIP-9 as a possible follow-on exploring flexible fanout trees for smaller proofs and optimized storage writes.",
+    noteKey: "footer.mip8Note",
   },
   "/mip-3": {
     specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-3.md",
     specLabel: "MIP-3 on GitHub",
-    note: "MIP-3 shipped as part of the MONAD_NINE network upgrade. It replaces the quadratic memory cost model with a linear one and introduces a shared 8 MB memory pool.",
+    noteKey: "footer.mip3Note",
   },
   "/mip-4": {
     specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-4.md",
     specLabel: "MIP-4 on GitHub",
-    note: "MIP-4 shipped as part of the MONAD_NINE network upgrade. The precompile at 0x1001 lets contracts detect reserve balance violations mid-execution.",
+    noteKey: "footer.mip4Note",
   },
   "/mip-7": {
     specUrl: "https://github.com/monad-crypto/MIPs/blob/main/MIPS/MIP-7.md",
     specLabel: "MIP-7 on GitHub",
-    note: "MIP-7 aligns with EIP-8163, which reserves 0xAE on Ethereum L1 for non-L1 extension use. All 256 selectors are currently unassigned; future MIPs will claim specific slots.",
+    noteKey: "footer.mip7Note",
   },
 };
 
 export default function FooterSection() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const data = FOOTER_DATA[pathname] || FOOTER_DATA["/mip-8"];
 
   return (
@@ -35,7 +37,7 @@ export default function FooterSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
           <div>
             <p className="font-mono text-xs tracking-wider uppercase text-surface/50 mb-3">
-              Read the spec
+              {t("footer.readSpec")}
             </p>
             <a
               href={data.specUrl}
@@ -48,17 +50,17 @@ export default function FooterSection() {
           </div>
           <div>
             <p className="font-mono text-xs tracking-wider uppercase text-surface/50 mb-3">
-              About
+              {t("footer.about")}
             </p>
             <p className="text-sm text-surface/60">
-              {data.note}
+              {t(data.noteKey)}
             </p>
           </div>
         </div>
 
         <div className="pt-8 border-t border-surface/10 flex items-center justify-center">
           <p className="font-mono text-xs text-surface/30">
-            made by{" "}
+            {t("footer.madeBy")}{" "}
             <a
               href="https://x.com/port_dev"
               target="_blank"

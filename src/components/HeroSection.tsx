@@ -2,12 +2,14 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COLS = 16;
 const ROWS = 8;
 const TOTAL = COLS * ROWS;
 
 export default function HeroSection() {
+  const { t } = useLanguage();
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [showPage, setShowPage] = useState(false);
 
@@ -51,14 +53,14 @@ export default function HeroSection() {
         className="text-center max-w-3xl relative z-10 mt-30"
       >
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
-          What if your storage model{" "}
-          <span className="font-semibold italic">matched</span>{" "}
-          your hardware?
+          {t("mip8.hero.title1")}{" "}
+          <span className="font-semibold italic">{t("mip8.hero.titleHighlight")}</span>{" "}
+          {t("mip8.hero.title2")}
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          The storage engine touches 4,096 bytes for a 32-byte read.
+          {t("mip8.hero.desc1")}
           <br />
-          MIP-8 makes the EVM account for that page-sized reality.
+          {t("mip8.hero.desc2")}
         </p>
       </motion.div>
 
@@ -73,10 +75,10 @@ export default function HeroSection() {
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full bg-problem-accent" />
             <p className="font-mono text-[11px] text-text-tertiary">
-              {activeSlot !== null ? `SLOAD slot ${activeSlot}` : "waiting..."}
+              {activeSlot !== null ? `${t("mip8.hero.sloadSlot")} ${activeSlot}` : t("mip8.hero.waiting")}
               {showPage && (
                 <span className="text-solution-accent ml-2">
-                  - backend may fetch an entire 4KB page
+                  {t("mip8.hero.pageFetch")}
                 </span>
               )}
             </p>
@@ -110,14 +112,14 @@ export default function HeroSection() {
           </div>
           <div className="flex items-center justify-between gap-4 mt-3">
             <p className="font-mono text-xs text-text-tertiary">
-              128 slots × 32 bytes = 4,096 bytes = 1 page
+              {t("mip8.hero.formula")}
             </p>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: showPage ? 1 : 0 }}
               className="font-mono text-xs text-problem-accent text-right"
             >
-              127 sibling slots stay unused in this example
+              {t("mip8.hero.siblingNote")}
             </motion.p>
           </div>
         </div>

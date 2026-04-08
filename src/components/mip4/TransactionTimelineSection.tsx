@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const RESERVE = 10;
 
@@ -23,53 +24,10 @@ const INITIAL_ACCOUNTS: Account[] = [
   { name: "Pool", balance: 50 },
 ];
 
-const STEPS: TimelineStep[] = [
-  {
-    action: "Alice swaps 8 MON into Pool",
-    detail: "Alice sends MON to the liquidity pool",
-    changes: [
-      { account: 0, delta: -8 },
-      { account: 2, delta: 8 },
-    ],
-  },
-  {
-    action: "Pool sends 5 MON to Bob",
-    detail: "Pool distributes rewards to Bob",
-    changes: [
-      { account: 2, delta: -5 },
-      { account: 1, delta: 5 },
-    ],
-  },
-  {
-    action: "Alice sends 10 MON to Bob",
-    detail: "Alice drops below 10 MON reserve!",
-    changes: [
-      { account: 0, delta: -10 },
-      { account: 1, delta: 10 },
-    ],
-  },
-  {
-    action: "Bob sends 12 MON to Pool",
-    detail: "Bob is still above reserve",
-    changes: [
-      { account: 1, delta: -12 },
-      { account: 2, delta: 12 },
-    ],
-  },
-  {
-    action: "Pool refunds 5 MON to Alice",
-    detail: "Alice is back above reserve!",
-    changes: [
-      { account: 2, delta: -5 },
-      { account: 0, delta: 5 },
-    ],
-  },
-];
-
-function computeBalances(stepIdx: number): number[] {
+function computeBalances(stepIdx: number, steps: TimelineStep[]): number[] {
   const balances = INITIAL_ACCOUNTS.map((a) => a.balance);
-  for (let i = 0; i <= stepIdx && i < STEPS.length; i++) {
-    for (const change of STEPS[i].changes) {
+  for (let i = 0; i <= stepIdx && i < steps.length; i++) {
+    for (const change of steps[i].changes) {
       balances[change.account] += change.delta;
     }
   }
@@ -83,11 +41,55 @@ function isViolating(balance: number, isContract: boolean): boolean {
 
 export default function TransactionTimelineSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { t } = useLanguage();
   const [stepIdx, setStepIdx] = useState(-1);
   const [checkResult, setCheckResult] = useState<boolean | null>(null);
 
+  const STEPS: TimelineStep[] = [
+    {
+      action: t("mip4.timeline.step1Action"),
+      detail: t("mip4.timeline.step1Detail"),
+      changes: [
+        { account: 0, delta: -8 },
+        { account: 2, delta: 8 },
+      ],
+    },
+    {
+      action: t("mip4.timeline.step2Action"),
+      detail: t("mip4.timeline.step2Detail"),
+      changes: [
+        { account: 2, delta: -5 },
+        { account: 1, delta: 5 },
+      ],
+    },
+    {
+      action: t("mip4.timeline.step3Action"),
+      detail: t("mip4.timeline.step3Detail"),
+      changes: [
+        { account: 0, delta: -10 },
+        { account: 1, delta: 10 },
+      ],
+    },
+    {
+      action: t("mip4.timeline.step4Action"),
+      detail: t("mip4.timeline.step4Detail"),
+      changes: [
+        { account: 1, delta: -12 },
+        { account: 2, delta: 12 },
+      ],
+    },
+    {
+      action: t("mip4.timeline.step5Action"),
+      detail: t("mip4.timeline.step5Detail"),
+      changes: [
+        { account: 2, delta: -5 },
+        { account: 0, delta: 5 },
+      ],
+    },
+  ];
+
   const balances =
-    stepIdx >= 0 ? computeBalances(stepIdx) : INITIAL_ACCOUNTS.map((a) => a.balance);
+    stepIdx >= 0 ? computeBalances(stepIdx, STEPS) : INITIAL_ACCOUNTS.map((a) => a.balance);
 
   // Pool (index 2) is a contract, exempt from reserve
   const violations = balances.map((b, i) => isViolating(b, i === 2));
@@ -98,7 +100,7 @@ export default function TransactionTimelineSection() {
       setStepIdx((s) => s + 1);
       setCheckResult(null);
     }
-  }, [stepIdx]);
+  }, [stepIdx, STEPS.length]);
 
   const handlePrev = useCallback(() => {
     if (stepIdx > 0) {
@@ -151,15 +153,14 @@ export default function TransactionTimelineSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Watch the reserve in action
+          {t("mip4.timeline.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          Step through a transaction that moves MON between accounts. The 10 MON
-          reserve line shows when an account is in violation. Call{" "}
+          {t("mip4.timeline.desc").split("dippedIntoReserve()")[0]}
           <code className="font-mono text-sm bg-surface px-1.5 py-0.5 rounded border border-border">
             dippedIntoReserve()
-          </code>{" "}
-          at any point to check.
+          </code>
+          {t("mip4.timeline.desc").split("dippedIntoReserve()")[1]}
         </p>
 
         {/* Account balance bars */}
@@ -186,7 +187,7 @@ export default function TransactionTimelineSection() {
                   </p>
                   {isContract && (
                     <span className="font-mono text-xs text-text-tertiary">
-                      contract
+                      {t("mip4.timeline.contract")}
                     </span>
                   )}
                   {violated && (
@@ -195,7 +196,7 @@ export default function TransactionTimelineSection() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="font-mono text-xs px-1.5 py-0.5 rounded-full bg-problem-accent text-white"
                     >
-                      VIOLATION
+                      {t("mip4.timeline.violation")}
                     </motion.span>
                   )}
                 </div>
@@ -231,12 +232,12 @@ export default function TransactionTimelineSection() {
                   </motion.p>
                   {!isContract && (
                     <p className="font-mono text-xs text-text-tertiary">
-                      reserve: {RESERVE}
+                      {t("mip4.timeline.reserve")}: {RESERVE}
                     </p>
                   )}
                   {isContract && (
                     <p className="font-mono text-xs text-text-tertiary">
-                      exempt
+                      {t("mip4.timeline.exempt")}
                     </p>
                   )}
                 </div>
@@ -292,8 +293,8 @@ export default function TransactionTimelineSection() {
               </p>
               <p className="font-mono text-xs text-text-tertiary mt-1">
                 {checkResult
-                  ? "At least one touched account is below the 10 MON reserve"
-                  : "All touched accounts are above the 10 MON reserve"}
+                  ? t("mip4.timeline.checkTrue")
+                  : t("mip4.timeline.checkFalse")}
               </p>
             </motion.div>
           )}
@@ -310,7 +311,7 @@ export default function TransactionTimelineSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary cursor-pointer"
             }`}
           >
-            Prev
+            {t("mip4.timeline.prev")}
           </button>
           <button
             onClick={handleNext}
@@ -321,7 +322,7 @@ export default function TransactionTimelineSection() {
                 : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
             }`}
           >
-            {stepIdx < 0 ? "Start" : "Next"}
+            {stepIdx < 0 ? t("mip4.timeline.start") : t("mip4.timeline.next")}
           </button>
           <button
             onClick={handleCheck}
@@ -339,14 +340,14 @@ export default function TransactionTimelineSection() {
               onClick={handleReset}
               className="font-mono text-xs px-3 py-2.5 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
             >
-              Reset
+              {t("mip4.timeline.reset")}
             </button>
           )}
           <p className="hidden sm:block font-mono text-xs text-text-tertiary/50">
-            ← → keys
+            {t("mip4.timeline.keys")}
           </p>
           <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
-            Step {Math.max(0, stepIdx + 1)} / {STEPS.length}
+            {t("mip4.timeline.step")} {Math.max(0, stepIdx + 1)} / {STEPS.length}
           </p>
         </div>
       </div>

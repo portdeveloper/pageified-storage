@@ -1,9 +1,11 @@
 "use client";
 
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Mip4DetailsSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { t } = useLanguage();
 
   return (
     <section ref={ref} className="py-24 px-6 bg-surface relative">
@@ -13,30 +15,26 @@ export default function Mip4DetailsSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">
-          Technical details
+          {t("mip4.details.title")}
         </h2>
         <div className="space-y-4 text-lg text-text-secondary font-light leading-relaxed mb-10">
           <p>
-            The precompile lives at{" "}
+            {t("mip4.details.desc1").split("0x1001")[0]}
             <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
               0x1001
-            </code>{" "}
-            with a single method:{" "}
+            </code>
+            {t("mip4.details.desc1").split("0x1001")[1].split("dippedIntoReserve()")[0]}
             <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
               dippedIntoReserve()
-            </code>{" "}
-            (selector{" "}
+            </code>
+            {t("mip4.details.desc1").split("dippedIntoReserve()")[1].split("0x3a61584e")[0]}
             <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
               0x3a61584e
             </code>
-            ). It costs 100 gas, equivalent to a transient storage read.
+            {t("mip4.details.desc1").split("0x3a61584e")[1]}
           </p>
           <p>
-            The check is global: it evaluates all accounts touched in the
-            transaction, not just the caller&apos;s. It returns true if any
-            account&apos;s balance is currently below its reserve threshold;
-            it clears back to false if that balance recovers above the
-            threshold mid-transaction.
+            {t("mip4.details.desc2")}
           </p>
         </div>
 
@@ -44,13 +42,14 @@ export default function Mip4DetailsSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <div className="bg-surface-elevated rounded-xl border border-border p-5">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-3">
-              Call restrictions
+              {t("mip4.details.callRestrictions")}
             </p>
             <ul className="space-y-2 text-sm text-text-secondary font-light">
               <li className="flex items-start gap-2">
                 <span className="text-solution-accent mt-0.5">&#10003;</span>
                 <span>
-                  <code className="font-mono text-xs bg-surface px-1 rounded">CALL</code> works
+                  <code className="font-mono text-xs bg-surface px-1 rounded">CALL</code>{" "}
+                  {t("mip4.details.callWorks").replace("CALL ", "")}
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -59,48 +58,40 @@ export default function Mip4DetailsSection() {
                   <code className="font-mono text-xs bg-surface px-1 rounded">STATICCALL</code>,{" "}
                   <code className="font-mono text-xs bg-surface px-1 rounded">DELEGATECALL</code>,{" "}
                   <code className="font-mono text-xs bg-surface px-1 rounded">CALLCODE</code>{" "}
-                  revert
+                  {t("mip4.details.callReverts").replace("STATICCALL, DELEGATECALL, CALLCODE ", "")}
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-problem-accent mt-0.5">&#10007;</span>
-                <span>Nonzero value reverts</span>
+                <span>{t("mip4.details.nonzeroReverts")}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-problem-accent mt-0.5">&#10007;</span>
-                <span>Extra calldata beyond the 4-byte selector reverts</span>
+                <span>{t("mip4.details.extraCalldata")}</span>
               </li>
             </ul>
           </div>
 
           <div className="bg-surface-elevated rounded-xl border border-border p-5">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-3">
-              Important behaviors
+              {t("mip4.details.importantBehaviors")}
             </p>
             <ul className="space-y-2 text-sm text-text-secondary font-light">
               <li className="flex items-start gap-2">
                 <span className="text-text-tertiary mt-0.5">&#8226;</span>
-                <span>
-                  Reverts consume <strong>all gas</strong> (precompile behavior, not Solidity-style refund)
-                </span>
+                <span dangerouslySetInnerHTML={{ __html: t("mip4.details.allGas").replace("all gas", "<strong>all gas</strong>") }} />
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-text-tertiary mt-0.5">&#8226;</span>
-                <span>
-                  Smart contracts (non-EIP-7702) are <strong>exempt</strong> from reserve balance
-                </span>
+                <span dangerouslySetInnerHTML={{ __html: t("mip4.details.exempt").replace("exempt", "<strong>exempt</strong>") }} />
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-text-tertiary mt-0.5">&#8226;</span>
-                <span>
-                  <strong>Emptying exception:</strong> an undelegated EOA&apos;s first transaction in k blocks may spend below reserve, letting users fully withdraw. EIP-7702-delegated accounts cannot use this exception.
-                </span>
+                <span dangerouslySetInnerHTML={{ __html: t("mip4.details.emptying").replace("Emptying exception:", "<strong>Emptying exception:</strong>") }} />
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-text-tertiary mt-0.5">&#8226;</span>
-                <span>
-                  O(1) cost: tracks violations incrementally via a failed-address set
-                </span>
+                <span>{t("mip4.details.o1Cost")}</span>
               </li>
             </ul>
           </div>
@@ -109,7 +100,7 @@ export default function Mip4DetailsSection() {
         {/* Code example */}
         <div className="bg-surface-elevated rounded-xl border border-border p-5">
           <p className="font-mono text-xs text-text-tertiary mb-3">
-            Usage in Solidity
+            {t("mip4.details.usageInSolidity")}
           </p>
           <pre className="font-mono text-sm text-text-primary leading-relaxed overflow-x-auto">
 {`interface IReserveBalance {

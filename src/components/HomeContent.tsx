@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 /* ─── Mini-visualization: MIP-8 page-aligned grid ────────────────────── */
 function MiniGrid() {
@@ -276,6 +277,7 @@ interface MipCardProps {
   title: string;
   subtitle: string;
   description: string;
+  exploreLabel: string;
   beta?: boolean;
   visualization: React.ReactNode;
   index: number;
@@ -287,6 +289,7 @@ function MipCard({
   title,
   subtitle,
   description,
+  exploreLabel,
   beta,
   visualization,
   index,
@@ -304,7 +307,7 @@ function MipCard({
     >
       <Link
         href={href}
-        aria-label={`Explore ${id}: ${title}`}
+        aria-label={`${exploreLabel} ${id}: ${title}`}
         className="group flex flex-col bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden h-full"
       >
         {/* Visualization area */}
@@ -332,7 +335,7 @@ function MipCard({
             {description}
           </p>
           <span className="inline-flex items-center gap-1 mt-4 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
-            Explore
+            {exploreLabel}
             <svg
               className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-300"
               fill="none"
@@ -356,6 +359,7 @@ function MipCard({
 /* ─── Main page ──────────────────────────────────────────────────────── */
 
 export default function HomeContent() {
+  const { t } = useLanguage();
   return (
     <main className="min-h-screen flex flex-col items-center px-6">
       {/* Hero */}
@@ -366,12 +370,12 @@ export default function HomeContent() {
         className="max-w-3xl w-full text-center mt-28 sm:mt-36 mb-2"
       >
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-light leading-[1.05] tracking-tight mb-5">
-          MIP Land
+          {t("home.title")}
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-lg mx-auto leading-relaxed">
-          Interactive explainers for Monad Improvement Proposals.{" "}
+          {t("home.subtitle")}{" "}
           <br className="hidden sm:block" />
-          Understand MIPs through visualizations, not just specs.
+          {t("home.subtitleBreak")}
         </p>
       </motion.div>
 
@@ -383,7 +387,7 @@ export default function HomeContent() {
         className="w-full max-w-4xl mb-5 mt-10"
       >
         <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase">
-          Proposals
+          {t("home.proposals")}
         </p>
       </motion.div>
 
@@ -402,7 +406,7 @@ export default function HomeContent() {
         >
           <Link
             href="/mip-8"
-            aria-label="Explore MIP-8: Page-ified Storage"
+            aria-label={`${t("home.explore")} MIP-8: ${t("home.mip8.title")}`}
             className="group block bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
@@ -412,7 +416,7 @@ export default function HomeContent() {
                   <MiniGrid />
                 </div>
                 <p className="font-mono text-[10px] text-text-tertiary mt-3">
-                  Slot access triggers a full 4 KB page read
+                  {t("home.mip8.miniNote")}
                 </p>
               </div>
               {/* Content */}
@@ -423,18 +427,16 @@ export default function HomeContent() {
                   </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-semibold mb-2 group-hover:text-solution-accent transition-colors duration-300">
-                  Page-ified Storage
+                  {t("home.mip8.title")}
                 </h2>
                 <p className="font-mono text-[11px] text-text-tertiary mb-3">
-                  Aligning EVM storage with hardware reality
+                  {t("home.mip8.subtitle")}
                 </p>
                 <p className="text-sm text-text-secondary leading-relaxed">
-                  See how 4 KB page-aligned reads cut random I/O and reshape gas
-                  costs. Explore the slot-to-page mapping, compare gas schedules,
-                  and step through real contract scenarios.
+                  {t("home.mip8.description")}
                 </p>
                 <span className="inline-flex items-center gap-1 mt-5 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
-                  Explore
+                  {t("home.explore")}
                   <svg
                     className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-300"
                     fill="none"
@@ -459,9 +461,10 @@ export default function HomeContent() {
           <MipCard
             id="MIP-3"
             href="/mip-3"
-            title="Linear Memory"
-            subtitle="Replacing quadratic memory costs"
-            description="A linear cost model with a shared 8 MB pool. Watch the cost curve flatten as allocations grow."
+            title={t("home.mip3.title")}
+            subtitle={t("home.mip3.subtitle")}
+            description={t("home.mip3.description")}
+            exploreLabel={t("home.explore")}
             beta
             visualization={<MiniCostBars />}
             index={0}
@@ -469,9 +472,10 @@ export default function HomeContent() {
           <MipCard
             id="MIP-4"
             href="/mip-4"
-            title="Reserve Balance Introspection"
-            subtitle="Detecting reserve violations mid-execution"
-            description="Letting contracts detect when an account dips below the 10 MON reserve threshold."
+            title={t("home.mip4.title")}
+            subtitle={t("home.mip4.subtitle")}
+            description={t("home.mip4.description")}
+            exploreLabel={t("home.explore")}
             beta
             visualization={<MiniBalanceBar />}
             index={1}
@@ -479,9 +483,10 @@ export default function HomeContent() {
           <MipCard
             id="MIP-7"
             href="/mip-7"
-            title="Extension Opcodes"
-            subtitle="Safe opcode expansion via 0xAE namespace"
-            description="One reserved slot expands to 256 selectors. Monad adds opcode-level features without risking collision with future Ethereum upgrades."
+            title={t("home.mip7.title")}
+            subtitle={t("home.mip7.subtitle")}
+            description={t("home.mip7.description")}
+            exploreLabel={t("home.explore")}
             beta
             visualization={<MiniOpcodeGrid />}
             index={2}

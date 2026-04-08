@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 function ethMemoryCost(bytes: number): number {
   const words = Math.ceil(bytes / 32);
@@ -19,10 +20,10 @@ const MAX_EXP = 23; // 8 MB (2^23)
 const SLIDER_STEPS = 200;
 
 const THRESHOLDS = [
-  { bytes: 2 * 1024, label: "2 KB", sub: "avg usage" },
-  { bytes: 2 * 1024 * 1024, label: "2 MB", sub: "historical max" },
-  { bytes: 3.75 * 1024 * 1024, label: "~3.75 MB", sub: "ETH block limit" },
-  { bytes: 8 * 1024 * 1024, label: "8 MB", sub: "MIP-3 cap" },
+  { bytes: 2 * 1024, label: "2 KB", subKey: "mip3.costCurve.avgUsage" },
+  { bytes: 2 * 1024 * 1024, label: "2 MB", subKey: "mip3.costCurve.historicalMax" },
+  { bytes: 3.75 * 1024 * 1024, label: "~3.75 MB", subKey: "mip3.costCurve.ethBlockLimit" },
+  { bytes: 8 * 1024 * 1024, label: "8 MB", subKey: "mip3.costCurve.mip3Cap" },
 ];
 
 function formatBytes(b: number): string {
@@ -39,6 +40,7 @@ function formatGas(g: number): string {
 }
 
 export default function CostCurveSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [sliderValue, setSliderValue] = useState(100); // middle-ish
 
@@ -78,18 +80,16 @@ export default function CostCurveSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          The quadratic wall
+          {t("mip3.costCurve.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Ethereum charges <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">words&sup2;/512 + 3*words</code> for
-          memory. MIP-3 charges <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">words/2</code>.
-          Drag the slider to see how they diverge.
+          {t("mip3.costCurve.desc")}
         </p>
 
         {/* Slider */}
         <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <label htmlFor="memory-size-range" className="font-mono text-xs text-text-tertiary">Memory allocation size</label>
+            <label htmlFor="memory-size-range" className="font-mono text-xs text-text-tertiary">{t("mip3.costCurve.memorySize")}</label>
             <motion.p
               key={currentBytes}
               initial={{ scale: 1.05 }}
@@ -115,13 +115,13 @@ export default function CostCurveSection() {
 
           {/* Threshold markers */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {THRESHOLDS.map((t) => {
-              const isActive = Math.abs(currentBytes - t.bytes) / t.bytes < 0.15;
+            {THRESHOLDS.map((th) => {
+              const isActive = Math.abs(currentBytes - th.bytes) / th.bytes < 0.15;
               return (
                 <button
-                  key={t.label}
+                  key={th.label}
                   onClick={() => {
-                    const exp = Math.log2(t.bytes);
+                    const exp = Math.log2(th.bytes);
                     setSliderValue(
                       Math.round(((exp - MIN_EXP) / (MAX_EXP - MIN_EXP)) * SLIDER_STEPS)
                     );
@@ -132,8 +132,8 @@ export default function CostCurveSection() {
                       : "bg-surface border-border hover:border-text-secondary"
                   }`}
                 >
-                  {t.label}
-                  <span className="text-text-tertiary ml-1.5">{t.sub}</span>
+                  {th.label}
+                  <span className="text-text-tertiary ml-1.5">{t(th.subKey)}</span>
                 </button>
               );
             })}
@@ -145,7 +145,7 @@ export default function CostCurveSection() {
           {/* ETH gas */}
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-5">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-3">
-              Quadratic (ETH)
+              {t("mip3.costCurve.quadraticEth")}
             </p>
             <motion.p
               key={`eth-${ethGas}`}
@@ -153,14 +153,14 @@ export default function CostCurveSection() {
               animate={{ scale: 1 }}
               className="font-mono text-2xl sm:text-3xl font-semibold text-problem-accent tabular-nums"
             >
-              {ethImpossible ? "IMPOSSIBLE" : formatGas(ethGas)}
+              {ethImpossible ? t("mip3.costCurve.impossible") : formatGas(ethGas)}
             </motion.p>
             {!ethImpossible && (
-              <p className="font-mono text-xs text-text-tertiary mt-1">gas</p>
+              <p className="font-mono text-xs text-text-tertiary mt-1">{t("mip3.costCurve.gas")}</p>
             )}
             {ethImpossible && (
               <p className="font-mono text-xs text-problem-accent mt-1">
-                exceeds 30M block limit
+                {t("mip3.costCurve.exceeds")}
               </p>
             )}
           </div>
@@ -168,7 +168,7 @@ export default function CostCurveSection() {
           {/* MIP-3 gas */}
           <div className="bg-solution-bg rounded-xl border border-solution-accent-light p-5">
             <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-3">
-              Linear (MIP-3)
+              {t("mip3.costCurve.linearMip3")}
             </p>
             <motion.p
               key={`mip3-${mip3Gas}`}
@@ -179,14 +179,14 @@ export default function CostCurveSection() {
               {mip3Gas === 0 ? "0" : formatGas(mip3Gas)}
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">
-              {mip3Gas === 0 ? "free (< 1 word)" : "gas"}
+              {mip3Gas === 0 ? `${t("mip3.costCurve.free")} (< 1 word)` : t("mip3.costCurve.gas")}
             </p>
           </div>
 
           {/* Ratio */}
           <div className="bg-surface-elevated rounded-xl border border-border p-5">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-3">
-              Improvement
+              {t("mip3.costCurve.improvement")}
             </p>
             <motion.p
               key={`ratio-${Math.round(ratio)}`}
@@ -196,10 +196,10 @@ export default function CostCurveSection() {
                 ratio >= 10 || mip3Gas === 0 ? "text-solution-accent" : "text-text-primary"
               }`}
             >
-              {ethImpossible ? "∞" : mip3Gas === 0 ? "free" : `${ratio.toFixed(ratio >= 100 ? 0 : 1)}x`}
+              {ethImpossible ? "∞" : mip3Gas === 0 ? t("mip3.costCurve.free") : `${ratio.toFixed(ratio >= 100 ? 0 : 1)}x`}
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">
-              {ethImpossible ? "only possible with MIP-3" : mip3Gas === 0 ? "no memory expansion cost" : `${savings}% cheaper`}
+              {ethImpossible ? t("mip3.costCurve.onlyMip3") : mip3Gas === 0 ? t("mip3.costCurve.noExpansion") : `${savings}% ${t("mip3.costCurve.cheaper")}`}
             </p>
           </div>
         </div>
@@ -207,7 +207,7 @@ export default function CostCurveSection() {
         {/* Visual bar comparison */}
         <div className="bg-surface-elevated rounded-xl border border-border p-6">
           <p className="font-mono text-xs text-text-tertiary mb-4">
-            Gas cost across memory sizes (log scale, capped at 30M for visibility)
+            {t("mip3.costCurve.gasChart")}
           </p>
           <div className="space-y-1.5">
             {chartPoints.map((point, i) => {
@@ -250,13 +250,13 @@ export default function CostCurveSection() {
           <div className="flex items-center gap-4 mt-4 font-mono text-xs text-text-tertiary">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-2 rounded-full bg-problem-accent inline-block" />
-              Quadratic
+              {t("mip3.costCurve.quadraticLabel")}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-2 rounded-full bg-solution-accent inline-block" />
-              Linear (MIP-3)
+              {t("mip3.costCurve.linearLabel")}
             </span>
-            <span className="ml-auto">30M gas block limit shown as 100%</span>
+            <span className="ml-auto">{t("mip3.costCurve.blockLimit")}</span>
           </div>
         </div>
       </div>

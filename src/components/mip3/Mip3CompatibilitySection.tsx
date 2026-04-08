@@ -1,8 +1,10 @@
 "use client";
 
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Mip3CompatibilitySection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
 
   return (
@@ -13,34 +15,24 @@ export default function Mip3CompatibilitySection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">
-          Backwards compatible
+          {t("mip3.compatibility.title")}
         </h2>
         <div className="space-y-4 text-lg text-text-secondary font-light leading-relaxed">
           <p>
-            All memory opcodes work identically: <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MLOAD</span>,{" "}
-            <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MSTORE</span>,{" "}
-            <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MSTORE8</span>,{" "}
-            <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">MCOPY</span>.
-            What changes: expansion gas becomes linear, an 8 MB hard cap is
-            enforced, and child calls share a memory pool with their parent
-            instead of getting isolated memory.
+            {t("mip3.compatibility.desc1")}
           </p>
           <p>
-            Existing contracts get cheaper, not broken. Average memory usage is
-            around 2 KB, which drops from 200 gas to 32 gas. The only contracts
-            at risk are those hardcoding gas assumptions about memory expansion costs.
+            {t("mip3.compatibility.desc2")}
           </p>
           <p>
-            When the 8 MB limit is exceeded, the call fails with an
-            out-of-gas error within the call frame, not a Solidity-level
-            revert, so no return data is produced.
+            {t("mip3.compatibility.desc3")}
           </p>
         </div>
 
         {/* Affected opcodes */}
         <div className="mt-10 p-4 bg-surface-elevated rounded-lg border border-border">
           <p className="font-mono text-xs text-text-tertiary mb-3">
-            All memory-expanding opcodes use the new linear cost:
+            {t("mip3.compatibility.opcodeNote")}
           </p>
           <div className="flex flex-wrap gap-2">
             {[
