@@ -16,10 +16,9 @@ interface EventLog {
 
 type Step = "idle" | "fetching" | "decoding" | "done";
 
-/* ─── Providers (from Monad docs) ────────────────────────────────────── */
+/* ─── Frameworks (from Monad docs) ───────────────────────────────────── */
 
 const FRAMEWORKS = [
-  { id: "envio", name: "Envio", ready: false },
   { id: "thegraph", name: "The Graph", ready: false },
   { id: "goldsky", name: "Goldsky", ready: false },
   { id: "ghost", name: "Ghost", ready: false },
@@ -36,13 +35,15 @@ const EVENT_TYPES = [
     id: "transfer",
     label: "ERC-20 Transfer",
     topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-    signature: "Transfer(address indexed from, address indexed to, uint256 value)",
+    signature: "Transfer(address,address,uint256)",
+    signatureIndexed: "Transfer(address indexed from, address indexed to, uint256 value)",
   },
   {
     id: "approval",
     label: "ERC-20 Approval",
     topic: "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
-    signature: "Approval(address indexed owner, address indexed spender, uint256 value)",
+    signature: "Approval(address,address,uint256)",
+    signatureIndexed: "Approval(address indexed owner, address indexed spender, uint256 value)",
   },
 ];
 
@@ -62,124 +63,172 @@ function shortenAddr(addr: string): string {
 
 function formatValue(hex: string): string {
   const raw = BigInt(hex || "0x0");
-  // Try to show as 18-decimal token
   const asEther = Number(raw) / 1e18;
   if (asEther >= 0.001) return asEther.toFixed(4);
-  // Try 6-decimal (USDC-like)
   const as6 = Number(raw) / 1e6;
   if (as6 >= 0.001) return as6.toFixed(2);
   return raw.toString();
 }
 
-/* ─── Code snippets ──────────────────────────────────────────────────── */
+/* ─── Code snippets (verified against Monad docs) ────────────────────── */
 
-function getViemSnippet(eventType: typeof EVENT_TYPES[0], blockRange: number): string {
+function getHyperSyncSnippet(eventType: typeof EVENT_TYPES[0]): string {
   const isTransfer = eventType.id === "transfer";
-  return `import { createPublicClient, http, parseAbiItem } from "viem";
+  return `// Envio HyperSync — query millions of events in seconds
+// Get a free API key at https://app.envio.dev/api-tokens
 
-const client = createPublicClient({
-  chain: { id: 10143, name: "Monad", nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 }, rpcUrls: { default: { http: ["https://rpc.monad.xyz"] } } },
-  transport: http(),
-});
+const HYPERSYNC_URL = "https://monad.hypersync.xyz";
+const API_KEY = process.env.HYPERSYNC_BEARER_TOKEN;
 
-const blockNumber = await client.getBlockNumber();
+// keccak256("${eventType.signature}")
+const ${eventType.id.toUpperCase()}_TOPIC =
+  "${eventType.topic}";
 
-// Query ${eventType.label} events from the last ${blockRange} blocks
-const logs = await client.getLogs({
-  event: parseAbiItem(
-    "event ${eventType.signature}"
-  ),
-  fromBlock: blockNumber - ${blockRange}n,
-  toBlock: blockNumber,
-});
-
-for (const log of logs) {
-  console.log({
-    contract: log.address,
-    ${isTransfer ? "from: log.args.from," : "owner: log.args.owner,"}
-    ${isTransfer ? "to: log.args.to," : "spender: log.args.spender,"}
-    ${isTransfer ? "value: log.args.value," : "value: log.args.value,"}
-    block: log.blockNumber,
+async function query${isTransfer ? "Transfers" : "Approvals"}(contractAddress, fromBlock = 0) {
+  const response = await fetch(\`\${HYPERSYNC_URL}/query\`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": \`Bearer \${API_KEY}\`,
+    },
+    body: JSON.stringify({
+      from_block: fromBlock,
+      logs: [{
+        address: [contractAddress],
+        topics: [[${eventType.id.toUpperCase()}_TOPIC]],
+      }],
+      field_selection: {
+        log: ["topic0", "topic1", "topic2", "data"],
+      },
+    }),
   });
+
+  return response.json();
 }
 
-console.log(\`Found \${logs.length} events\`);`;
+// Parse addresses from 32-byte topics (last 20 bytes)
+function parseAddress(topic) {
+  return "0x" + topic.slice(-40).toLowerCase();
 }
 
-function getEnvioSnippet(eventType: typeof EVENT_TYPES[0]): string {
+// Paginate through all results
+async function fetchAll(contractAddress) {
+  const results = [];
+  let fromBlock = 0;
+
+  while (true) {
+    const response = await query${isTransfer ? "Transfers" : "Approvals"}(contractAddress, fromBlock);
+
+    for (const block of response.data) {
+      for (const log of block.logs) {
+        results.push({
+          ${isTransfer ? "from" : "owner"}: parseAddress(log.topic1),
+          ${isTransfer ? "to" : "spender"}: parseAddress(log.topic2),
+          value: BigInt(log.data),
+        });
+      }
+    }
+
+    // Check for more pages
+    if (response.next_block && response.next_block > fromBlock) {
+      fromBlock = response.next_block;
+    } else {
+      break;
+    }
+  }
+
+  return results;
+}
+
+const events = await fetchAll("0xYourTokenContract");
+console.log(\`Found \${events.length} ${isTransfer ? "transfers" : "approvals"}\`);`;
+}
+
+function getHyperIndexSnippet(eventType: typeof EVENT_TYPES[0]): string {
   const isTransfer = eventType.id === "transfer";
-  return `// config.yaml — Envio HyperIndex configuration
+  return `# Envio HyperIndex — hosted indexer with GraphQL API
+# npx envio init  (to scaffold a new project)
+
+# ── config.yaml ──────────────────────────────────
 name: monad-${eventType.id}-indexer
-description: Index ${eventType.label} events on Monad
 networks:
-  - id: 10143
+  - id: 10143  # Monad mainnet
     start_block: 0
     contracts:
       - name: ERC20
         address:
-          - "0x..." # your token contract
+          - "0xYourTokenContract"
         handler: src/EventHandlers.ts
         events:
-          - event: "${eventType.signature}"
+          - event: "${eventType.signatureIndexed}"
 
-// src/EventHandlers.ts
+# ── schema.graphql ───────────────────────────────
+# type ${isTransfer ? "Transfer" : "Approval"} @entity {
+#   id: ID!
+#   ${isTransfer ? "from: String!" : "owner: String!"}
+#   ${isTransfer ? "to: String!" : "spender: String!"}
+#   value: BigInt!
+#   blockNumber: Int!
+# }
+
+# ── src/EventHandlers.ts ────────────────────────
 import { ERC20 } from "generated";
 
 ERC20.${isTransfer ? "Transfer" : "Approval"}.handler(async ({ event, context }) => {
-  const entity = {
+  context.${isTransfer ? "Transfer" : "Approval"}.set({
     id: event.transaction.hash + "-" + event.logIndex,
     ${isTransfer ? "from: event.params.from," : "owner: event.params.owner,"}
     ${isTransfer ? "to: event.params.to," : "spender: event.params.spender,"}
     value: event.params.value,
     blockNumber: event.block.number,
-    timestamp: event.block.timestamp,
-  };
-  context.${isTransfer ? "Transfer" : "Approval"}.set(entity);
+  });
 });
 
-// Query via GraphQL after indexing:
-// { transfers(first: 10, orderBy: "blockNumber", orderDirection: "desc") {
-//     from to value blockNumber
-// } }`;
+# Deploy: npx envio dev  (local) or push to envio.dev
+# Then query via GraphQL:
+#
+# {
+#   ${isTransfer ? "transfers" : "approvals"}(first: 10, orderBy: "blockNumber", orderDirection: "desc") {
+#     ${isTransfer ? "from to" : "owner spender"} value blockNumber
+#   }
+# }`;
 }
 
 function getAIPrompt(eventType: typeof EVENT_TYPES[0], blockRange: number): string {
-  return `I want to index ${eventType.label} events on Monad.
+  const isTransfer = eventType.id === "transfer";
+  return `I want to index ${eventType.label} events on Monad using Envio.
 
-## Quick start — raw RPC with viem
-${getViemSnippet(eventType, blockRange)}
+## Option 1: Envio HyperSync (raw query API)
+Best for: one-off queries, scripts, token snapshots
+${getHyperSyncSnippet(eventType)}
 
-## Production — use an indexing framework
+## Option 2: Envio HyperIndex (hosted indexer)
+Best for: production apps that need a persistent GraphQL API
+${getHyperIndexSnippet(eventType)}
 
-### Envio HyperIndex (recommended)
-- Hosted indexing with GraphQL API
-- HyperSync endpoint: https://monad.hypersync.xyz (mainnet)
-- Docs: https://docs.envio.dev/
-
-### The Graph
-- Decentralized subgraph protocol
-- AssemblyScript mappings
-- Docs: https://thegraph.com/docs/
-
-### Goldsky
-- Subgraphs + Mirror (streaming pipelines)
-- Real-time data streaming
-- Docs: https://docs.goldsky.com/
-
-### Other frameworks on Monad
-- Ghost (Solidity-based indexer): https://docs.ghost.ac/
-- Sentio (integrated alerting): https://docs.sentio.xyz/
-- SQD (squid-sdk, TypeScript): https://docs.sqd.ai/
-- SubQuery (decentralized, TypeScript): https://academy.subquery.network/
-- Streamingfast (Substreams, Rust): https://substreams.streamingfast.io/
+## Setup
+1. Get a free HyperSync API key: https://app.envio.dev/api-tokens
+2. For HyperIndex: npx envio init
+3. HyperSync endpoint: https://monad.hypersync.xyz (mainnet)
+4. HyperSync endpoint: https://monad-testnet.hypersync.xyz (testnet)
 
 ## Key details
 - Monad mainnet chain ID: 10143
-- RPC: https://rpc.monad.xyz
-- ERC-20 Transfer topic: ${EVENT_TYPES[0].topic}
-- ERC-20 Approval topic: ${EVENT_TYPES[1].topic}
-- For production, use an indexing framework instead of raw eth_getLogs
-  (handles reorgs, pagination, and historical backfill)
+- ${eventType.label} topic: ${eventType.topic}
+- HyperSync returns paginated results — always check next_block
+- Topics are 32-byte hex: addresses are in the last 20 bytes
+- ${isTransfer ? "ERC-20 value is in the data field" : "ERC-20 allowance is in the data field"}
+- For ERC-721, tokenId is in topic3 instead of data
+- Envio docs: https://docs.envio.dev/
+
+## Other indexing frameworks on Monad
+- The Graph (decentralized subgraphs): https://thegraph.com/docs/
+- Goldsky (subgraphs + streaming): https://docs.goldsky.com/
+- Ghost (Solidity-based): https://docs.ghost.ac/
+- Sentio (alerting + viz): https://docs.sentio.xyz/
+- SQD (squid-sdk): https://docs.sqd.ai/
+- SubQuery (decentralized): https://academy.subquery.network/
+- Streamingfast (Substreams, Rust): https://substreams.streamingfast.io/
 
 Integrate this into my project following my existing code patterns.`;
 }
@@ -188,7 +237,7 @@ Integrate this into my project following my existing code patterns.`;
 
 export default function IndexerPlayground() {
   const [eventType, setEventType] = useState(0);
-  const [blockRange, setBlockRange] = useState(1); // index into BLOCK_RANGES
+  const [blockRange, setBlockRange] = useState(1);
   const [step, setStep] = useState<Step>("idle");
   const [logs, setLogs] = useState<EventLog[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -196,7 +245,7 @@ export default function IndexerPlayground() {
   const [revealIndex, setRevealIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [codeTab, setCodeTab] = useState<"viem" | "envio">("viem");
+  const [codeTab, setCodeTab] = useState<"hypersync" | "hyperindex">("hypersync");
 
   const evt = EVENT_TYPES[eventType];
   const range = BLOCK_RANGES[blockRange];
@@ -232,7 +281,7 @@ export default function IndexerPlayground() {
       const latest = parseInt(blockData.result, 16);
       const from = latest - range.value;
 
-      // Query logs
+      // Query logs via eth_getLogs (same data Envio HyperSync indexes)
       const logsRes = await fetch(RPC_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,7 +315,6 @@ export default function IndexerPlayground() {
 
       setTotalCount(rawLogs.length);
 
-      // Decode top 10
       const decoded: EventLog[] = rawLogs.slice(0, 12).map((log) => ({
         address: log.address,
         from: log.topics[1] ? "0x" + log.topics[1].slice(26) : "?",
@@ -279,7 +327,6 @@ export default function IndexerPlayground() {
       setLogs(decoded);
       setStep("decoding");
 
-      // Reveal rows one by one
       for (let i = 0; i < decoded.length; i++) {
         await new Promise((r) => setTimeout(r, 120));
         setRevealIndex(i);
@@ -298,13 +345,11 @@ export default function IndexerPlayground() {
       {/* Framework tabs */}
       <div>
         <p className="font-mono text-[11px] text-text-tertiary mb-3">
-          Indexing frameworks on Monad
+          Pick a framework
         </p>
         <div className="flex flex-wrap gap-2">
-          <button
-            className="font-mono text-xs px-3 py-1.5 rounded-lg border bg-solution-accent text-white border-solution-accent"
-          >
-            eth_getLogs
+          <button className="font-mono text-xs px-3 py-1.5 rounded-lg border bg-solution-accent text-white border-solution-accent">
+            Envio
           </button>
           {FRAMEWORKS.map((f) => (
             <button
@@ -416,7 +461,6 @@ export default function IndexerPlayground() {
             </div>
           )}
 
-          {/* Error */}
           {error && (
             <p className="font-mono text-xs text-problem-accent">{error}</p>
           )}
@@ -487,15 +531,31 @@ export default function IndexerPlayground() {
           <div className="bg-solution-bg/50 rounded-xl p-4 border border-solution-cell">
             <div className="flex items-center gap-2 mb-1">
               <p className="font-mono text-[11px] text-solution-accent font-medium">
-                How event indexing works
+                Envio on Monad
               </p>
+              <span className="font-mono text-[10px] text-solution-muted bg-solution-cell px-1.5 py-0.5 rounded">
+                HyperSync + HyperIndex
+              </span>
             </div>
             <p className="text-sm text-text-secondary leading-relaxed">
-              <code className="font-mono text-xs bg-surface px-1 py-0.5 rounded">eth_getLogs</code>{" "}
-              queries the blockchain for events matching a topic filter.
-              This works for small ranges, but for production use an indexing
-              framework like Envio, The Graph, or Goldsky — they handle reorgs,
-              pagination, and historical backfill.
+              <strong>HyperSync</strong> is Envio&apos;s raw query API &mdash;
+              query millions of events in seconds with topic filters and
+              pagination.{" "}
+              <strong>HyperIndex</strong> is their hosted indexing framework
+              with YAML config and a GraphQL API.
+              The demo above uses{" "}
+              <code className="font-mono text-xs bg-surface px-1 py-0.5 rounded">
+                eth_getLogs
+              </code>{" "}
+              (same data, no API key needed). For production,{" "}
+              <a
+                href="https://app.envio.dev/api-tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-text-primary"
+              >
+                get a free HyperSync key
+              </a>.
             </p>
           </div>
         </div>
@@ -505,32 +565,32 @@ export default function IndexerPlayground() {
           {/* Code tabs */}
           <div className="flex items-center border-b border-border px-4">
             <button
-              onClick={() => setCodeTab("viem")}
+              onClick={() => setCodeTab("hypersync")}
               className={`font-mono text-xs px-3 py-3 border-b-2 transition-all ${
-                codeTab === "viem"
+                codeTab === "hypersync"
                   ? "border-text-primary text-text-primary"
                   : "border-transparent text-text-tertiary hover:text-text-secondary"
               }`}
             >
-              viem
+              HyperSync
             </button>
             <button
-              onClick={() => setCodeTab("envio")}
+              onClick={() => setCodeTab("hyperindex")}
               className={`font-mono text-xs px-3 py-3 border-b-2 transition-all ${
-                codeTab === "envio"
+                codeTab === "hyperindex"
                   ? "border-text-primary text-text-primary"
                   : "border-transparent text-text-tertiary hover:text-text-secondary"
               }`}
             >
-              Envio
+              HyperIndex
             </button>
             <div className="flex-1" />
             <button
               onClick={() =>
                 copyToClipboard(
-                  codeTab === "viem"
-                    ? getViemSnippet(evt, range.value)
-                    : getEnvioSnippet(evt),
+                  codeTab === "hypersync"
+                    ? getHyperSyncSnippet(evt)
+                    : getHyperIndexSnippet(evt),
                   "code"
                 )
               }
@@ -551,9 +611,9 @@ export default function IndexerPlayground() {
                 transition={{ duration: 0.15 }}
                 className="font-mono text-[13px] leading-relaxed text-text-primary whitespace-pre-wrap break-words"
               >
-                {codeTab === "viem"
-                  ? getViemSnippet(evt, range.value)
-                  : getEnvioSnippet(evt)}
+                {codeTab === "hypersync"
+                  ? getHyperSyncSnippet(evt)
+                  : getHyperIndexSnippet(evt)}
               </motion.pre>
             </AnimatePresence>
           </div>
@@ -569,7 +629,7 @@ export default function IndexerPlayground() {
               </svg>
               {copied === "ai"
                 ? "Copied! Paste into your AI assistant"
-                : "Copy for AI — viem + Envio + all frameworks"}
+                : "Copy for AI — HyperSync + HyperIndex + setup"}
             </button>
           </div>
         </div>
