@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import OraclePlayground from "./OraclePlayground";
+import IndexerPlayground from "./IndexerPlayground";
 
 interface Category {
   id: string;
@@ -13,7 +14,7 @@ interface Category {
 
 const CATEGORIES: Category[] = [
   { id: "oracles", label: "Use an Oracle", icon: "◎", ready: true },
-  { id: "indexers", label: "Index Events", icon: "⦿", ready: false },
+  { id: "indexers", label: "Index Events", icon: "⦿", ready: true },
   { id: "swaps", label: "Swap Tokens", icon: "⇄", ready: false },
   { id: "bridges", label: "Bridge Assets", icon: "⌁", ready: false },
   { id: "rpcs", label: "Query an RPC", icon: "⟡", ready: false },
@@ -89,6 +90,7 @@ export default function InfraContent() {
         className="w-full max-w-5xl mb-28"
       >
         {active === "oracles" && <OraclePlayground />}
+        {active === "indexers" && <IndexerPlayground />}
       </motion.div>
     </main>
   );
