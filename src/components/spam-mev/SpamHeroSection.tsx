@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
+import { useExplainMode } from "./ExplainModeContext";
 
 const COLS = 9;
 const ROWS = 6;
@@ -82,6 +83,8 @@ export default function SpamHeroSection() {
 
   const spamCount = cells.filter((c) => c !== "user").length;
   const successCount = cells.filter((c) => c === "spam-success").length;
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
 
   return (
     <section className="min-h-[80vh] flex items-center justify-center px-6 relative overflow-hidden">
@@ -100,14 +103,24 @@ export default function SpamHeroSection() {
             MEV
           </h1>
           <p className="text-lg text-text-secondary font-light leading-relaxed mb-8 max-w-md">
-            Speculative probes that search for MEV on-chain at execution time,
-            consuming around a quarter of blockspace while rarely producing a
-            trade.
+            {simple
+              ? "Bots flood blockchains with thousands of speculative transactions. Most fail, but they still clog the block and raise costs for everyone."
+              : "Speculative probes that search for MEV on-chain at execution time, consuming around a quarter of blockspace while rarely producing a trade."}
           </p>
           <p className="text-base text-problem-accent/80 font-light italic leading-relaxed max-w-md">
-            Why does spam emerge? What does it cost?
-            <br />
-            And what can blockchain designers do about it?
+            {simple ? (
+              <>
+                Why does this happen? How bad is it?
+                <br />
+                And what can we do about it?
+              </>
+            ) : (
+              <>
+                Why does spam emerge? What does it cost?
+                <br />
+                And what can blockchain designers do about it?
+              </>
+            )}
           </p>
         </div>
 

@@ -3,17 +3,25 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useInView } from "../useInView";
+import { useExplainMode } from "./ExplainModeContext";
 import { computeEquilibrium, computeSweep, DEFAULTS } from "./model";
 import type { ModelParams } from "./model";
 
 const MAX_BMAX = 2000;
 const SLIDER_STEPS = 200;
 
-const REGIME_PRESETS = [
-  { label: "No spam", Bmax: 350, desc: "Fees too high for spam" },
-  { label: "Congested", Bmax: 900, desc: "Spam competes with users" },
-  { label: "Near plateau", Bmax: 1250, desc: "Most marginal gas is spam" },
-  { label: "Slack", Bmax: 1700, desc: "Capacity exceeds all demand" },
+const REGIME_PRESETS_TECHNICAL = [
+  { label: "No spam", Bmax: 350 },
+  { label: "Congested", Bmax: 900 },
+  { label: "Near plateau", Bmax: 1250 },
+  { label: "Slack", Bmax: 1700 },
+];
+
+const REGIME_PRESETS_SIMPLE = [
+  { label: "Tiny blocks", Bmax: 350 },
+  { label: "Medium blocks", Bmax: 900 },
+  { label: "Large blocks", Bmax: 1250 },
+  { label: "Huge blocks", Bmax: 1700 },
 ];
 
 function formatNum(n: number, decimals = 0): string {
@@ -275,8 +283,100 @@ function SweepChart({
   );
 }
 
+/** Plain-language narrative for simple mode, replacing raw metrics */
+function NarrativeCallout({
+  eq,
+  Bmax,
+}: {
+  eq: ReturnType<typeof computeEquilibrium>;
+  Bmax: number;
+}) {
+  const welfareLoss =
+    eq.userWelfareNoSpam > 0
+      ? ((eq.userWelfareNoSpam - eq.userWelfare) / eq.userWelfareNoSpam) * 100
+      : 0;
+
+  let headline: string;
+  let body: string;
+  let color: string;
+
+  if (eq.regime === "no-spam") {
+    headline = "No spam at this block size";
+    body =
+      "The block is small enough that transaction fees stay high. Spam bots can't afford to play because every failed probe costs more than they'd make. All block space goes to real users.";
+    color = "#2a7d6a";
+  } else if (eq.regime === "slack") {
+    headline = "Block has room to spare";
+    body = `The block is bigger than total demand. Spam has settled at its maximum level (${Math.round(eq.spamShare * 100)}% of used space), but it's no longer crowding out real users. Extra capacity sits idle. Making the block even bigger won't change anything.`;
+    color = "#9b9084";
+  } else {
+    // congested
+    const severity =
+      eq.spamShare > 0.25
+        ? "heavy"
+        : eq.spamShare > 0.1
+          ? "moderate"
+          : "light";
+
+    if (severity === "heavy") {
+      headline = "Spam is eating the block";
+      body = `Spam takes up ${Math.round(eq.spamShare * 100)}% of the block. Real users are being crowded out and paying ${welfareLoss > 0 ? `${Math.round(welfareLoss)}% more than they would` : "significantly more than they should"} without spam. Most of the block space that was meant for users is being wasted on failed probes.`;
+    } else if (severity === "moderate") {
+      headline = "Spam is competing with users";
+      body = `About ${Math.round(eq.spamShare * 100)}% of the block is spam. Users are paying somewhat higher fees because spam is taking up space they need. Each additional unit of block space increasingly goes to spam rather than users.`;
+    } else {
+      headline = "Spam is starting to appear";
+      body = `Spam has entered the block at ${Math.round(eq.spamShare * 100)}% of total gas. The impact on users is still small, but as the block grows larger, spam will claim an increasing share of each additional unit of capacity.`;
+    }
+    color = "#c4653a";
+  }
+
+  return (
+    <motion.div
+      key={eq.regime + Math.round(eq.spamShare * 10)}
+      initial={{ opacity: 0.7 }}
+      animate={{ opacity: 1 }}
+      className="rounded-xl border-2 p-5 mb-8"
+      style={{ borderColor: color + "40", backgroundColor: color + "08" }}
+    >
+      <p className="font-semibold text-lg mb-2" style={{ color }}>
+        {headline}
+      </p>
+      <p className="text-sm text-text-secondary leading-relaxed">{body}</p>
+      <div className="flex items-center gap-6 mt-4 pt-3 border-t" style={{ borderColor: color + "20" }}>
+        <div>
+          <p className="font-mono text-2xl font-semibold tabular-nums" style={{ color }}>
+            {Math.round(eq.spamShare * 100)}%
+          </p>
+          <p className="font-mono text-[10px] text-text-tertiary">spam</p>
+        </div>
+        {welfareLoss > 1 && (
+          <div>
+            <p className="font-mono text-2xl font-semibold tabular-nums text-problem-accent">
+              &minus;{Math.round(welfareLoss)}%
+            </p>
+            <p className="font-mono text-[10px] text-text-tertiary">
+              user benefit lost
+            </p>
+          </div>
+        )}
+        <div>
+          <p className="font-mono text-2xl font-semibold tabular-nums">
+            {Math.round(eq.S)}
+          </p>
+          <p className="font-mono text-[10px] text-text-tertiary">
+            spam txs in each block
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function EquilibriumSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
   const [sliderValue, setSliderValue] = useState(120); // ~1200
   const params = DEFAULTS;
 
@@ -287,11 +387,24 @@ export default function EquilibriumSection() {
   const totalIncluded = eq.Qu + eq.spamGas;
   const idle = Math.max(0, Bmax - totalIncluded);
 
+  const presets = simple ? REGIME_PRESETS_SIMPLE : REGIME_PRESETS_TECHNICAL;
+
   // Bar widths as percentages of Bmax
   const userPct = Bmax > 0 ? (eq.Qu / MAX_BMAX) * 100 : 0;
   const spamPct = Bmax > 0 ? (eq.spamGas / MAX_BMAX) * 100 : 0;
-  const idlePct = Bmax > 0 ? (idle / MAX_BMAX) * 100 : 0;
   const capacityPct = (Bmax / MAX_BMAX) * 100;
+
+  const regimeLabel = simple
+    ? eq.regime === "no-spam"
+      ? "No spam - fees keep bots out"
+      : eq.regime === "congested"
+        ? "Congested - spam crowds users"
+        : "Slack - block has room to spare"
+    : eq.regime === "no-spam"
+      ? "No Spam"
+      : eq.regime === "congested"
+        ? "Congested"
+        : "Slack";
 
   const regimeColor =
     eq.regime === "no-spam"
@@ -306,19 +419,21 @@ export default function EquilibriumSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          The spam equilibrium
+          {simple ? "How spam fills up blocks" : "The spam equilibrium"}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          As block capacity grows, spam enters and claims an increasing share of
-          each additional unit. The model identifies three regimes depending on
-          how capacity compares to demand.
+          {simple
+            ? "As blocks get bigger, spam takes a larger share of each new unit of space. Drag the slider to make blocks bigger and watch spam grow."
+            : "As block capacity grows, spam enters and claims an increasing share of each additional unit. The model identifies three regimes depending on how capacity compares to demand."}
         </p>
-        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          Drag the slider to see how spam volume changes with block capacity.
-          Parameters use the paper&apos;s defaults: D&#8320; = {params.D0}, &#946; ={" "}
-          {params.beta}, s = {params.s}, r&#8320; = {params.r0}, g_min ={" "}
-          {params.gmin}.
-        </p>
+        {!simple && (
+          <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-2">
+            Parameters use the paper&apos;s defaults: D&#8320; = {params.D0}, &#946; ={" "}
+            {params.beta}, s = {params.s}, r&#8320; = {params.r0}, g_min ={" "}
+            {params.gmin}.
+          </p>
+        )}
+        <div className="mb-10" />
 
         {/* Slider + Presets */}
         <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-6">
@@ -327,7 +442,7 @@ export default function EquilibriumSection() {
               htmlFor="bmax-range"
               className="font-mono text-xs text-text-tertiary"
             >
-              Block capacity (B_max)
+              {simple ? "Block size" : "Block capacity (B_max)"}
             </label>
             <motion.p
               key={Bmax}
@@ -354,7 +469,7 @@ export default function EquilibriumSection() {
 
           {/* Preset buttons */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {REGIME_PRESETS.map((preset) => {
+            {presets.map((preset) => {
               const sv = Math.round(
                 (preset.Bmax / MAX_BMAX) * SLIDER_STEPS
               );
@@ -392,11 +507,7 @@ export default function EquilibriumSection() {
                 backgroundColor: regimeColor + "18",
               }}
             >
-              {eq.regime === "no-spam"
-                ? "No Spam"
-                : eq.regime === "congested"
-                  ? "Congested"
-                  : "Slack"}
+              {regimeLabel}
             </div>
           </div>
 
@@ -468,91 +579,94 @@ export default function EquilibriumSection() {
           </div>
         </div>
 
-        {/* Metrics grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          <div className="bg-surface-elevated rounded-lg border border-border p-4">
-            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-              Gas price
-            </p>
-            <motion.p
-              key={`g-${Math.round(eq.g * 10)}`}
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              className="font-mono text-xl font-semibold tabular-nums"
-            >
-              {eq.g.toFixed(1)}
-            </motion.p>
-          </div>
-          <div className="bg-surface-elevated rounded-lg border border-border p-4">
-            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-              Spam share
-            </p>
-            <motion.p
-              key={`share-${Math.round(eq.spamShare * 100)}`}
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              className="font-mono text-xl font-semibold tabular-nums"
-              style={{
-                color:
-                  eq.spamShare > 0.2
-                    ? "#c4653a"
-                    : eq.spamShare > 0
-                      ? "#a8856e"
-                      : "#2a7d6a",
-              }}
-            >
-              {(eq.spamShare * 100).toFixed(1)}%
-            </motion.p>
-          </div>
-          <div className="bg-surface-elevated rounded-lg border border-border p-4">
-            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-              Spam txs
-            </p>
-            <motion.p
-              key={`S-${Math.round(eq.S * 10)}`}
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              className="font-mono text-xl font-semibold tabular-nums"
-            >
-              {eq.S.toFixed(1)}
-            </motion.p>
-          </div>
-          <div className="bg-surface-elevated rounded-lg border border-border p-4">
-            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-              User welfare
-            </p>
-            <motion.p
-              key={`w-${Math.round(eq.userWelfare)}`}
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              className="font-mono text-xl font-semibold tabular-nums"
-            >
-              {formatNum(eq.userWelfare)}
-            </motion.p>
-            {eq.userWelfareNoSpam > eq.userWelfare + 1 && (
-              <p className="font-mono text-[10px] text-problem-accent mt-1">
-                &minus;
-                {(
-                  ((eq.userWelfareNoSpam - eq.userWelfare) /
-                    eq.userWelfareNoSpam) *
-                  100
-                ).toFixed(0)}
-                % vs no-spam
+        {/* Metrics: narrative in simple mode, raw numbers in technical */}
+        {simple ? (
+          <NarrativeCallout eq={eq} Bmax={Bmax} />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+            <div className="bg-surface-elevated rounded-lg border border-border p-4">
+              <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+                Gas price
               </p>
-            )}
+              <motion.p
+                key={`g-${Math.round(eq.g * 10)}`}
+                initial={{ scale: 1.05 }}
+                animate={{ scale: 1 }}
+                className="font-mono text-xl font-semibold tabular-nums"
+              >
+                {eq.g.toFixed(1)}
+              </motion.p>
+            </div>
+            <div className="bg-surface-elevated rounded-lg border border-border p-4">
+              <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+                Spam share
+              </p>
+              <motion.p
+                key={`share-${Math.round(eq.spamShare * 100)}`}
+                initial={{ scale: 1.05 }}
+                animate={{ scale: 1 }}
+                className="font-mono text-xl font-semibold tabular-nums"
+                style={{
+                  color:
+                    eq.spamShare > 0.2
+                      ? "#c4653a"
+                      : eq.spamShare > 0
+                        ? "#a8856e"
+                        : "#2a7d6a",
+                }}
+              >
+                {(eq.spamShare * 100).toFixed(1)}%
+              </motion.p>
+            </div>
+            <div className="bg-surface-elevated rounded-lg border border-border p-4">
+              <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+                Spam txs
+              </p>
+              <motion.p
+                key={`S-${Math.round(eq.S * 10)}`}
+                initial={{ scale: 1.05 }}
+                animate={{ scale: 1 }}
+                className="font-mono text-xl font-semibold tabular-nums"
+              >
+                {eq.S.toFixed(1)}
+              </motion.p>
+            </div>
+            <div className="bg-surface-elevated rounded-lg border border-border p-4">
+              <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+                User welfare
+              </p>
+              <motion.p
+                key={`w-${Math.round(eq.userWelfare)}`}
+                initial={{ scale: 1.05 }}
+                animate={{ scale: 1 }}
+                className="font-mono text-xl font-semibold tabular-nums"
+              >
+                {formatNum(eq.userWelfare)}
+              </motion.p>
+              {eq.userWelfareNoSpam > eq.userWelfare + 1 && (
+                <p className="font-mono text-[10px] text-problem-accent mt-1">
+                  &minus;
+                  {(
+                    ((eq.userWelfareNoSpam - eq.userWelfare) /
+                      eq.userWelfareNoSpam) *
+                    100
+                  ).toFixed(0)}
+                  % vs no-spam
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Sweep chart */}
         <div className="bg-surface-elevated rounded-xl border border-border p-6">
           <p className="font-mono text-xs text-text-tertiary mb-2">
-            Spam equilibrium across all block sizes
+            {simple ? "The big picture" : "Spam equilibrium across all block sizes"}
           </p>
           <p className="text-sm text-text-secondary font-light mb-4">
-            Blue area shows user gas, red area shows spam gas stacked on top.
-            As capacity grows beyond the congested regime, added capacity
-            increasingly serves spam until the plateau (B_plat ={" "}
-            {Math.round(eq.Bplat)}) where both level off.
+            {simple
+              ? "Each column shows how a block of that size splits between real users (blue) and spam (red). Notice how the red area grows faster than the blue as blocks get bigger."
+              : `Blue area shows user gas, red area shows spam gas stacked on top. As capacity grows beyond the congested regime, added capacity increasingly serves spam until the plateau (B_plat = ${Math.round(eq.Bplat)}) where both level off.`}
           </p>
           <SweepChart
             sweep={sweep}

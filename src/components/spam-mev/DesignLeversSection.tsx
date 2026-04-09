@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useInView } from "../useInView";
+import { useExplainMode } from "./ExplainModeContext";
 import {
   computeEquilibrium,
   computeEquilibriumPFO,
@@ -169,6 +170,8 @@ function MarginalCapacityChart({
 
 export default function DesignLeversSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
   const [Bmax, setBmax] = useState(1000);
   const [gmin, setGmin] = useState(DEFAULTS.gmin);
   const [ordering, setOrdering] = useState<"random" | "pfo">("random");
@@ -204,12 +207,12 @@ export default function DesignLeversSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Three levers to reduce spam
+          {simple ? "Three ways to fight spam" : "Three levers to reduce spam"}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-12">
-          Blockchain designers can adjust block capacity, set a minimum gas
-          price floor, and choose transaction ordering. Each lever trades off
-          spam reduction against user welfare.
+          {simple
+            ? "Blockchain designers have three knobs to turn. Each one reduces spam but might also affect real users. Try adjusting them to see the tradeoffs."
+            : "Blockchain designers can adjust block capacity, set a minimum gas price floor, and choose transaction ordering. Each lever trades off spam reduction against user welfare."}
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -222,7 +225,7 @@ export default function DesignLeversSection() {
                   htmlFor="lever-bmax"
                   className="font-mono text-xs text-text-tertiary"
                 >
-                  Block capacity (B_max)
+                  {simple ? "Block size" : "Block capacity (B_max)"}
                 </label>
                 <span className="font-mono text-sm font-semibold tabular-nums">
                   {Bmax}
@@ -246,7 +249,7 @@ export default function DesignLeversSection() {
                   htmlFor="lever-gmin"
                   className="font-mono text-xs text-text-tertiary"
                 >
-                  Minimum gas price (g_min)
+                  {simple ? "Minimum fee" : "Minimum gas price (g_min)"}
                 </label>
                 <span className="font-mono text-sm font-semibold tabular-nums">
                   {gmin}
@@ -281,7 +284,7 @@ export default function DesignLeversSection() {
                       : "bg-surface border-border hover:border-text-secondary"
                   }`}
                 >
-                  Random / FIFO
+                  {simple ? "First come, first served" : "Random / FIFO"}
                 </button>
                 <button
                   onClick={() => setOrdering("pfo")}
@@ -291,7 +294,7 @@ export default function DesignLeversSection() {
                       : "bg-surface border-border hover:border-text-secondary"
                   }`}
                 >
-                  Priority fee
+                  {simple ? "Highest bidder first" : "Priority fee"}
                 </button>
               </div>
 
@@ -347,53 +350,89 @@ export default function DesignLeversSection() {
                 />
               </div>
 
-              {/* Comparison metrics */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="font-mono text-[10px] text-text-tertiary mb-1">
-                    Spam share
-                  </p>
-                  <motion.p
-                    key={`share-${Math.round(eqCurrent.spamShare * 1000)}`}
-                    initial={{ scale: 1.05 }}
-                    animate={{ scale: 1 }}
-                    className="font-mono text-lg font-semibold tabular-nums"
-                    style={{
-                      color:
-                        eqCurrent.spamShare > 0.15 ? "#c4653a" : "#2a7d6a",
-                    }}
-                  >
-                    {(eqCurrent.spamShare * 100).toFixed(1)}%
-                  </motion.p>
+              {/* Comparison: narrative in simple, raw numbers in technical */}
+              {simple ? (
+                <div className="text-sm text-text-secondary leading-relaxed">
+                  {spamReduction > 50 ? (
+                    <p>
+                      These settings cut spam by{" "}
+                      <strong className="text-solution-accent">
+                        {Math.round(spamReduction)}%
+                      </strong>{" "}
+                      compared to having no fee floor. Spam now takes up just{" "}
+                      {Math.round(eqCurrent.spamShare * 100)}% of the block.
+                      {ordering === "pfo" &&
+                        " Priority ordering pushes spam bots to the back of the block where they can't grab the best positions."}
+                    </p>
+                  ) : spamReduction > 10 ? (
+                    <p>
+                      Spam is down{" "}
+                      <strong>{Math.round(spamReduction)}%</strong> from the
+                      no-floor baseline. Try raising the minimum fee higher to
+                      see a bigger effect.
+                    </p>
+                  ) : eqCurrent.spamShare === 0 ? (
+                    <p className="text-solution-accent font-medium">
+                      No spam at these settings. The block is too small or fees
+                      too high for bots to profit.
+                    </p>
+                  ) : (
+                    <p>
+                      Spam still takes up{" "}
+                      {Math.round(eqCurrent.spamShare * 100)}% of the block.
+                      Try increasing the minimum fee or switching to priority
+                      ordering.
+                    </p>
+                  )}
                 </div>
-                <div>
-                  <p className="font-mono text-[10px] text-text-tertiary mb-1">
-                    Gas price
-                  </p>
-                  <p className="font-mono text-lg font-semibold tabular-nums">
-                    {eqCurrent.g.toFixed(1)}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="font-mono text-[10px] text-text-tertiary mb-1">
+                      Spam share
+                    </p>
+                    <motion.p
+                      key={`share-${Math.round(eqCurrent.spamShare * 1000)}`}
+                      initial={{ scale: 1.05 }}
+                      animate={{ scale: 1 }}
+                      className="font-mono text-lg font-semibold tabular-nums"
+                      style={{
+                        color:
+                          eqCurrent.spamShare > 0.15 ? "#c4653a" : "#2a7d6a",
+                      }}
+                    >
+                      {(eqCurrent.spamShare * 100).toFixed(1)}%
+                    </motion.p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] text-text-tertiary mb-1">
+                      Gas price
+                    </p>
+                    <p className="font-mono text-lg font-semibold tabular-nums">
+                      {eqCurrent.g.toFixed(1)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] text-text-tertiary mb-1">
+                      Spam reduction
+                    </p>
+                    <motion.p
+                      key={`red-${Math.round(spamReduction)}`}
+                      initial={{ scale: 1.05 }}
+                      animate={{ scale: 1 }}
+                      className="font-mono text-lg font-semibold tabular-nums"
+                      style={{
+                        color: spamReduction > 30 ? "#2a7d6a" : "#9b9084",
+                      }}
+                    >
+                      {spamReduction > 0 ? `${spamReduction.toFixed(0)}%` : "--"}
+                    </motion.p>
+                    <p className="font-mono text-[9px] text-text-tertiary">
+                      vs g_min=1
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-mono text-[10px] text-text-tertiary mb-1">
-                    Spam reduction
-                  </p>
-                  <motion.p
-                    key={`red-${Math.round(spamReduction)}`}
-                    initial={{ scale: 1.05 }}
-                    animate={{ scale: 1 }}
-                    className="font-mono text-lg font-semibold tabular-nums"
-                    style={{
-                      color: spamReduction > 30 ? "#2a7d6a" : "#9b9084",
-                    }}
-                  >
-                    {spamReduction > 0 ? `${spamReduction.toFixed(0)}%` : "--"}
-                  </motion.p>
-                  <p className="font-mono text-[9px] text-text-tertiary">
-                    vs g_min=1
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Monad callout */}
@@ -402,11 +441,9 @@ export default function DesignLeversSection() {
                 Monad&apos;s approach
               </p>
               <p className="text-sm text-text-secondary leading-relaxed">
-                Monad launched with a non-trivial minimum gas price and charges
-                based on <strong>gas limit</strong> rather than gas consumed.
-                Spam transactions reserve large gas allocations but use only a
-                fraction when they fail; charging for reserved gas directly
-                targets this asymmetry.
+                {simple
+                  ? "Monad charges bots for the gas they reserve, even when their transaction fails. Since spam transactions reserve a lot of gas but barely use any, this makes spamming much more expensive."
+                  : "Monad launched with a non-trivial minimum gas price and charges based on gas limit rather than gas consumed. Spam transactions reserve large gas allocations but use only a fraction when they fail; charging for reserved gas directly targets this asymmetry."}
               </p>
             </div>
           </div>
@@ -415,13 +452,12 @@ export default function DesignLeversSection() {
         {/* Marginal capacity chart */}
         <div className="bg-surface-elevated rounded-xl border border-border p-6 mt-6">
           <h3 className="text-xl font-semibold tracking-tight mb-2">
-            The favorable tradeoff
+            {simple ? "Why capping block size works" : "The favorable tradeoff"}
           </h3>
           <p className="text-sm text-text-secondary font-light mb-4 max-w-3xl">
-            The share of each marginal unit of capacity going to users
-            is strictly decreasing. Near the plateau, most additional capacity
-            serves spam. Capping B_max before that point eliminates
-            disproportionate spam at a small cost to user welfare.
+            {simple
+              ? "As blocks get bigger, each additional unit of space increasingly goes to spam rather than real users. By not adding that last stretch of capacity, designers can cut a lot of spam with very little impact on users."
+              : "The share of each marginal unit of capacity going to users is strictly decreasing. Near the plateau, most additional capacity serves spam. Capping B_max before that point eliminates disproportionate spam at a small cost to user welfare."}
           </p>
           <MarginalCapacityChart params={params} Bmax={Bmax} />
           <p className="font-mono text-xs text-text-tertiary mt-2">

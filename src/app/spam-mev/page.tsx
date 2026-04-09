@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { ExplainModeProvider } from "@/components/spam-mev/ExplainModeContext";
+import ModeToggle from "@/components/spam-mev/ModeToggle";
 import SpamHeroSection from "@/components/spam-mev/SpamHeroSection";
+import WhatIsMevSection from "@/components/spam-mev/WhatIsMevSection";
 import WhatIsSpamSection from "@/components/spam-mev/WhatIsSpamSection";
 import EquilibriumSection from "@/components/spam-mev/EquilibriumSection";
 import DesignLeversSection from "@/components/spam-mev/DesignLeversSection";
@@ -18,12 +21,16 @@ export const metadata: Metadata = {
 
 export default function SpamMevPage() {
   return (
-    <main>
-      <SpamHeroSection />
-      <WhatIsSpamSection />
-      <EquilibriumSection />
-      <DesignLeversSection />
-      <SpamFooterSection />
-    </main>
+    <ExplainModeProvider>
+      <ModeToggle />
+      <main>
+        <SpamHeroSection />
+        <WhatIsMevSection />
+        <WhatIsSpamSection />
+        <EquilibriumSection />
+        <DesignLeversSection />
+        <SpamFooterSection />
+      </main>
+    </ExplainModeProvider>
   );
 }
