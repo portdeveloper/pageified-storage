@@ -62,9 +62,15 @@ The codebase follows consistent patterns. Before contributing, look at an existi
 - **Typography**: IBM Plex Sans for body, IBM Plex Mono for code/numbers.
 - All interactive components need `"use client"` at the top.
 
+### Rules
+
+1. **Every PR requires an approved Issue first.** Open an Issue describing what you want to do and wait for a maintainer to agree before writing code. PRs without a linked, approved Issue will be closed.
+2. Contributors must be humans, not bots.
+3. First-time contributions must not be only spelling, grammar, or formatting fixes.
+
 ### Issues
 
-Before starting work, open an Issue describing what you want to do. This helps avoid duplicate effort and lets us discuss the approach.
+Open an Issue before doing any work. Describe what you want to change and why. This lets us discuss the approach, avoid duplicate effort, and say no early if the change doesn't fit.
 
 When reporting a bug:
 - Describe what you expected vs what happened.
@@ -73,7 +79,7 @@ When reporting a bug:
 
 ### Pull Requests
 
-We follow the fork-and-pull workflow:
+Once your Issue is approved, follow the fork-and-pull workflow:
 
 1. Fork the repo
 2. Create a branch with a descriptive name
@@ -83,11 +89,11 @@ We follow the fork-and-pull workflow:
 
 Tips for a good PR:
 - Keep the title short and descriptive.
-- Link the related Issue.
+- Link the approved Issue.
 - Describe what changed and why.
 - One commit per logical change is fine; we squash-merge.
 
-After submitting, we may ask questions or request changes. Once approved, we'll squash-and-merge.
+PRs without a linked Issue, or that change things not discussed in the Issue, will be closed. After review, we may ask questions or request changes. Once approved, we'll squash-and-merge.
 
 ## Adding a New Explainer Page
 
