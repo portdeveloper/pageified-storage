@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useInView } from "../useInView";
 import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 import { computeEquilibrium, computeSweep, DEFAULTS } from "./model";
 import type { ModelParams } from "./model";
 
@@ -442,7 +443,7 @@ export default function EquilibriumSection() {
               htmlFor="bmax-range"
               className="font-mono text-xs text-text-tertiary"
             >
-              {simple ? "Block size" : "Block capacity (B_max)"}
+              {simple ? "Block size" : <Hint term="b_max">Block capacity (B_max)</Hint>}
             </label>
             <motion.p
               key={Bmax}
@@ -586,7 +587,7 @@ export default function EquilibriumSection() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             <div className="bg-surface-elevated rounded-lg border border-border p-4">
               <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-                Gas price
+                <Hint term="clearing price">Gas price</Hint>
               </p>
               <motion.p
                 key={`g-${Math.round(eq.g * 10)}`}
@@ -599,7 +600,7 @@ export default function EquilibriumSection() {
             </div>
             <div className="bg-surface-elevated rounded-lg border border-border p-4">
               <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-                Spam share
+                <Hint term="spam share">Spam share</Hint>
               </p>
               <motion.p
                 key={`share-${Math.round(eq.spamShare * 100)}`}
@@ -633,7 +634,7 @@ export default function EquilibriumSection() {
             </div>
             <div className="bg-surface-elevated rounded-lg border border-border p-4">
               <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-                User welfare
+                <Hint term="user welfare">User welfare</Hint>
               </p>
               <motion.p
                 key={`w-${Math.round(eq.userWelfare)}`}

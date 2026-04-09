@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 interface TxCardProps {
   label: string;
@@ -44,9 +45,9 @@ export default function WhatIsMevSection() {
                 First, what is MEV?
               </h2>
               <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-                MEV stands for Maximal Extractable Value. It is the profit
-                someone can make by choosing which transactions go in a block
-                and in what order.
+                <Hint term="mev">MEV</Hint> stands for Maximal Extractable
+                Value. It is the profit someone can make by choosing which
+                transactions go in a block and in what order.
               </p>
 
               {/* Visual example */}

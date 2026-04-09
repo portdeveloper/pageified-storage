@@ -2,6 +2,7 @@
 
 import { useInView } from "../useInView";
 import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 interface FlowStep {
   label: string;
@@ -170,7 +171,7 @@ export default function WhatIsSpamSection() {
               </p>
             </div>
             <div className="text-center">
-              <p className="font-mono text-2xl mb-1">No mempool</p>
+              <p className="font-mono text-2xl mb-1">No <Hint term="mempool">mempool</Hint></p>
               <p className="text-sm text-text-secondary font-light">
                 {simple
                   ? "Bots can't see other transactions before they execute"

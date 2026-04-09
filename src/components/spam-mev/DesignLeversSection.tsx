@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useInView } from "../useInView";
 import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 import {
   computeEquilibrium,
   computeEquilibriumPFO,
@@ -225,7 +226,7 @@ export default function DesignLeversSection() {
                   htmlFor="lever-bmax"
                   className="font-mono text-xs text-text-tertiary"
                 >
-                  {simple ? "Block size" : "Block capacity (B_max)"}
+                  {simple ? "Block size" : <Hint term="b_max">Block capacity (B_max)</Hint>}
                 </label>
                 <span className="font-mono text-sm font-semibold tabular-nums">
                   {Bmax}
@@ -249,7 +250,7 @@ export default function DesignLeversSection() {
                   htmlFor="lever-gmin"
                   className="font-mono text-xs text-text-tertiary"
                 >
-                  {simple ? "Minimum fee" : "Minimum gas price (g_min)"}
+                  {simple ? "Minimum fee" : <Hint term="gmin">Minimum gas price (g_min)</Hint>}
                 </label>
                 <span className="font-mono text-sm font-semibold tabular-nums">
                   {gmin}
@@ -294,7 +295,7 @@ export default function DesignLeversSection() {
                       : "bg-surface border-border hover:border-text-secondary"
                   }`}
                 >
-                  {simple ? "Highest bidder first" : "Priority fee"}
+                  {simple ? "Highest bidder first" : <><Hint term="pfo">Priority fee</Hint></>}
                 </button>
               </div>
 
