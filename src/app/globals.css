@@ -22,6 +22,13 @@
   --color-solution-cell: #d4e8e2;
   --color-solution-cell-hover: #b8d9cf;
 
+  /* User palette - blue (spam-mev page) */
+  --color-user-bg: #edf3fc;
+  --color-user-accent: #3b7dd8;
+  --color-user-accent-light: #b8d4f0;
+  --color-user-muted: #6b9dd4;
+  --color-user-cell: #d4e4f4;
+
   /* Neutral */
   --color-surface: #f8f6f3;
   --color-surface-elevated: #ffffff;

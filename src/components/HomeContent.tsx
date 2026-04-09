@@ -353,6 +353,55 @@ function MipCard({
   );
 }
 
+/* ─── Mini-visualization: Spam MEV block grid ──────────────────────── */
+function MiniSpamGrid() {
+  const cols = 9;
+  const rows = 4;
+  const total = cols * rows;
+  const [cells, setCells] = useState<number[]>([]);
+  const [cycle, setCycle] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const generate = () => {
+      const c: number[] = [];
+      const successIdx = Math.floor(Math.random() * total);
+      for (let i = 0; i < total; i++) {
+        if (i === successIdx) { c.push(3); continue; } // success
+        const r = Math.random();
+        c.push(r < 0.3 ? 0 : r < 0.78 ? 1 : 2); // user, spam-idle, spam-fail
+      }
+      if (!cancelled) {
+        setCells(c);
+        setCycle((n) => n + 1);
+      }
+    };
+    generate();
+    const timer = setInterval(generate, 3000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
+
+  // 0=user, 1=spam-idle, 2=spam-fail, 3=spam-success
+  const colors = ["#d4e4f4", "#f0d0c0", "#e8b8a8", "#c8e6d8"];
+
+  return (
+    <div
+      className="grid gap-[2px]"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {cells.map((type, i) => (
+        <motion.div
+          key={`${cycle}-${i}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, backgroundColor: colors[type] }}
+          transition={{ duration: 0.2, delay: i * 0.015 }}
+          className="aspect-square rounded-[2px]"
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ─── Main page ──────────────────────────────────────────────────────── */
 
 export default function HomeContent() {
@@ -487,6 +536,79 @@ export default function HomeContent() {
             index={2}
           />
         </div>
+      </div>
+
+      {/* Research section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.9 }}
+        className="w-full max-w-4xl mb-5 mt-2"
+      >
+        <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase">
+          Research
+        </p>
+      </motion.div>
+
+      <div className="w-full max-w-4xl mb-28">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.7,
+            delay: 0.95,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        >
+          <Link
+            href="/spam-mev"
+            aria-label="Explore Spam MEV: Blockspace Under Pressure"
+            className="group block bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+              <div className="p-8 flex flex-col justify-center">
+                <MiniSpamGrid />
+                <p className="font-mono text-[10px] text-text-tertiary mt-3">
+                  Spam probes fill the block, but rarely find a trade
+                </p>
+              </div>
+              <div className="p-8 flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-mono text-[11px] text-text-tertiary tracking-wider">
+                    Category Labs
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-semibold mb-2 group-hover:text-problem-accent transition-colors duration-300">
+                  Spam MEV
+                </h2>
+                <p className="font-mono text-[11px] text-text-tertiary mb-3">
+                  Blockspace under pressure
+                </p>
+                <p className="text-sm text-text-secondary leading-relaxed">
+                  Explore how block capacity, gas price floors, and transaction
+                  ordering jointly determine spam volumes. Play with the
+                  equilibrium model from the paper.
+                </p>
+                <span className="inline-flex items-center gap-1 mt-5 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
+                  Explore
+                  <svg
+                    className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
       </div>
     </main>
   );

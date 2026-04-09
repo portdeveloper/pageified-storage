@@ -1,0 +1,580 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { useState, useMemo } from "react";
+import { useInView } from "../useInView";
+import { computeEquilibrium, computeSweep, DEFAULTS } from "./model";
+import type { ModelParams } from "./model";
+
+const MAX_BMAX = 2000;
+const SLIDER_STEPS = 200;
+
+const REGIME_PRESETS = [
+  { label: "No spam", Bmax: 350, desc: "Fees too high for spam" },
+  { label: "Congested", Bmax: 900, desc: "Spam competes with users" },
+  { label: "Near plateau", Bmax: 1250, desc: "Most marginal gas is spam" },
+  { label: "Slack", Bmax: 1700, desc: "Capacity exceeds all demand" },
+];
+
+function formatNum(n: number, decimals = 0): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return n.toFixed(decimals);
+}
+
+/** SVG sweep chart: user gas (blue) + spam gas (red) stacked areas */
+function SweepChart({
+  sweep,
+  currentBmax,
+  params,
+}: {
+  sweep: ReturnType<typeof computeSweep>;
+  currentBmax: number;
+  params: ModelParams;
+}) {
+  const W = 580;
+  const H = 240;
+  const padL = 48;
+  const padR = 8;
+  const padT = 12;
+  const padB = 32;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const maxGas = Math.max(
+    params.D0 * 1.05,
+    ...sweep.map((s) => s.Qu + s.spamGas)
+  );
+
+  const x = (bmax: number) => padL + (bmax / MAX_BMAX) * chartW;
+  const y = (gas: number) => padT + chartH - (gas / maxGas) * chartH;
+
+  // Build area paths
+  const userAreaPath = useMemo(() => {
+    const forward = sweep
+      .map((s, i) => `${i === 0 ? "M" : "L"}${x(i * 10)},${y(s.Qu)}`)
+      .join(" ");
+    const back = `L${x(MAX_BMAX)},${y(0)} L${x(0)},${y(0)} Z`;
+    return forward + " " + back;
+  }, [sweep]);
+
+  const spamAreaPath = useMemo(() => {
+    const forward = sweep
+      .map(
+        (s, i) =>
+          `${i === 0 ? "M" : "L"}${x(i * 10)},${y(s.Qu + s.spamGas)}`
+      )
+      .join(" ");
+    const back = [...sweep]
+      .reverse()
+      .map((s, i) => `L${x((sweep.length - 1 - i) * 10)},${y(s.Qu)}`)
+      .join(" ");
+    return forward + " " + back + " Z";
+  }, [sweep]);
+
+  // Regime boundaries
+  const BnoSpam = sweep[0]?.BnoSpam ?? 0;
+  const Bplat = sweep[0]?.Bplat ?? 0;
+
+  // Current point
+  const eq = computeEquilibrium(currentBmax, params);
+  const cx = x(currentBmax);
+  const cyUser = y(eq.Qu);
+  const cyTotal = y(eq.Qu + eq.spamGas);
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full"
+      style={{ maxHeight: 280 }}
+    >
+      {/* Regime background bands */}
+      <rect
+        x={padL}
+        y={padT}
+        width={x(BnoSpam) - padL}
+        height={chartH}
+        fill="#f0f7f5"
+        opacity={0.5}
+      />
+      <rect
+        x={x(BnoSpam)}
+        y={padT}
+        width={x(Math.min(Bplat, MAX_BMAX)) - x(BnoSpam)}
+        height={chartH}
+        fill="#fdf6ef"
+        opacity={0.4}
+      />
+      <rect
+        x={x(Math.min(Bplat, MAX_BMAX))}
+        y={padT}
+        width={x(MAX_BMAX) - x(Math.min(Bplat, MAX_BMAX))}
+        height={chartH}
+        fill="#f8f6f3"
+        opacity={0.5}
+      />
+
+      {/* Regime labels */}
+      <text
+        x={(padL + x(BnoSpam)) / 2}
+        y={padT + 14}
+        textAnchor="middle"
+        className="font-mono"
+        fontSize={9}
+        fill="#2a7d6a"
+        opacity={0.7}
+      >
+        no spam
+      </text>
+      <text
+        x={(x(BnoSpam) + x(Math.min(Bplat, MAX_BMAX))) / 2}
+        y={padT + 14}
+        textAnchor="middle"
+        className="font-mono"
+        fontSize={9}
+        fill="#c4653a"
+        opacity={0.7}
+      >
+        congested
+      </text>
+      <text
+        x={
+          (x(Math.min(Bplat, MAX_BMAX)) + x(MAX_BMAX)) / 2
+        }
+        y={padT + 14}
+        textAnchor="middle"
+        className="font-mono"
+        fontSize={9}
+        fill="#9b9084"
+        opacity={0.7}
+      >
+        slack
+      </text>
+
+      {/* User area */}
+      <path d={userAreaPath} fill="#3b7dd8" opacity={0.25} />
+
+      {/* Spam area (stacked above user) */}
+      <path d={spamAreaPath} fill="#c4653a" opacity={0.3} />
+
+      {/* User gas line */}
+      <path
+        d={sweep
+          .map(
+            (s, i) => `${i === 0 ? "M" : "L"}${x(i * 10)},${y(s.Qu)}`
+          )
+          .join(" ")}
+        fill="none"
+        stroke="#3b7dd8"
+        strokeWidth={1.5}
+      />
+
+      {/* Total gas line (user + spam) */}
+      <path
+        d={sweep
+          .map(
+            (s, i) =>
+              `${i === 0 ? "M" : "L"}${x(i * 10)},${y(s.Qu + s.spamGas)}`
+          )
+          .join(" ")}
+        fill="none"
+        stroke="#c4653a"
+        strokeWidth={1.5}
+        strokeDasharray="4 2"
+      />
+
+      {/* Bplat marker */}
+      {Bplat <= MAX_BMAX && (
+        <line
+          x1={x(Bplat)}
+          y1={padT}
+          x2={x(Bplat)}
+          y2={padT + chartH}
+          stroke="#9b9084"
+          strokeWidth={1}
+          strokeDasharray="3 3"
+        />
+      )}
+
+      {/* Current Bmax indicator */}
+      <line
+        x1={cx}
+        y1={padT}
+        x2={cx}
+        y2={padT + chartH}
+        stroke="#1a1714"
+        strokeWidth={1}
+        opacity={0.4}
+      />
+      <circle cx={cx} cy={cyUser} r={4} fill="#3b7dd8" />
+      <circle cx={cx} cy={cyTotal} r={4} fill="#c4653a" />
+
+      {/* Axes */}
+      <line
+        x1={padL}
+        y1={padT + chartH}
+        x2={padL + chartW}
+        y2={padT + chartH}
+        stroke="#e2ddd7"
+        strokeWidth={1}
+      />
+      <line
+        x1={padL}
+        y1={padT}
+        x2={padL}
+        y2={padT + chartH}
+        stroke="#e2ddd7"
+        strokeWidth={1}
+      />
+
+      {/* Axis labels */}
+      <text
+        x={padL + chartW / 2}
+        y={H - 4}
+        textAnchor="middle"
+        className="font-mono"
+        fontSize={10}
+        fill="#9b9084"
+      >
+        B_max (block capacity)
+      </text>
+      <text
+        x={14}
+        y={padT + chartH / 2}
+        textAnchor="middle"
+        className="font-mono"
+        fontSize={10}
+        fill="#9b9084"
+        transform={`rotate(-90, 14, ${padT + chartH / 2})`}
+      >
+        gas
+      </text>
+
+      {/* Tick marks */}
+      {[0, 500, 1000, 1500, 2000].map((tick) => (
+        <g key={tick}>
+          <line
+            x1={x(tick)}
+            y1={padT + chartH}
+            x2={x(tick)}
+            y2={padT + chartH + 4}
+            stroke="#9b9084"
+          />
+          <text
+            x={x(tick)}
+            y={padT + chartH + 16}
+            textAnchor="middle"
+            className="font-mono"
+            fontSize={9}
+            fill="#9b9084"
+          >
+            {tick}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+export default function EquilibriumSection() {
+  const { ref, isVisible } = useInView(0.1);
+  const [sliderValue, setSliderValue] = useState(120); // ~1200
+  const params = DEFAULTS;
+
+  const Bmax = Math.round((sliderValue / SLIDER_STEPS) * MAX_BMAX);
+  const eq = computeEquilibrium(Bmax, params);
+  const sweep = useMemo(() => computeSweep(params, MAX_BMAX), [params]);
+
+  const totalIncluded = eq.Qu + eq.spamGas;
+  const idle = Math.max(0, Bmax - totalIncluded);
+
+  // Bar widths as percentages of Bmax
+  const userPct = Bmax > 0 ? (eq.Qu / MAX_BMAX) * 100 : 0;
+  const spamPct = Bmax > 0 ? (eq.spamGas / MAX_BMAX) * 100 : 0;
+  const idlePct = Bmax > 0 ? (idle / MAX_BMAX) * 100 : 0;
+  const capacityPct = (Bmax / MAX_BMAX) * 100;
+
+  const regimeColor =
+    eq.regime === "no-spam"
+      ? "#2a7d6a"
+      : eq.regime === "congested"
+        ? "#c4653a"
+        : "#9b9084";
+
+  return (
+    <section ref={ref} className="py-24 px-6 bg-surface relative">
+      <div
+        className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
+      >
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
+          The spam equilibrium
+        </h2>
+        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
+          As block capacity grows, spam enters and claims an increasing share of
+          each additional unit. The model identifies three regimes depending on
+          how capacity compares to demand.
+        </p>
+        <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
+          Drag the slider to see how spam volume changes with block capacity.
+          Parameters use the paper&apos;s defaults: D&#8320; = {params.D0}, &#946; ={" "}
+          {params.beta}, s = {params.s}, r&#8320; = {params.r0}, g_min ={" "}
+          {params.gmin}.
+        </p>
+
+        {/* Slider + Presets */}
+        <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <label
+              htmlFor="bmax-range"
+              className="font-mono text-xs text-text-tertiary"
+            >
+              Block capacity (B_max)
+            </label>
+            <motion.p
+              key={Bmax}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              className="font-mono text-2xl font-semibold text-text-primary tabular-nums"
+            >
+              {Bmax.toLocaleString()}
+            </motion.p>
+          </div>
+          <input
+            id="bmax-range"
+            type="range"
+            min={0}
+            max={SLIDER_STEPS}
+            value={sliderValue}
+            onChange={(e) => setSliderValue(Number(e.target.value))}
+            className="w-full accent-text-primary cursor-pointer"
+          />
+          <div className="flex justify-between font-mono text-xs text-text-tertiary mt-1">
+            <span>0</span>
+            <span>{MAX_BMAX.toLocaleString()}</span>
+          </div>
+
+          {/* Preset buttons */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {REGIME_PRESETS.map((preset) => {
+              const sv = Math.round(
+                (preset.Bmax / MAX_BMAX) * SLIDER_STEPS
+              );
+              const isActive = Math.abs(sliderValue - sv) <= 5;
+              return (
+                <button
+                  key={preset.label}
+                  onClick={() => setSliderValue(sv)}
+                  className={`font-mono text-xs px-2.5 py-1.5 rounded-md border transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-text-primary text-surface border-text-primary"
+                      : "bg-surface border-border hover:border-text-secondary"
+                  }`}
+                >
+                  {preset.label}
+                  <span className="text-text-tertiary ml-1.5">
+                    {preset.Bmax}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Block composition bar */}
+        <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-mono text-xs text-text-tertiary">
+              Block composition
+            </p>
+            <div
+              className="font-mono text-xs font-semibold px-2 py-0.5 rounded"
+              style={{
+                color: regimeColor,
+                backgroundColor: regimeColor + "18",
+              }}
+            >
+              {eq.regime === "no-spam"
+                ? "No Spam"
+                : eq.regime === "congested"
+                  ? "Congested"
+                  : "Slack"}
+            </div>
+          </div>
+
+          {/* Stacked bar */}
+          <div className="relative h-10 bg-border/30 rounded-lg overflow-hidden">
+            {/* Capacity boundary */}
+            <div
+              className="absolute top-0 bottom-0 left-0 bg-border/10 rounded-lg"
+              style={{ width: `${capacityPct}%` }}
+            />
+
+            {/* User gas */}
+            <motion.div
+              className="absolute top-0 bottom-0 left-0 rounded-l-lg"
+              style={{ backgroundColor: "#3b7dd8" }}
+              animate={{ width: `${userPct}%` }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            />
+
+            {/* Spam gas */}
+            <motion.div
+              className="absolute top-0 bottom-0"
+              style={{ backgroundColor: "#c4653a" }}
+              animate={{
+                left: `${userPct}%`,
+                width: `${spamPct}%`,
+              }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            />
+
+            {/* Labels on bar */}
+            {eq.Qu > 100 && (
+              <motion.span
+                className="absolute top-1/2 -translate-y-1/2 font-mono text-[10px] text-white font-semibold pointer-events-none"
+                animate={{ left: `${Math.max(1, userPct / 2)}%` }}
+                style={{ transform: "translate(-50%, -50%)" }}
+              >
+                Users {Math.round(eq.Qu)}
+              </motion.span>
+            )}
+            {eq.spamGas > 40 && (
+              <motion.span
+                className="absolute top-1/2 -translate-y-1/2 font-mono text-[10px] text-white font-semibold pointer-events-none"
+                animate={{
+                  left: `${userPct + spamPct / 2}%`,
+                }}
+                style={{ transform: "translate(-50%, -50%)" }}
+              >
+                Spam {Math.round(eq.spamGas)}
+              </motion.span>
+            )}
+          </div>
+
+          {/* Legend + numbers */}
+          <div className="flex items-center gap-4 mt-3 font-mono text-xs text-text-tertiary">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-2 rounded-full inline-block bg-[#3b7dd8]" />
+              User gas
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-2 rounded-full inline-block bg-[#c4653a]" />
+              Spam gas
+            </span>
+            {idle > 10 && (
+              <span className="ml-auto">
+                {Math.round(idle)} idle
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Metrics grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <div className="bg-surface-elevated rounded-lg border border-border p-4">
+            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+              Gas price
+            </p>
+            <motion.p
+              key={`g-${Math.round(eq.g * 10)}`}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              className="font-mono text-xl font-semibold tabular-nums"
+            >
+              {eq.g.toFixed(1)}
+            </motion.p>
+          </div>
+          <div className="bg-surface-elevated rounded-lg border border-border p-4">
+            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+              Spam share
+            </p>
+            <motion.p
+              key={`share-${Math.round(eq.spamShare * 100)}`}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              className="font-mono text-xl font-semibold tabular-nums"
+              style={{
+                color:
+                  eq.spamShare > 0.2
+                    ? "#c4653a"
+                    : eq.spamShare > 0
+                      ? "#a8856e"
+                      : "#2a7d6a",
+              }}
+            >
+              {(eq.spamShare * 100).toFixed(1)}%
+            </motion.p>
+          </div>
+          <div className="bg-surface-elevated rounded-lg border border-border p-4">
+            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+              Spam txs
+            </p>
+            <motion.p
+              key={`S-${Math.round(eq.S * 10)}`}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              className="font-mono text-xl font-semibold tabular-nums"
+            >
+              {eq.S.toFixed(1)}
+            </motion.p>
+          </div>
+          <div className="bg-surface-elevated rounded-lg border border-border p-4">
+            <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+              User welfare
+            </p>
+            <motion.p
+              key={`w-${Math.round(eq.userWelfare)}`}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              className="font-mono text-xl font-semibold tabular-nums"
+            >
+              {formatNum(eq.userWelfare)}
+            </motion.p>
+            {eq.userWelfareNoSpam > eq.userWelfare + 1 && (
+              <p className="font-mono text-[10px] text-problem-accent mt-1">
+                &minus;
+                {(
+                  ((eq.userWelfareNoSpam - eq.userWelfare) /
+                    eq.userWelfareNoSpam) *
+                  100
+                ).toFixed(0)}
+                % vs no-spam
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Sweep chart */}
+        <div className="bg-surface-elevated rounded-xl border border-border p-6">
+          <p className="font-mono text-xs text-text-tertiary mb-2">
+            Spam equilibrium across all block sizes
+          </p>
+          <p className="text-sm text-text-secondary font-light mb-4">
+            Blue area shows user gas, red area shows spam gas stacked on top.
+            As capacity grows beyond the congested regime, added capacity
+            increasingly serves spam until the plateau (B_plat ={" "}
+            {Math.round(eq.Bplat)}) where both level off.
+          </p>
+          <SweepChart
+            sweep={sweep}
+            currentBmax={Bmax}
+            params={params}
+          />
+          <div className="flex items-center gap-4 mt-3 font-mono text-xs text-text-tertiary">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 inline-block bg-[#3b7dd8]" />
+              User gas
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-5 h-0.5 inline-block bg-[#c4653a]" style={{ borderTop: "1px dashed #c4653a" }} />
+              Total included gas
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 inline-block bg-[#9b9084]" style={{ borderTop: "1px dashed #9b9084" }} />
+              B_plat
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
