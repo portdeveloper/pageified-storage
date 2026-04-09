@@ -9,6 +9,7 @@ const TABS = [
   { name: "MIP-3", href: "/mip-3", ready: true, beta: true },
   { name: "MIP-4", href: "/mip-4", ready: true, beta: true },
   { name: "MIP-7", href: "/mip-7", ready: true, beta: true },
+  { name: "Infra", href: "/infra", ready: true, beta: true },
 ];
 
 export default function MipNav() {
