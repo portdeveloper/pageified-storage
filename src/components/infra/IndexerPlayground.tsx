@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -28,6 +28,17 @@ const FRAMEWORKS = [
   { id: "streamingfast", name: "Streamingfast", ready: false },
 ];
 
+/* ─── Known contracts on Monad mainnet ───────────────────────────────── */
+
+const KNOWN_CONTRACTS = [
+  { label: "All contracts", address: "", description: "Any contract" },
+  { label: "WMON", address: "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A", description: "Wrapped MON" },
+  { label: "USDC", address: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603", description: "USD Coin" },
+  { label: "WETH", address: "0xEE8c0E9f1BFFb4Eb878d8f15f368A02a35481242", description: "Wrapped Ether" },
+  { label: "USDT", address: "0xe7cd86e13AC4309349F30B3435a9d337750fC82D", description: "Tether USD" },
+  { label: "WBTC", address: "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c", description: "Wrapped Bitcoin" },
+];
+
 /* ─── Event types ────────────────────────────────────────────────────── */
 
 const EVENT_TYPES = [
@@ -48,9 +59,9 @@ const EVENT_TYPES = [
 ];
 
 const BLOCK_RANGES = [
-  { label: "Last 5 blocks", value: 5 },
-  { label: "Last 20 blocks", value: 20 },
-  { label: "Last 100 blocks", value: 100 },
+  { label: "5 blocks", value: 5 },
+  { label: "20 blocks", value: 20 },
+  { label: "100 blocks", value: 100 },
 ];
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
@@ -72,8 +83,11 @@ function formatValue(hex: string): string {
 
 /* ─── Code snippets (verified against Monad docs) ────────────────────── */
 
-function getHyperSyncSnippet(eventType: typeof EVENT_TYPES[0]): string {
+function getHyperSyncSnippet(eventType: typeof EVENT_TYPES[0], contractAddr: string): string {
   const isTransfer = eventType.id === "transfer";
+  const addrLine = contractAddr
+    ? `        address: ["${contractAddr}"],`
+    : `        // address: ["0xYourContract"],  // omit to query all`;
   return `// Envio HyperSync — query millions of events in seconds
 // Get a free API key at https://app.envio.dev/api-tokens
 
@@ -84,7 +98,7 @@ const API_KEY = process.env.HYPERSYNC_BEARER_TOKEN;
 const ${eventType.id.toUpperCase()}_TOPIC =
   "${eventType.topic}";
 
-async function query${isTransfer ? "Transfers" : "Approvals"}(contractAddress, fromBlock = 0) {
+async function query${isTransfer ? "Transfers" : "Approvals"}(fromBlock = 0) {
   const response = await fetch(\`\${HYPERSYNC_URL}/query\`, {
     method: "POST",
     headers: {
@@ -94,7 +108,7 @@ async function query${isTransfer ? "Transfers" : "Approvals"}(contractAddress, f
     body: JSON.stringify({
       from_block: fromBlock,
       logs: [{
-        address: [contractAddress],
+${addrLine}
         topics: [[${eventType.id.toUpperCase()}_TOPIC]],
       }],
       field_selection: {
@@ -112,12 +126,12 @@ function parseAddress(topic) {
 }
 
 // Paginate through all results
-async function fetchAll(contractAddress) {
+async function fetchAll() {
   const results = [];
   let fromBlock = 0;
 
   while (true) {
-    const response = await query${isTransfer ? "Transfers" : "Approvals"}(contractAddress, fromBlock);
+    const response = await query${isTransfer ? "Transfers" : "Approvals"}(fromBlock);
 
     for (const block of response.data) {
       for (const log of block.logs) {
@@ -140,11 +154,11 @@ async function fetchAll(contractAddress) {
   return results;
 }
 
-const events = await fetchAll("0xYourTokenContract");
+const events = await fetchAll();
 console.log(\`Found \${events.length} ${isTransfer ? "transfers" : "approvals"}\`);`;
 }
 
-function getHyperIndexSnippet(eventType: typeof EVENT_TYPES[0]): string {
+function getHyperIndexSnippet(eventType: typeof EVENT_TYPES[0], contractAddr: string): string {
   const isTransfer = eventType.id === "transfer";
   return `# Envio HyperIndex — hosted indexer with GraphQL API
 # npx envio init  (to scaffold a new project)
@@ -157,7 +171,7 @@ networks:
     contracts:
       - name: ERC20
         address:
-          - "0xYourTokenContract"
+          - "${contractAddr || "0xYourTokenContract"}"
         handler: src/EventHandlers.ts
         events:
           - event: "${eventType.signatureIndexed}"
@@ -194,17 +208,16 @@ ERC20.${isTransfer ? "Transfer" : "Approval"}.handler(async ({ event, context })
 # }`;
 }
 
-function getAIPrompt(eventType: typeof EVENT_TYPES[0], blockRange: number): string {
-  const isTransfer = eventType.id === "transfer";
-  return `I want to index ${eventType.label} events on Monad using Envio.
+function getAIPrompt(eventType: typeof EVENT_TYPES[0], blockRange: number, contractAddr: string): string {
+  return `I want to index ${eventType.label} events on Monad using Envio.${contractAddr ? `\nTarget contract: ${contractAddr}` : ""}
 
 ## Option 1: Envio HyperSync (raw query API)
 Best for: one-off queries, scripts, token snapshots
-${getHyperSyncSnippet(eventType)}
+${getHyperSyncSnippet(eventType, contractAddr)}
 
 ## Option 2: Envio HyperIndex (hosted indexer)
 Best for: production apps that need a persistent GraphQL API
-${getHyperIndexSnippet(eventType)}
+${getHyperIndexSnippet(eventType, contractAddr)}
 
 ## Setup
 1. Get a free HyperSync API key: https://app.envio.dev/api-tokens
@@ -212,23 +225,28 @@ ${getHyperIndexSnippet(eventType)}
 3. HyperSync endpoint: https://monad.hypersync.xyz (mainnet)
 4. HyperSync endpoint: https://monad-testnet.hypersync.xyz (testnet)
 
+## Known Monad mainnet contracts
+- WMON: 0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A
+- USDC: 0x754704Bc059F8C67012fEd69BC8A327a5aafb603
+- WETH: 0xEE8c0E9f1BFFb4Eb878d8f15f368A02a35481242
+- USDT: 0xe7cd86e13AC4309349F30B3435a9d337750fC82D
+- WBTC: 0x0555E30da8f98308EdB960aa94C0Db47230d2B9c
+
 ## Key details
 - Monad mainnet chain ID: 10143
 - ${eventType.label} topic: ${eventType.topic}
 - HyperSync returns paginated results — always check next_block
 - Topics are 32-byte hex: addresses are in the last 20 bytes
-- ${isTransfer ? "ERC-20 value is in the data field" : "ERC-20 allowance is in the data field"}
-- For ERC-721, tokenId is in topic3 instead of data
 - Envio docs: https://docs.envio.dev/
 
 ## Other indexing frameworks on Monad
-- The Graph (decentralized subgraphs): https://thegraph.com/docs/
-- Goldsky (subgraphs + streaming): https://docs.goldsky.com/
-- Ghost (Solidity-based): https://docs.ghost.ac/
-- Sentio (alerting + viz): https://docs.sentio.xyz/
-- SQD (squid-sdk): https://docs.sqd.ai/
-- SubQuery (decentralized): https://academy.subquery.network/
-- Streamingfast (Substreams, Rust): https://substreams.streamingfast.io/
+- The Graph: https://thegraph.com/docs/
+- Goldsky: https://docs.goldsky.com/
+- Ghost: https://docs.ghost.ac/
+- Sentio: https://docs.sentio.xyz/
+- SQD: https://docs.sqd.ai/
+- SubQuery: https://academy.subquery.network/
+- Streamingfast: https://substreams.streamingfast.io/
 
 Integrate this into my project following my existing code patterns.`;
 }
@@ -238,6 +256,8 @@ Integrate this into my project following my existing code patterns.`;
 export default function IndexerPlayground() {
   const [eventType, setEventType] = useState(0);
   const [blockRange, setBlockRange] = useState(1);
+  const [contractIndex, setContractIndex] = useState(0);
+  const [customAddress, setCustomAddress] = useState("");
   const [step, setStep] = useState<Step>("idle");
   const [logs, setLogs] = useState<EventLog[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -249,6 +269,27 @@ export default function IndexerPlayground() {
 
   const evt = EVENT_TYPES[eventType];
   const range = BLOCK_RANGES[blockRange];
+  const activeAddress =
+    contractIndex === -1
+      ? customAddress
+      : KNOWN_CONTRACTS[contractIndex].address;
+
+  // Live request preview that updates as user changes parameters
+  const requestPreview = useMemo(() => {
+    const filter: Record<string, unknown> = {
+      fromBlock: `latest - ${range.value}`,
+      toBlock: "latest",
+      topics: [evt.topic.slice(0, 10) + "..."],
+    };
+    if (activeAddress) {
+      filter.address = activeAddress.slice(0, 10) + "...";
+    }
+    return JSON.stringify(
+      { jsonrpc: "2.0", method: "eth_getLogs", params: [filter], id: 1 },
+      null,
+      2
+    );
+  }, [evt.topic, range.value, activeAddress]);
 
   const copyToClipboard = useCallback((text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -266,7 +307,6 @@ export default function IndexerPlayground() {
     try {
       const t0 = performance.now();
 
-      // Get latest block
       const blockRes = await fetch(RPC_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -281,20 +321,22 @@ export default function IndexerPlayground() {
       const latest = parseInt(blockData.result, 16);
       const from = latest - range.value;
 
-      // Query logs via eth_getLogs (same data Envio HyperSync indexes)
+      const logFilter: Record<string, unknown> = {
+        fromBlock: "0x" + from.toString(16),
+        toBlock: "0x" + latest.toString(16),
+        topics: [evt.topic],
+      };
+      if (activeAddress) {
+        logFilter.address = activeAddress;
+      }
+
       const logsRes = await fetch(RPC_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jsonrpc: "2.0",
           method: "eth_getLogs",
-          params: [
-            {
-              fromBlock: "0x" + from.toString(16),
-              toBlock: "0x" + latest.toString(16),
-              topics: [evt.topic],
-            },
-          ],
+          params: [logFilter],
           id: 2,
         }),
       });
@@ -328,17 +370,22 @@ export default function IndexerPlayground() {
       setStep("decoding");
 
       for (let i = 0; i < decoded.length; i++) {
-        await new Promise((r) => setTimeout(r, 120));
+        await new Promise((r) => setTimeout(r, 100));
         setRevealIndex(i);
       }
 
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 200));
       setStep("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Query failed");
       setStep("idle");
     }
-  }, [evt.topic, range.value]);
+  }, [evt.topic, range.value, activeAddress]);
+
+  const resetQuery = () => {
+    setStep("idle");
+    setLogs([]);
+  };
 
   return (
     <div className="space-y-6">
@@ -367,55 +414,137 @@ export default function IndexerPlayground() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ── Left: Query builder + results ─────────────────────────────── */}
         <div className="bg-surface-elevated rounded-2xl border border-border p-6 space-y-5">
-          {/* Event type picker */}
+          {/* Contract picker */}
           <div>
             <p className="font-mono text-[11px] text-text-tertiary mb-3">
-              Event type
+              Contract
             </p>
-            <div className="flex flex-wrap gap-2">
-              {EVENT_TYPES.map((e, i) => (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {KNOWN_CONTRACTS.map((c, i) => (
                 <button
-                  key={e.id}
+                  key={c.label}
                   onClick={() => {
-                    setEventType(i);
-                    setStep("idle");
-                    setLogs([]);
+                    setContractIndex(i);
+                    resetQuery();
                   }}
                   className={`font-mono text-sm px-3 py-2 rounded-lg border transition-all ${
-                    eventType === i
+                    contractIndex === i
                       ? "bg-text-primary text-surface border-text-primary"
                       : "bg-surface text-text-secondary border-border hover:border-text-tertiary"
                   }`}
                 >
-                  {e.label}
+                  {c.label}
                 </button>
               ))}
+              <button
+                onClick={() => {
+                  setContractIndex(-1);
+                  resetQuery();
+                }}
+                className={`font-mono text-sm px-3 py-2 rounded-lg border transition-all ${
+                  contractIndex === -1
+                    ? "bg-text-primary text-surface border-text-primary"
+                    : "bg-surface text-text-secondary border-border hover:border-text-tertiary"
+                }`}
+              >
+                Custom
+              </button>
+            </div>
+            {contractIndex === -1 && (
+              <motion.input
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                type="text"
+                placeholder="0x..."
+                value={customAddress}
+                onChange={(e) => {
+                  setCustomAddress(e.target.value);
+                  resetQuery();
+                }}
+                className="w-full font-mono text-xs px-3 py-2 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-tertiary/40 focus:outline-none focus:border-text-tertiary"
+              />
+            )}
+            {contractIndex > 0 && (
+              <p className="font-mono text-[10px] text-text-tertiary truncate">
+                {KNOWN_CONTRACTS[contractIndex].description} &middot;{" "}
+                {KNOWN_CONTRACTS[contractIndex].address}
+              </p>
+            )}
+          </div>
+
+          {/* Event type + Block range — side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="font-mono text-[11px] text-text-tertiary mb-2">
+                Event
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {EVENT_TYPES.map((e, i) => (
+                  <button
+                    key={e.id}
+                    onClick={() => {
+                      setEventType(i);
+                      resetQuery();
+                    }}
+                    className={`font-mono text-xs px-2.5 py-1.5 rounded-lg border transition-all text-left ${
+                      eventType === i
+                        ? "bg-text-primary text-surface border-text-primary"
+                        : "bg-surface text-text-secondary border-border hover:border-text-tertiary"
+                    }`}
+                  >
+                    {e.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="font-mono text-[11px] text-text-tertiary mb-2">
+                Range
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {BLOCK_RANGES.map((r, i) => (
+                  <button
+                    key={r.value}
+                    onClick={() => {
+                      setBlockRange(i);
+                      resetQuery();
+                    }}
+                    className={`font-mono text-xs px-2.5 py-1.5 rounded-lg border transition-all text-left ${
+                      blockRange === i
+                        ? "bg-text-primary text-surface border-text-primary"
+                        : "bg-surface text-text-secondary border-border hover:border-text-tertiary"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Block range picker */}
+          {/* Live request preview */}
           <div>
-            <p className="font-mono text-[11px] text-text-tertiary mb-3">
-              Block range
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {BLOCK_RANGES.map((r, i) => (
-                <button
-                  key={r.value}
-                  onClick={() => {
-                    setBlockRange(i);
-                    setStep("idle");
-                    setLogs([]);
-                  }}
-                  className={`font-mono text-sm px-3 py-2 rounded-lg border transition-all ${
-                    blockRange === i
-                      ? "bg-text-primary text-surface border-text-primary"
-                      : "bg-surface text-text-secondary border-border hover:border-text-tertiary"
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
+                Request preview
+              </p>
+              <span className="font-mono text-[10px] text-text-tertiary">
+                rpc.monad.xyz
+              </span>
+            </div>
+            <div className="bg-surface rounded-lg border border-border p-3 overflow-x-auto">
+              <pre className="font-mono text-[11px] leading-relaxed text-text-secondary whitespace-pre">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={requestPreview}
+                    initial={{ opacity: 0.5 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {requestPreview}
+                  </motion.span>
+                </AnimatePresence>
+              </pre>
             </div>
           </div>
 
@@ -432,9 +561,9 @@ export default function IndexerPlayground() {
             {step === "idle" && (
               <>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Query Monad
+                Send query
               </>
             )}
             {step === "fetching" && "Querying rpc.monad.xyz..."}
@@ -449,11 +578,11 @@ export default function IndexerPlayground() {
             )}
           </button>
 
-          {/* Results summary */}
+          {/* Results */}
           {step === "done" && (
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs text-text-secondary">
-                {totalCount} events found
+                {totalCount} events
               </span>
               <span className="font-mono text-[10px] text-solution-accent">
                 {latencyMs}ms
@@ -465,7 +594,6 @@ export default function IndexerPlayground() {
             <p className="font-mono text-xs text-problem-accent">{error}</p>
           )}
 
-          {/* Results table */}
           <AnimatePresence>
             {logs.length > 0 && (
               <motion.div
@@ -520,7 +648,7 @@ export default function IndexerPlayground() {
                 </table>
                 {totalCount > 12 && step === "done" && (
                   <p className="font-mono text-[10px] text-text-tertiary mt-2">
-                    Showing 12 of {totalCount} events
+                    Showing 12 of {totalCount}
                   </p>
                 )}
               </motion.div>
@@ -539,15 +667,14 @@ export default function IndexerPlayground() {
             </div>
             <p className="text-sm text-text-secondary leading-relaxed">
               <strong>HyperSync</strong> is Envio&apos;s raw query API &mdash;
-              query millions of events in seconds with topic filters and
-              pagination.{" "}
+              query millions of events in seconds.{" "}
               <strong>HyperIndex</strong> is their hosted indexing framework
-              with YAML config and a GraphQL API.
-              The demo above uses{" "}
+              with GraphQL.
+              The live demo uses{" "}
               <code className="font-mono text-xs bg-surface px-1 py-0.5 rounded">
                 eth_getLogs
               </code>{" "}
-              (same data, no API key needed). For production,{" "}
+              (same data). For production,{" "}
               <a
                 href="https://app.envio.dev/api-tokens"
                 target="_blank"
@@ -589,8 +716,8 @@ export default function IndexerPlayground() {
               onClick={() =>
                 copyToClipboard(
                   codeTab === "hypersync"
-                    ? getHyperSyncSnippet(evt)
-                    : getHyperIndexSnippet(evt),
+                    ? getHyperSyncSnippet(evt, activeAddress)
+                    : getHyperIndexSnippet(evt, activeAddress),
                   "code"
                 )
               }
@@ -604,7 +731,7 @@ export default function IndexerPlayground() {
           <div className="flex-1 overflow-auto p-5">
             <AnimatePresence mode="wait">
               <motion.pre
-                key={`${eventType}-${codeTab}`}
+                key={`${eventType}-${contractIndex}-${customAddress}-${codeTab}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -612,8 +739,8 @@ export default function IndexerPlayground() {
                 className="font-mono text-[13px] leading-relaxed text-text-primary whitespace-pre-wrap break-words"
               >
                 {codeTab === "hypersync"
-                  ? getHyperSyncSnippet(evt)
-                  : getHyperIndexSnippet(evt)}
+                  ? getHyperSyncSnippet(evt, activeAddress)
+                  : getHyperIndexSnippet(evt, activeAddress)}
               </motion.pre>
             </AnimatePresence>
           </div>
@@ -621,7 +748,7 @@ export default function IndexerPlayground() {
           {/* Copy for AI button */}
           <div className="border-t border-border p-4">
             <button
-              onClick={() => copyToClipboard(getAIPrompt(evt, range.value), "ai")}
+              onClick={() => copyToClipboard(getAIPrompt(evt, range.value, activeAddress), "ai")}
               className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
