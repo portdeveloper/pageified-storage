@@ -1,8 +1,9 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const TOTAL_MB = 8;
 
@@ -12,62 +13,60 @@ interface CallFrame {
   color: string;
 }
 
-const DEMO_STEPS: { action: string; frames: CallFrame[] }[] = [
-  {
-    action: "Transaction starts with 8 MB pool",
-    frames: [],
-  },
-  {
-    action: "Contract A allocates 1 MB",
-    frames: [{ name: "Contract A", allocMB: 1, color: "bg-problem-accent" }],
-  },
-  {
-    action: "A calls B. B allocates 3 MB",
-    frames: [
-      { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
-      { name: "Contract B", allocMB: 3, color: "bg-solution-accent" },
-    ],
-  },
-  {
-    action: "B calls C. C allocates 2 MB",
-    frames: [
-      { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
-      { name: "Contract B", allocMB: 3, color: "bg-solution-accent" },
-      { name: "Contract C", allocMB: 2, color: "bg-text-secondary" },
-    ],
-  },
-  {
-    action: "C returns. Its 2 MB is released back to the pool",
-    frames: [
-      { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
-      { name: "Contract B", allocMB: 3, color: "bg-solution-accent" },
-    ],
-  },
-  {
-    action: "B returns. Its 3 MB is released back to the pool",
-    frames: [{ name: "Contract A", allocMB: 1, color: "bg-problem-accent" }],
-  },
-  {
-    action: "A calls D. D allocates 4 MB (7 MB available)",
-    frames: [
-      { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
-      { name: "Contract D", allocMB: 4, color: "bg-solution-muted" },
-    ],
-  },
+const DEMO_FRAMES: CallFrame[][] = [
+  [],
+  [{ name: "Contract A", allocMB: 1, color: "bg-problem-accent" }],
+  [
+    { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
+    { name: "Contract B", allocMB: 3, color: "bg-solution-accent" },
+  ],
+  [
+    { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
+    { name: "Contract B", allocMB: 3, color: "bg-solution-accent" },
+    { name: "Contract C", allocMB: 2, color: "bg-text-secondary" },
+  ],
+  [
+    { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
+    { name: "Contract B", allocMB: 3, color: "bg-solution-accent" },
+  ],
+  [{ name: "Contract A", allocMB: 1, color: "bg-problem-accent" }],
+  [
+    { name: "Contract A", allocMB: 1, color: "bg-problem-accent" },
+    { name: "Contract D", allocMB: 4, color: "bg-solution-muted" },
+  ],
+];
+
+const STEP_KEYS = [
+  "mip3.memoryPool.step1",
+  "mip3.memoryPool.step2",
+  "mip3.memoryPool.step3",
+  "mip3.memoryPool.step4",
+  "mip3.memoryPool.step5",
+  "mip3.memoryPool.step6",
+  "mip3.memoryPool.step7",
 ];
 
 export default function MemoryPoolSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [stepIdx, setStepIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const step = DEMO_STEPS[stepIdx];
+  const demoSteps = useMemo(() =>
+    STEP_KEYS.map((key, i) => ({
+      action: t(key),
+      frames: DEMO_FRAMES[i],
+    })),
+    [t]
+  );
+
+  const step = demoSteps[stepIdx];
   const usedMB = step.frames.reduce((sum, f) => sum + f.allocMB, 0);
   const freeMB = TOTAL_MB - usedMB;
-  const finished = stepIdx >= DEMO_STEPS.length - 1;
+  const finished = stepIdx >= demoSteps.length - 1;
 
   const handleNext = useCallback(() => {
-    if (stepIdx < DEMO_STEPS.length - 1) {
+    if (stepIdx < demoSteps.length - 1) {
       setStepIdx((s) => s + 1);
     }
   }, [stepIdx]);
@@ -103,7 +102,7 @@ export default function MemoryPoolSection() {
   // Auto-advance when playing using a timer
   useEffect(() => {
     if (!isPlaying) return;
-    if (stepIdx >= DEMO_STEPS.length - 1) {
+    if (stepIdx >= demoSteps.length - 1) {
       setIsPlaying(false);
       return;
     }
@@ -119,15 +118,13 @@ export default function MemoryPoolSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Shared memory pool
+          {t("mip3.memoryPool.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Under MIP-3, child calls share the same 8 MB memory pool with their
-          parent. When a call returns, its memory is released back.
+          {t("mip3.memoryPool.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          On the current EVM, each call context gets fresh isolated memory.
-          MIP-3 pools it, so nested calls don&apos;t waste the budget.
+          {t("mip3.memoryPool.subDesc")}
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -135,10 +132,10 @@ export default function MemoryPoolSection() {
           <div className="bg-surface rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider">
-                8 MB Transaction Pool
+                {t("mip3.memoryPool.transactionPool")}
               </p>
               <p className="font-mono text-xs text-text-tertiary">
-                {freeMB} MB free
+                {freeMB} {t("mip3.memoryPool.free")}
               </p>
             </div>
 
@@ -178,20 +175,20 @@ export default function MemoryPoolSection() {
                 <p className="font-mono text-2xl font-semibold text-problem-accent tabular-nums">
                   {usedMB}
                 </p>
-                <p className="font-mono text-xs text-text-tertiary">MB used</p>
+                <p className="font-mono text-xs text-text-tertiary">{t("mip3.memoryPool.mbUsed")}</p>
               </div>
               <div className="text-center">
                 <p className="font-mono text-2xl font-semibold text-solution-accent tabular-nums">
                   {freeMB}
                 </p>
-                <p className="font-mono text-xs text-text-tertiary">MB free</p>
+                <p className="font-mono text-xs text-text-tertiary">{t("mip3.memoryPool.mbFree")}</p>
               </div>
               <div className="text-center">
                 <p className="font-mono text-2xl font-semibold text-text-primary tabular-nums">
                   {step.frames.length}
                 </p>
                 <p className="font-mono text-xs text-text-tertiary">
-                  call{step.frames.length !== 1 ? "s" : ""} deep
+                  {step.frames.length !== 1 ? t("mip3.memoryPool.calls") : t("mip3.memoryPool.call")} {t("mip3.memoryPool.callsDeep")}
                 </p>
               </div>
             </div>
@@ -200,7 +197,7 @@ export default function MemoryPoolSection() {
           {/* Call stack + action log */}
           <div className="bg-surface rounded-xl border border-border p-6">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-4">
-              Call stack
+              {t("mip3.memoryPool.callStack")}
             </p>
             <div className="space-y-2 mb-6 min-h-[120px]">
               <AnimatePresence>
@@ -225,7 +222,7 @@ export default function MemoryPoolSection() {
               </AnimatePresence>
               {step.frames.length === 0 && (
                 <p className="font-mono text-xs text-text-tertiary italic">
-                  No active calls
+                  {t("mip3.memoryPool.noActiveCalls")}
                 </p>
               )}
             </div>
@@ -258,7 +255,7 @@ export default function MemoryPoolSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary cursor-pointer"
             }`}
           >
-            Prev
+            {t("mip3.memoryPool.prev")}
           </button>
           <button
             onClick={handleNext}
@@ -269,7 +266,7 @@ export default function MemoryPoolSection() {
                 : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
             }`}
           >
-            {stepIdx === 0 ? "Start" : "Next"}
+            {stepIdx === 0 ? t("mip3.memoryPool.start") : t("mip3.memoryPool.next")}
           </button>
           <button
             onClick={handlePlay}
@@ -280,10 +277,10 @@ export default function MemoryPoolSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary cursor-pointer"
             }`}
           >
-            {isPlaying ? "Playing..." : "Auto-play"}
+            {isPlaying ? t("mip3.memoryPool.playing") : t("mip3.memoryPool.autoPlay")}
           </button>
           <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
-            Step {stepIdx + 1} / {DEMO_STEPS.length}
+            {t("mip3.memoryPool.step")} {stepIdx + 1} / {demoSteps.length}
           </p>
         </div>
       </div>

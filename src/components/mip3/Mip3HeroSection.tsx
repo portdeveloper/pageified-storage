@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Quadratic: words²/512 + 3*words
 function ethMemoryCost(bytes: number): number {
@@ -20,6 +21,7 @@ const STEPS = 40;
 const STEP_DELAY = 80;
 
 export default function Mip3HeroSection() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [running, setRunning] = useState(false);
 
@@ -73,11 +75,11 @@ export default function Mip3HeroSection() {
         className="text-center max-w-3xl relative z-10 mt-30"
       >
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
-          What if memory cost{" "}
-          <span className="font-semibold italic">scaled linearly?</span>
+          {t("mip3.hero.title1")}{" "}
+          <span className="font-semibold italic">{t("mip3.hero.titleHighlight")}</span>
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          EVM memory has a quadratic cost curve. MIP-3 makes it linear.
+          {t("mip3.hero.desc")}
         </p>
       </motion.div>
 
@@ -92,7 +94,7 @@ export default function Mip3HeroSection() {
           {/* Memory size indicator */}
           <div className="flex items-center justify-between mb-5">
             <p className="font-mono text-xs text-text-tertiary">
-              Allocating memory...
+              {t("mip3.hero.allocating")}
             </p>
             <p className="font-mono text-sm font-semibold text-text-primary tabular-nums">
               {formatBytes(currentBytes)}
@@ -105,7 +107,7 @@ export default function Mip3HeroSection() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="font-mono text-xs text-problem-accent">
-                  Quadratic (current)
+                  {t("mip3.hero.quadratic")}
                 </p>
                 <p className="font-mono text-xs text-problem-accent font-semibold tabular-nums">
                   {formatGas(ethGas)} gas
@@ -126,7 +128,7 @@ export default function Mip3HeroSection() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="font-mono text-xs text-solution-accent">
-                  Linear (MIP-3)
+                  {t("mip3.hero.linear")}
                 </p>
                 <p className="font-mono text-xs text-solution-accent font-semibold tabular-nums">
                   {formatGas(mip3Gas)} gas
@@ -148,8 +150,8 @@ export default function Mip3HeroSection() {
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
             <p className="font-mono text-xs text-text-tertiary">
               {step >= STEPS
-                ? "1 MB of memory"
-                : `Expanding to ${formatBytes(currentBytes)}...`}
+                ? t("mip3.hero.memoryOf")
+                : `${t("mip3.hero.expanding")} ${formatBytes(currentBytes)}...`}
             </p>
             {Number(ratio) > 1.5 && (
               <motion.p
@@ -158,7 +160,7 @@ export default function Mip3HeroSection() {
                 animate={{ scale: 1 }}
                 className="font-mono text-sm font-semibold text-solution-accent tabular-nums"
               >
-                {ratio}x cheaper
+                {ratio}{t("mip3.hero.cheaper")}
               </motion.p>
             )}
           </div>

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COLS = 16;
 const ROWS = 8;
@@ -20,6 +21,7 @@ const FIELD_NAMES = ["owner", "balance", "timestamp", "approved"];
 const COLD_COST = 8100;
 
 export default function ProblemSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [loadedSlots, setLoadedSlots] = useState<number[]>([]);
   const [gasUsed, setGasUsed] = useState(0);
@@ -51,27 +53,24 @@ export default function ProblemSection() {
         }`}
       >
         <p className="font-mono text-xs tracking-[0.2em] text-problem-muted uppercase mb-3">
-          Current EVM
+          {t("mip8.problem.label")}
         </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Hashing destroys locality
+          {t("mip8.problem.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
-          Ethereum&apos;s trie/database path hashes storage keys, so logically
-          contiguous slots lose backend locality. In a worst-case pattern like
-          this illustration, four related fields can end up on four different
-          backend pages even though they are adjacent in Solidity.
+          {t("mip8.problem.desc")}
         </p>
 
         {/* Struct definition */}
         <div className="bg-surface-elevated rounded-lg border border-border p-4 mb-8 max-w-sm font-mono text-sm">
           <p className="text-text-tertiary text-xs mb-2">
-            {"// Solidity struct"}
+            {t("mip8.problem.structComment")}
           </p>
           <p className="text-problem-accent">struct Token {"{"}</p>
           {FIELD_NAMES.map((name, i) => (
             <p key={name} className="ml-4">
-              <span className="text-text-tertiary">slot {i}:</span>{" "}
+              <span className="text-text-tertiary">{t("mip8.problem.slot")} {i}:</span>{" "}
               <span
                 className={
                   loadedSlots.includes(i)
@@ -107,7 +106,7 @@ export default function ProblemSection() {
               onClick={reset}
               className="font-mono text-xs px-3 py-2 rounded-md text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
             >
-              reset
+              {t("mip8.problem.reset")}
             </button>
           )}
         </div>
@@ -182,7 +181,7 @@ export default function ProblemSection() {
         {/* Gas counter */}
         <div className="flex items-center gap-6 p-4 bg-surface-elevated rounded-lg border border-border">
           <div>
-            <p className="font-mono text-xs text-text-tertiary">Total gas</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.problem.totalGas")}</p>
             <motion.p
               key={gasUsed}
               initial={{ scale: 1.2 }}
@@ -194,14 +193,14 @@ export default function ProblemSection() {
           </div>
           <div className="h-10 w-px bg-border" />
           <div>
-            <p className="font-mono text-xs text-text-tertiary">Cold reads</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.problem.coldReads")}</p>
             <p className="font-mono text-3xl font-semibold text-text-primary tabular-nums">
               {loadedSlots.length}
             </p>
           </div>
           <div className="h-10 w-px bg-border" />
           <div>
-            <p className="font-mono text-xs text-text-tertiary">Pages loaded</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.problem.pagesLoaded")}</p>
             <p className="font-mono text-3xl font-semibold text-text-primary tabular-nums">
               {loadedSlots.length}
             </p>
@@ -213,10 +212,10 @@ export default function ProblemSection() {
               className="ml-auto"
             >
               <p className="font-mono text-xs text-problem-accent font-semibold">
-                In this illustration: 4 fields = 4 pages = 4 cold reads
+                {t("mip8.problem.fourFieldsNote")}
               </p>
               <p className="font-mono text-[10px] text-text-tertiary">
-                128x more data touched than returned
+                {t("mip8.problem.moreDataNote")}
               </p>
             </motion.div>
           )}

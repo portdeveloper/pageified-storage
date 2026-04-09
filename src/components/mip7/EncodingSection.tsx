@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface ByteCell {
   hex: string;
@@ -69,6 +70,7 @@ function ByteRow({ cells }: { cells: ByteCell[] }) {
 }
 
 export default function EncodingSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [mode, setMode] = useState<"A" | "B">("A");
 
@@ -78,20 +80,10 @@ export default function EncodingSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Argument encoding
+          {t("mip7.encoding.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          Extension opcodes have two ways to pass arguments. The choice depends
-          on whether argument bytes need to include values in the restricted
-          range (
-          <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
-            0x5B
-          </code>{" "}
-          or{" "}
-          <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
-            0x60–0x7F
-          </code>
-          ).
+          {t("mip7.encoding.desc")}
         </p>
 
         {/* Mode toggle */}
@@ -104,7 +96,7 @@ export default function EncodingSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary"
             }`}
           >
-            Mode A: Restricted-range
+            {t("mip7.encoding.modeA")}
           </button>
           <button
             onClick={() => setMode("B")}
@@ -114,7 +106,7 @@ export default function EncodingSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary"
             }`}
           >
-            Mode B: PUSH-prefix
+            {t("mip7.encoding.modeB")}
           </button>
         </div>
 
@@ -135,20 +127,15 @@ export default function EncodingSection() {
                 <ByteRow cells={MODE_A_CELLS} />
                 <div className="mt-6 pt-4 border-t border-border space-y-2">
                   <p className="font-mono text-xs text-text-secondary">
-                    <span className="text-solution-accent font-semibold">Simple.</span>{" "}
-                    Argument bytes follow the selector inline. No overhead.
+                    <span className="text-solution-accent font-semibold">{t("mip7.encoding.modeASimple")}</span>{" "}
+                    {t("mip7.encoding.modeASimpleDesc")}
                   </p>
                   <p className="font-mono text-xs text-text-secondary">
-                    <span className="text-problem-accent font-semibold">Constraint:</span>{" "}
-                    Each argument byte must avoid{" "}
-                    <span className="font-semibold">0x5B</span> and{" "}
-                    <span className="font-semibold">0x60–0x7F</span>. Using a
-                    forbidden value causes an exceptional halt.
+                    <span className="text-problem-accent font-semibold">{t("mip7.encoding.modeAConstraint")}</span>{" "}
+                    {t("mip7.encoding.modeAConstraintDesc")}
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">
-                    Why: JUMPDEST analysis scans arg bytes normally, since 0xAE
-                    doesn&apos;t eat them. Forbidden bytes would create analysis
-                    divergence between chains.
+                    {t("mip7.encoding.modeAWhy")}
                   </p>
                 </div>
               </div>
@@ -169,26 +156,15 @@ export default function EncodingSection() {
                 <ByteRow cells={MODE_B_CELLS} />
                 <div className="mt-6 pt-4 border-t border-border space-y-2">
                   <p className="font-mono text-xs text-text-secondary">
-                    <span className="text-solution-accent font-semibold">Full range.</span>{" "}
-                    A{" "}
-                    <code className="font-mono bg-surface px-1 rounded border border-border">
-                      PUSHn
-                    </code>{" "}
-                    byte immediately after the selector frames the next n
-                    argument bytes. All values 0x00–0xFF are safe.
+                    <span className="text-solution-accent font-semibold">{t("mip7.encoding.modeBFull")}</span>{" "}
+                    {t("mip7.encoding.modeBFullDesc")}
                   </p>
                   <p className="font-mono text-xs text-text-secondary">
-                    <span className="text-solution-accent font-semibold">Why it works:</span>{" "}
-                    JUMPDEST analysis encounters the real{" "}
-                    <code className="font-mono bg-surface px-1 rounded border border-border">
-                      PUSHn
-                    </code>{" "}
-                    opcode and correctly eats the next n bytes as its
-                    immediates, including any 0x5B or PUSH-range bytes.
-                    Analysis and execution agree on which bytes are consumed.
+                    <span className="text-solution-accent font-semibold">{t("mip7.encoding.modeBWhy")}</span>{" "}
+                    {t("mip7.encoding.modeBWhyDesc")}
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">
-                    Trade-off: one extra byte of overhead (the PUSHn prefix).
+                    {t("mip7.encoding.modeBTradeoff")}
                   </p>
                 </div>
               </div>
@@ -201,7 +177,7 @@ export default function EncodingSection() {
                 <div className="flex items-start gap-6 flex-wrap">
                   <div>
                     <p className="font-mono text-[10px] text-problem-accent mb-1.5">
-                      Mode A: NOT allowed
+                      {t("mip7.encoding.modeANotAllowed")}
                     </p>
                     <div className="flex gap-1.5 items-center">
                       <span className="font-mono text-xs px-2 py-1 rounded bg-text-primary text-surface">0xAE</span>
@@ -212,7 +188,7 @@ export default function EncodingSection() {
                   </div>
                   <div>
                     <p className="font-mono text-[10px] text-solution-accent mb-1.5">
-                      Mode B: safe
+                      {t("mip7.encoding.modeBSafe")}
                     </p>
                     <div className="flex gap-1.5 items-center flex-wrap">
                       <span className="font-mono text-xs px-2 py-1 rounded bg-text-primary text-surface">0xAE</span>

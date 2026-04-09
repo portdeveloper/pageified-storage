@@ -3,34 +3,37 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useInView } from "../useInView";
-
-const STEPS = [
-  {
-    id: "monad-claims",
-    label: "Monad adds an opcode",
-    monad: { byte: "0xAB", name: "FAST_HASH", status: "claimed" },
-    ethereum: { byte: "0xAB", name: "(unassigned)", status: "free" },
-    message: "Monad adds opcode 0xAB as FAST_HASH, a Monad-specific optimized hash. Works great on Monad.",
-  },
-  {
-    id: "eth-claims",
-    label: "Ethereum later assigns the same slot",
-    monad: { byte: "0xAB", name: "FAST_HASH", status: "claimed" },
-    ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "claimed" },
-    message: "Ethereum's next upgrade assigns 0xAB to a new system precompile. The same slot, a completely different function.",
-  },
-  {
-    id: "divergence",
-    label: "Same bytecode, different behavior",
-    monad: { byte: "0xAB", name: "FAST_HASH", status: "conflict" },
-    ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "conflict" },
-    message: "A contract deployed on Monad uses 0xAB. If that bytecode ever runs on Ethereum, 0xAB means something entirely different. No error, just silent wrong behavior.",
-  },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function CollisionSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [stepIdx, setStepIdx] = useState(0);
+
+  const STEPS = [
+    {
+      id: "monad-claims",
+      label: t("mip7.collision.step1Label"),
+      monad: { byte: "0xAB", name: "FAST_HASH", status: "claimed" },
+      ethereum: { byte: "0xAB", name: "(unassigned)", status: "free" },
+      message: t("mip7.collision.step1Message"),
+    },
+    {
+      id: "eth-claims",
+      label: t("mip7.collision.step2Label"),
+      monad: { byte: "0xAB", name: "FAST_HASH", status: "claimed" },
+      ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "claimed" },
+      message: t("mip7.collision.step2Message"),
+    },
+    {
+      id: "divergence",
+      label: t("mip7.collision.step3Label"),
+      monad: { byte: "0xAB", name: "FAST_HASH", status: "conflict" },
+      ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "conflict" },
+      message: t("mip7.collision.step3Message"),
+    },
+  ];
+
   const step = STEPS[stepIdx];
 
   return (
@@ -39,12 +42,10 @@ export default function CollisionSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          The collision problem
+          {t("mip7.collision.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          Ethereum assigns new opcodes with every upgrade. Any slot Monad
-          claims today might be claimed by Ethereum tomorrow, turning the
-          same bytecode into two different programs on two different chains.
+          {t("mip7.collision.desc")}
         </p>
 
         {/* Step buttons */}
@@ -99,10 +100,10 @@ export default function CollisionSection() {
                 </p>
                 <p className="font-mono text-xs text-text-tertiary mt-0.5">
                   {step.monad.status === "free"
-                    ? "not yet assigned"
+                    ? t("mip7.collision.notAssigned")
                     : step.monad.status === "claimed"
-                    ? "assigned by Monad"
-                    : "assigned by Monad"}
+                    ? t("mip7.collision.assignedByMonad")
+                    : t("mip7.collision.assignedByMonad")}
                 </p>
               </div>
             </div>
@@ -149,8 +150,8 @@ export default function CollisionSection() {
                 </p>
                 <p className="font-mono text-xs text-text-tertiary mt-0.5">
                   {step.ethereum.status === "free"
-                    ? "not yet assigned"
-                    : "assigned by Ethereum upgrade"}
+                    ? t("mip7.collision.notAssigned")
+                    : t("mip7.collision.assignedByEth")}
                 </p>
               </div>
             </div>
@@ -202,14 +203,10 @@ export default function CollisionSection() {
             className="mt-6 rounded-xl bg-solution-bg border border-solution-accent-light p-5"
           >
             <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-2">
-              MIP-7 solution
+              {t("mip7.collision.mip7Solution")}
             </p>
             <p className="font-mono text-sm text-solution-accent">
-              Instead of claiming{" "}
-              <span className="font-semibold">0xAB</span>, Monad uses{" "}
-              <span className="font-semibold">0xAE 0x01</span>. The{" "}
-              <span className="font-semibold">0xAE</span> slot is reserved on
-              Ethereum L1 as INVALID forever. No collision is possible.
+              {t("mip7.collision.mip7SolutionDesc")}
             </p>
           </motion.div>
         )}

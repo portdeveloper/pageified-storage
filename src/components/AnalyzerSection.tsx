@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function AnalyzerSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [input, setInput] = useState("");
   const router = useRouter();
@@ -20,19 +22,17 @@ export default function AnalyzerSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Try your own contract
+          {t("mip8.analyzer.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Paste a GitHub repo URL or Solidity source to see how your
-          contract&apos;s storage layout maps to pages.
+          {t("mip8.analyzer.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-6">
-          Works best with small-to-medium repos. Large repos with many
-          dependencies (e.g. Aave, Chainlink) may time out.
+          {t("mip8.analyzer.note")}
         </p>
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="font-mono text-xs text-text-tertiary">Try:</span>
+          <span className="font-mono text-xs text-text-tertiary">{t("mip8.analyzer.tryLabel")}</span>
           {[
             { name: "Uniswap V2", url: "https://github.com/Uniswap/v2-core" },
             { name: "Uniswap V3", url: "https://github.com/Uniswap/v3-core" },
@@ -67,7 +67,7 @@ export default function AnalyzerSection() {
                 : "bg-solution-accent text-white border-solution-accent hover:bg-solution-accent/90 cursor-pointer"
             }`}
           >
-            Analyze
+            {t("mip8.analyzer.analyze")}
           </button>
         </div>
       </div>

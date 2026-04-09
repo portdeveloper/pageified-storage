@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // All Ethereum-defined opcodes as of Prague + PUSH0
 const DEFINED_OPCODES = new Set<number>([
@@ -35,6 +36,7 @@ const DEFINED_COUNT = DEFINED_OPCODES.size; // 149
 const UNDEFINED_COUNT = 256 - DEFINED_COUNT - 1; // 106
 
 export default function Mip7HeroSection() {
+  const { t } = useLanguage();
   const [showSubgrid, setShowSubgrid] = useState(false);
 
   return (
@@ -46,12 +48,11 @@ export default function Mip7HeroSection() {
         className="text-center max-w-3xl relative z-10 mt-30"
       >
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
-          One reserved slot.{" "}
-          <span className="font-semibold italic">256 possible functions.</span>
+          {t("mip7.hero.title1")}{" "}
+          <span className="font-semibold italic">{t("mip7.hero.titleHighlight")}</span>
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          Adding opcodes to an EVM chain risks collision with future Ethereum
-          upgrades. MIP-7 claims one reserved slot as a safe extension namespace.
+          {t("mip7.hero.desc")}
         </p>
       </motion.div>
 
@@ -65,20 +66,20 @@ export default function Mip7HeroSection() {
           {/* Legend */}
           <div className="flex items-center justify-between mb-4">
             <p className="font-mono text-xs text-text-tertiary">
-              EVM opcode space (0x00–0xFF)
+              {t("mip7.hero.opcodeSpace")}
             </p>
             <div className="flex items-center gap-3 font-mono text-[10px] text-text-tertiary">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm inline-block bg-[#9b9084]" />
-                {DEFINED_COUNT} defined
+                {DEFINED_COUNT} {t("mip7.hero.defined")}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm inline-block bg-border" />
-                {UNDEFINED_COUNT} free
+                {UNDEFINED_COUNT} {t("mip7.hero.free")}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm inline-block bg-solution-accent" />
-                1 reserved
+                {t("mip7.hero.reserved")}
               </span>
             </div>
           </div>
@@ -129,9 +130,7 @@ export default function Mip7HeroSection() {
 
           <div className="mt-3 flex items-center justify-between">
             <p className="font-mono text-[10px] text-text-tertiary">
-              Click{" "}
-              <span className="text-solution-accent font-semibold">0xAE</span>{" "}
-              to expand the extension namespace
+              {t("mip7.hero.clickToExpand")}
             </p>
           </div>
 
@@ -145,10 +144,10 @@ export default function Mip7HeroSection() {
             >
               <div className="flex items-center justify-between mb-3">
                 <p className="font-mono text-xs text-solution-accent font-semibold">
-                  0xAE XX: Monad extension selectors
+                  {t("mip7.hero.extensionSelectors")}
                 </p>
                 <p className="font-mono text-[10px] text-text-tertiary">
-                  all INVALID today
+                  {t("mip7.hero.allInvalid")}
                 </p>
               </div>
               <div
@@ -164,7 +163,7 @@ export default function Mip7HeroSection() {
                 ))}
               </div>
               <p className="font-mono text-[10px] text-text-tertiary mt-2">
-                256 selectors · future MIPs assign specific functionality
+                {t("mip7.hero.selectorsFuture")}
               </p>
             </motion.div>
           )}

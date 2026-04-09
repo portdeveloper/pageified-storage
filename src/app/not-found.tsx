@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function NotFound() {
+  const { t } = useLanguage();
   return (
     <main className="min-h-[calc(100vh-48px)] flex flex-col items-center justify-center px-6 text-center">
       {/* 4x4 grid echoing the favicon / pageified storage concept */}
@@ -18,13 +22,13 @@ export default function NotFound() {
       </div>
 
       <p className="font-mono text-xs text-text-tertiary tracking-widest uppercase mb-3">
-        Page not found
+        {t("notFound.label")}
       </p>
       <h1 className="text-4xl sm:text-5xl font-light tracking-tight mb-4">
         404
       </h1>
       <p className="text-text-secondary max-w-sm mb-8">
-        This slot doesn&apos;t map to any page. The address space here is empty.
+        {t("notFound.desc")}
       </p>
       <Link
         href="/"
@@ -43,7 +47,7 @@ export default function NotFound() {
             d="M7 16l-4-4m0 0l4-4m-4 4h18"
           />
         </svg>
-        Back to MIP Land
+        {t("notFound.back")}
       </Link>
     </main>
   );

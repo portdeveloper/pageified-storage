@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COLD_COST = 8100;
 const WARM_COST = 100;
@@ -23,6 +24,7 @@ function ratio(n: number) {
 
 export default function CherryPickedSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { t } = useLanguage();
   const [batchSize, setBatchSize] = useState(20);
 
   const current = currentGas(batchSize);
@@ -38,17 +40,13 @@ export default function CherryPickedSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-2">
-          Design for pages, get 10X+
+          {t("cherryPicked.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          MIP-8 doesn&apos;t just help existing contracts. It opens a new design
-          space where page-aware storage yields order-of-magnitude improvements.
+          {t("cherryPicked.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          Consider an ERC-1155 multi-token contract. The standard implementation
-          hashes each token balance to a random storage location. A page-aware
-          design stores balances contiguously, so batch operations read one page
-          instead of N scattered slots.
+          {t("cherryPicked.subDesc")}
         </p>
 
         {/* Before / After layout comparison */}
@@ -56,11 +54,11 @@ export default function CherryPickedSection() {
           {/* Standard layout */}
           <div className="bg-surface-elevated rounded-xl border border-border p-5">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-4">
-              Standard ERC-1155
+              {t("cherryPicked.standardLayout")}
             </p>
             <div className="font-mono text-sm mb-4">
               <p className="text-text-tertiary text-xs mb-2">
-                {"// balances scattered by keccak256"}
+                {t("cherryPicked.standardComment")}
               </p>
               <p>
                 <span className="text-problem-accent">mapping</span>(uint256 =&gt;{" "}
@@ -74,7 +72,7 @@ export default function CherryPickedSection() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-problem-accent" />
               <p className="font-mono text-xs text-text-tertiary">
-                Each token ID hashes to a different page
+                {t("cherryPicked.standardNote")}
               </p>
             </div>
             {/* Scattered page visualization */}
@@ -101,30 +99,30 @@ export default function CherryPickedSection() {
               ))}
             </div>
             <p className="font-mono text-xs text-problem-accent mt-3">
-              {batchSize} tokens = {batchSize} cold reads = {current.toLocaleString()} gas
+              {batchSize} {t("cherryPicked.tokens")} = {batchSize} cold reads = {current.toLocaleString()} gas
             </p>
           </div>
 
           {/* Page-aware layout */}
           <div className="bg-surface-elevated rounded-xl border border-solution-accent-light p-5">
             <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-4">
-              Page-aware design
+              {t("cherryPicked.pageAwareLayout")}
             </p>
             <div className="font-mono text-sm mb-4">
               <p className="text-text-tertiary text-xs mb-2">
-                {"// balances packed contiguously"}
+                {t("cherryPicked.pageAwareComment")}
               </p>
               <p>
                 <span className="text-solution-accent">uint256</span>[128] balances;
               </p>
               <p className="text-text-tertiary text-xs mt-1">
-                {"// token IDs 0-127 map to one page"}
+                {t("cherryPicked.pageAwareMapComment")}
               </p>
             </div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-solution-accent" />
               <p className="font-mono text-xs text-text-tertiary">
-                All token balances in one page
+                {t("cherryPicked.pageAwareNote")}
               </p>
             </div>
             {/* Single page visualization */}
@@ -151,7 +149,7 @@ export default function CherryPickedSection() {
               </div>
             </div>
             <p className="font-mono text-xs text-solution-accent mt-3">
-              {batchSize} tokens = 1 cold + {batchSize - 1} warm = {mip8.toLocaleString()} gas
+              {batchSize} {t("cherryPicked.tokens")} = 1 cold + {batchSize - 1} warm = {mip8.toLocaleString()} gas
             </p>
           </div>
         </div>
@@ -161,10 +159,10 @@ export default function CherryPickedSection() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider">
-                Batch size
+                {t("cherryPicked.batchSize")}
               </p>
               <p className="text-sm text-text-secondary font-light mt-1">
-                Number of token balances read in one operation
+                {t("cherryPicked.batchDesc")}
               </p>
             </div>
             <div className="text-right">
@@ -176,7 +174,7 @@ export default function CherryPickedSection() {
               >
                 {batchSize}
               </motion.p>
-              <p className="font-mono text-xs text-text-tertiary">tokens</p>
+              <p className="font-mono text-xs text-text-tertiary">{t("cherryPicked.tokens")}</p>
             </div>
           </div>
           <input
@@ -189,7 +187,7 @@ export default function CherryPickedSection() {
           />
           <div className="flex justify-between font-mono text-xs text-text-tertiary mt-1">
             <span>2</span>
-            <span>12 (10X threshold)</span>
+            <span>{t("cherryPicked.threshold")}</span>
             <span>64</span>
           </div>
         </div>
@@ -199,7 +197,7 @@ export default function CherryPickedSection() {
           {/* Current gas */}
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-5">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-3">
-              Standard layout
+              {t("cherryPicked.standardLabel")}
             </p>
             <motion.p
               key={`current-${batchSize}`}
@@ -211,14 +209,14 @@ export default function CherryPickedSection() {
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary mt-1">gas</p>
             <p className="font-mono text-xs text-text-tertiary mt-2">
-              {batchSize} x 8,100 (all cold)
+              {batchSize} x 8,100 ({t("cherryPicked.allCold")})
             </p>
           </div>
 
           {/* MIP-8 gas */}
           <div className="bg-solution-bg rounded-xl border border-solution-accent-light p-5">
             <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-3">
-              Page-aware + MIP-8
+              {t("cherryPicked.pageAwareLabel")}
             </p>
             <motion.p
               key={`mip8-${batchSize}`}
@@ -237,7 +235,7 @@ export default function CherryPickedSection() {
           {/* Improvement ratio */}
           <div className="bg-surface-elevated rounded-xl border border-border p-5">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-3">
-              Improvement
+              {t("cherryPicked.improvement")}
             </p>
             <motion.p
               key={`ratio-${batchSize}`}
@@ -249,9 +247,9 @@ export default function CherryPickedSection() {
             >
               {improvement.toFixed(1)}x
             </motion.p>
-            <p className="font-mono text-xs text-text-tertiary mt-1">cheaper</p>
+            <p className="font-mono text-xs text-text-tertiary mt-1">{t("cherryPicked.cheaper")}</p>
             <p className="font-mono text-xs text-text-tertiary mt-2">
-              {savings}% gas saved
+              {savings}% {t("cherryPicked.gasSaved")}
             </p>
           </div>
         </div>
@@ -260,7 +258,7 @@ export default function CherryPickedSection() {
         <div className="bg-surface-elevated rounded-lg border border-border p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="font-mono text-xs text-text-tertiary">
-              Cold-access gas comparison
+              {t("cherryPicked.gasComparison")}
             </p>
             <motion.p
               key={`savings-${batchSize}`}
@@ -270,7 +268,7 @@ export default function CherryPickedSection() {
                 improvement >= 10 ? "text-solution-accent" : "text-text-primary"
               }`}
             >
-              {improvement >= 10 ? `${improvement.toFixed(1)}x cheaper` : `${savings}% cheaper`}
+              {improvement >= 10 ? `${improvement.toFixed(1)}x ${t("cherryPicked.cheaper")}` : `${savings}% ${t("cherryPicked.cheaper")}`}
             </motion.p>
           </div>
           <div className="w-full h-3 bg-problem-cell rounded-full overflow-hidden">
@@ -283,14 +281,11 @@ export default function CherryPickedSection() {
             />
           </div>
           <div className="flex justify-between mt-1 font-mono text-xs text-text-tertiary">
-            <span>Page-aware + MIP-8: {mip8.toLocaleString()}</span>
-            <span>Standard: {current.toLocaleString()}</span>
+            <span>{t("cherryPicked.pageAwareLabel")}: {mip8.toLocaleString()}</span>
+            <span>{t("cherryPicked.standardLabel")}: {current.toLocaleString()}</span>
           </div>
           <p className="font-mono text-xs text-text-tertiary mt-3">
-            This example shows a page-aware ERC-1155 that stores token balances
-            in a contiguous array instead of a double mapping. With MIP-8, batch
-            reads from the same page scale at 100 gas per additional slot instead
-            of 8,100.
+            {t("cherryPicked.explanation")}
           </p>
         </div>
       </div>

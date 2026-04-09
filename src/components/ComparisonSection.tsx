@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COLS = 16;
 const TOTAL = COLS * 8;
@@ -19,6 +20,7 @@ const COLD_COST = 8100;
 const WARM_COST = 100;
 
 export default function ComparisonSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [loadedSlots, setLoadedSlots] = useState<number[]>([]);
   const [pageWarmed, setPageWarmed] = useState(false);
@@ -52,17 +54,13 @@ export default function ComparisonSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Same struct, different cost model
+          {t("mip8.comparison.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Solidity lays out struct fields at contiguous slots, but
-          trie/backend hashing can scatter them across different physical
-          locations. In this worst-case illustration, each field lands on a
-          separate backend page. MIP-8 groups contiguous slots into one page.
+          {t("mip8.comparison.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-8">
-          Click each field to load it and compare the gas cost side by side.
-          Cold read costs 8,100 gas, warm read costs 100 gas on Monad.
+          {t("mip8.comparison.clickNote")}
         </p>
 
         {/* Struct + buttons */}
@@ -109,7 +107,7 @@ export default function ComparisonSection() {
                   : "text-transparent pointer-events-none"
               }`}
             >
-              reset
+              {t("mip8.comparison.reset")}
             </button>
           </div>
         </div>
@@ -120,10 +118,10 @@ export default function ComparisonSection() {
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-5">
             <div className="flex items-center justify-between mb-4">
               <p className="font-mono text-xs text-problem-muted uppercase tracking-wider">
-                Monad (current)
+                {t("mip8.comparison.monadCurrent")}
               </p>
               <p className="font-mono text-xs text-problem-muted">
-                {loadedSlots.length} cold read{loadedSlots.length !== 1 ? "s" : ""}
+                {loadedSlots.length} {loadedSlots.length !== 1 ? t("mip8.comparison.coldReads") : t("mip8.comparison.coldRead")}
               </p>
             </div>
 
@@ -191,7 +189,7 @@ export default function ComparisonSection() {
                 MIP-8
               </p>
               <p className="font-mono text-xs text-solution-muted">
-                {loadedSlots.length > 0 ? "1 cold" : "0"}{loadedSlots.length > 1 ? ` + ${loadedSlots.length - 1} warm` : ""}
+                {loadedSlots.length > 0 ? `1 ${t("mip8.comparison.cold")}` : "0"}{loadedSlots.length > 1 ? ` + ${loadedSlots.length - 1} ${t("mip8.comparison.warm")}` : ""}
               </p>
             </div>
 
@@ -203,7 +201,7 @@ export default function ComparisonSection() {
             >
               <div className="flex items-center gap-2 mb-1">
                 <p className="font-mono text-xs text-text-tertiary">
-                  page 0 (contiguous)
+                  {t("mip8.comparison.contiguous")}
                 </p>
                 {pageWarmed && (
                   <motion.span
@@ -211,7 +209,7 @@ export default function ComparisonSection() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="font-mono text-xs px-1.5 py-0.5 rounded-full bg-solution-accent text-white"
                   >
-                    WARM
+                    {t("mip8.comparison.warm").toUpperCase()}
                   </motion.span>
                 )}
               </div>
@@ -280,10 +278,10 @@ export default function ComparisonSection() {
             >
               <div className="flex items-center justify-between mb-2">
                 <p className="font-mono text-xs text-text-tertiary">
-                  4 fields, same struct
+                  {t("mip8.comparison.fourFields")}
                 </p>
                 <p className="font-mono text-lg font-semibold text-solution-accent">
-                  {savings}% cheaper with MIP-8
+                  {savings}{t("mip8.comparison.cheaperWithMip8")}
                 </p>
               </div>
               <div className="w-full h-3 bg-problem-cell rounded-full overflow-hidden">

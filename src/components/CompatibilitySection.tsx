@@ -1,8 +1,10 @@
 "use client";
 
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function CompatibilitySection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
 
   return (
@@ -14,36 +16,21 @@ export default function CompatibilitySection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">
-          Execution stays compatible
+          {t("mip8.compatibility.title")}
         </h2>
         <div className="space-y-4 text-lg text-text-secondary font-light leading-relaxed">
           <p>
-            At the opcode level, execution semantics stay the same: <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">SLOAD</span> still
-            returns 32 bytes and <span className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">SSTORE</span> still writes
-            32 bytes. What changes is the storage commitment/proof layer and the
-            gas model, which become page-aware. The effective key space narrows
-            from 2<sup>256</sup> hashed slots to 2<sup>249</sup> page indices.
+            {t("mip8.compatibility.desc1")}
           </p>
           <p>
-            Contracts that read consecutive storage slots often get cheaper
-            because Solidity stores struct members, fixed arrays, and runs of
-            dynamic-array elements contiguously once their base location is
-            known. Mappings still use hashed locations, so mapping-heavy access
-            patterns tend to change less. The main contracts at risk are those
-            that hardcode opcode-gas assumptions for consecutive storage
-            accesses.
+            {t("mip8.compatibility.desc2")}
           </p>
         </div>
 
         {/* BLAKE3 footnote */}
         <div className="mt-10 p-4 bg-surface-elevated rounded-lg border border-border">
           <p className="text-sm text-text-secondary font-light leading-relaxed">
-            Each 4,096-byte page is committed via a fixed binary tree built from
-            the BLAKE3 compression function. 128 slots pair into 64 leaves,
-            which hash through 6 levels into a single 32-byte root. An inclusion
-            proof for any slot is about 257 bytes (1-byte index + target word +
-            sibling word + 6 parent hashes), plus the MPT proof for the page
-            commitment.
+            {t("mip8.compatibility.blake3Note")}
           </p>
         </div>
 

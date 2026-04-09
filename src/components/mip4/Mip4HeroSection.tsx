@@ -2,22 +2,23 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const RESERVE_MON = 10;
 
-// Animated scenario: balance drops below reserve, then recovers
-const BALANCE_STEPS = [
-  { balance: 25, label: "Starting balance", phase: "ok" },
-  { balance: 18, label: "Swap 7 MON for tokens", phase: "ok" },
-  { balance: 8, label: "Transfer 10 MON to pool", phase: "violation" },
-  { balance: 8, label: "dippedIntoReserve() → true", phase: "detect" },
-  { balance: 18, label: "Revert transfer, restore balance", phase: "recover" },
-  { balance: 18, label: "dippedIntoReserve() → false", phase: "ok" },
-];
-
 export default function Mip4HeroSection() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [running, setRunning] = useState(false);
+
+  const BALANCE_STEPS = [
+    { balance: 25, label: t("mip4.hero.step1"), phase: "ok" },
+    { balance: 18, label: t("mip4.hero.step2"), phase: "ok" },
+    { balance: 8, label: t("mip4.hero.step3"), phase: "violation" },
+    { balance: 8, label: t("mip4.hero.step4"), phase: "detect" },
+    { balance: 18, label: t("mip4.hero.step5"), phase: "recover" },
+    { balance: 18, label: t("mip4.hero.step6"), phase: "ok" },
+  ];
 
   useEffect(() => {
     const timer = setTimeout(() => setRunning(true), 1200);
@@ -36,7 +37,7 @@ export default function Mip4HeroSection() {
     }
     const timer = setTimeout(() => setStep((s) => s + 1), 1500);
     return () => clearTimeout(timer);
-  }, [step, running]);
+  }, [step, running, BALANCE_STEPS.length]);
 
   const current = BALANCE_STEPS[step];
   const barHeight = Math.min(100, (current.balance / 30) * 100);
@@ -52,12 +53,11 @@ export default function Mip4HeroSection() {
         className="text-center max-w-3xl relative z-10 mt-30"
       >
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
-          Detect reserve violations{" "}
-          <span className="font-semibold italic">mid-execution</span>
+          {t("mip4.hero.title1")}{" "}
+          <span className="font-semibold italic">{t("mip4.hero.titleHighlight")}</span>
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          Monad reserves 10 MON per EOA to ensure solvency across async execution.
-          MIP-4 lets contracts check if that threshold has been crossed.
+          {t("mip4.hero.desc")}
         </p>
       </motion.div>
 
@@ -79,7 +79,7 @@ export default function Mip4HeroSection() {
                   style={{ bottom: `${reserveLinePos}%` }}
                 >
                   <span className="absolute right-0 -top-5 font-mono text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                    10 MON reserve
+                    {t("mip4.hero.reserve")}
                   </span>
                 </div>
 
@@ -106,7 +106,7 @@ export default function Mip4HeroSection() {
               >
                 {current.balance}
               </motion.p>
-              <p className="font-mono text-xs text-text-tertiary mb-4">MON balance</p>
+              <p className="font-mono text-xs text-text-tertiary mb-4">{t("mip4.hero.monBalance")}</p>
 
               <motion.div
                 key={step}

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, useEffect } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -78,38 +79,40 @@ interface Example {
   insight: string;
 }
 
-const EXAMPLES: Example[] = [
-  {
-    name: "PUSH consumes 0x5B",
-    bytes: [0x60, 0x5b, 0x5b],
-    insight:
-      "PUSH1 (0x60) marks its next byte as immediate data. That 0x5B is NOT a JUMPDEST. The second 0x5B is standalone, so it IS a valid JUMPDEST.",
-  },
-  {
-    name: "EXTENSION doesn't eat bytes",
-    bytes: [0xae, 0x01, 0x5b],
-    insight:
-      "0xAE does not consume any bytes during JUMPDEST analysis. After the selector 0x01, the scanner returns to normal, so 0x5B is a valid JUMPDEST.",
-  },
-  {
-    name: "PUSH-prefix args",
-    bytes: [0xae, 0x02, 0x62, 0x5b, 0xa0, 0xff],
-    insight:
-      "Selector 0x02 is valid. The PUSH3 (0x62) after it causes analysis to eat the next 3 bytes as PUSH immediates, including 0x5B, which is safely consumed and NOT a JUMPDEST.",
-  },
-  {
-    name: "Forbidden: 0x5B selector",
-    bytes: [0xae, 0x5b, 0x01],
-    insight:
-      "0x5B as a selector would make analysis mark it as a JUMPDEST, but execution treats it as a selector. The two disagree: forbidden. Execution halts with all gas consumed.",
-  },
-  {
-    name: "Forbidden: PUSH selector",
-    bytes: [0xae, 0x61, 0xab, 0xcd],
-    insight:
-      "PUSH2 (0x61) as a selector: analysis sees PUSH2 and eats 0xAB 0xCD as its immediates. Execution treats them as extension arguments. The byte consumption diverges between chains. Forbidden. Halt.",
-  },
-];
+function getExamples(t: (key: string) => string): Example[] {
+  return [
+    {
+      name: t("mip7.jumpdest.example1Name"),
+      bytes: [0x60, 0x5b, 0x5b],
+      insight:
+        "PUSH1 (0x60) marks its next byte as immediate data. That 0x5B is NOT a JUMPDEST. The second 0x5B is standalone, so it IS a valid JUMPDEST.",
+    },
+    {
+      name: t("mip7.jumpdest.example2Name"),
+      bytes: [0xae, 0x01, 0x5b],
+      insight:
+        "0xAE does not consume any bytes during JUMPDEST analysis. After the selector 0x01, the scanner returns to normal, so 0x5B is a valid JUMPDEST.",
+    },
+    {
+      name: t("mip7.jumpdest.example3Name"),
+      bytes: [0xae, 0x02, 0x62, 0x5b, 0xa0, 0xff],
+      insight:
+        "Selector 0x02 is valid. The PUSH3 (0x62) after it causes analysis to eat the next 3 bytes as PUSH immediates, including 0x5B, which is safely consumed and NOT a JUMPDEST.",
+    },
+    {
+      name: t("mip7.jumpdest.example4Name"),
+      bytes: [0xae, 0x5b, 0x01],
+      insight:
+        "0x5B as a selector would make analysis mark it as a JUMPDEST, but execution treats it as a selector. The two disagree: forbidden. Execution halts with all gas consumed.",
+    },
+    {
+      name: t("mip7.jumpdest.example5Name"),
+      bytes: [0xae, 0x61, 0xab, 0xcd],
+      insight:
+        "PUSH2 (0x61) as a selector: analysis sees PUSH2 and eats 0xAB 0xCD as its immediates. Execution treats them as extension arguments. The byte consumption diverges between chains. Forbidden. Halt.",
+    },
+  ];
+}
 
 // ── Role display config ────────────────────────────────────────────────────────
 
@@ -189,11 +192,13 @@ function roleConfig(role: ByteRole): {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function JumpdestSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [exampleIdx, setExampleIdx] = useState(0);
   const [scanStep, setScanStep] = useState(-1); // -1 = not started
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const EXAMPLES = getExamples(t);
   const example = EXAMPLES[exampleIdx];
   const allRoles = analyzeBytes(example.bytes);
   const totalBytes = example.bytes.length;
@@ -248,23 +253,13 @@ export default function JumpdestSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          JUMPDEST analysis
+          {t("mip7.jumpdest.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          Before execution, the EVM scans bytecode to find valid jump
-          destinations: bytes equal to{" "}
-          <code className="font-mono text-sm bg-surface px-1.5 py-0.5 rounded border border-border">
-            0x5B
-          </code>{" "}
-          that are not consumed as PUSH immediates. MIP-7 is designed so that{" "}
-          <code className="font-mono text-sm bg-surface px-1.5 py-0.5 rounded border border-border">
-            0xAE
-          </code>{" "}
-          never alters this analysis.
+          {t("mip7.jumpdest.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          This preserves identical jump destination sets across all EVM chains,
-          and it's why extension selectors have strict byte-range restrictions.
+          {t("mip7.jumpdest.subDesc")}
         </p>
 
         {/* Example picker */}
@@ -288,10 +283,10 @@ export default function JumpdestSection() {
         <div className="bg-surface rounded-xl border border-border p-6 mb-4">
           <div className="flex items-center justify-between mb-6">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider">
-              JUMPDEST analysis scanner
+              {t("mip7.jumpdest.scanner")}
             </p>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[10px] text-text-tertiary">left</span>
+              <span className="font-mono text-[10px] text-text-tertiary">{t("mip7.jumpdest.left")}</span>
               <svg width="28" height="8" viewBox="0 0 28 8" fill="none">
                 <path
                   d="M0 4h24M20 1l4 3-4 3"
@@ -301,7 +296,7 @@ export default function JumpdestSection() {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="font-mono text-[10px] text-text-tertiary">right</span>
+              <span className="font-mono text-[10px] text-text-tertiary">{t("mip7.jumpdest.right")}</span>
             </div>
           </div>
 
@@ -381,7 +376,7 @@ export default function JumpdestSection() {
                   : "bg-surface-elevated border-border text-text-tertiary cursor-default"
               }`}
             >
-              Reset
+              {t("mip7.jumpdest.reset")}
             </button>
             <button
               onClick={!done && !isPlaying ? handleStep : undefined}
@@ -392,7 +387,7 @@ export default function JumpdestSection() {
                   : "bg-surface-elevated border-border text-text-tertiary cursor-default"
               }`}
             >
-              {!started ? "Start scan" : done ? "Done" : "Step →"}
+              {!started ? t("mip7.jumpdest.startScan") : done ? t("mip7.jumpdest.done") : t("mip7.jumpdest.stepArrow")}
             </button>
             <button
               onClick={!isPlaying ? handlePlay : undefined}
@@ -403,10 +398,10 @@ export default function JumpdestSection() {
                   : "bg-surface-elevated border-border text-text-tertiary cursor-default"
               }`}
             >
-              {isPlaying ? "Scanning…" : "Auto-scan"}
+              {isPlaying ? t("mip7.jumpdest.scanning") : t("mip7.jumpdest.autoScan")}
             </button>
             <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
-              {Math.max(0, scanStep + 1)} / {totalBytes} bytes
+              {Math.max(0, scanStep + 1)} / {totalBytes} {t("mip7.jumpdest.bytes")}
             </p>
           </div>
         </div>
@@ -414,17 +409,17 @@ export default function JumpdestSection() {
         {/* Color legend */}
         <div className="bg-surface rounded-xl border border-border p-4">
           <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-3">
-            Legend
+            {t("mip7.jumpdest.legend")}
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {[
-              { role: "extension" as ByteRole, desc: "0xAE: extension gateway" },
-              { role: "selector" as ByteRole, desc: "valid selector" },
-              { role: "forbidden" as ByteRole, desc: "forbidden selector → halt" },
-              { role: "jumpdest" as ByteRole, desc: "valid JUMPDEST ✓" },
-              { role: "push-opcode" as ByteRole, desc: "PUSH opcode" },
-              { role: "push-data" as ByteRole, desc: "PUSH-consumed (not JUMPDEST)" },
-              { role: "opcode" as ByteRole, desc: "regular opcode/data" },
+              { role: "extension" as ByteRole, desc: t("mip7.jumpdest.extensionGateway") },
+              { role: "selector" as ByteRole, desc: t("mip7.jumpdest.validSelector") },
+              { role: "forbidden" as ByteRole, desc: t("mip7.jumpdest.forbiddenHalt") },
+              { role: "jumpdest" as ByteRole, desc: t("mip7.jumpdest.validJumpdest") },
+              { role: "push-opcode" as ByteRole, desc: t("mip7.jumpdest.pushOpcode") },
+              { role: "push-data" as ByteRole, desc: t("mip7.jumpdest.pushConsumed") },
+              { role: "opcode" as ByteRole, desc: t("mip7.jumpdest.regularOpcode") },
             ].map(({ role, desc }) => {
               const cfg = roleConfig(role);
               return (

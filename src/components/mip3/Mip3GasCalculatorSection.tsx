@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 function ethMemoryCost(bytes: number): number {
   const words = Math.ceil(bytes / 32);
@@ -14,50 +15,37 @@ function mip3MemoryCost(bytes: number): number {
   return Math.floor(words / 2);
 }
 
-interface Scenario {
-  name: string;
-  description: string;
+interface ScenarioData {
   bytes: number;
-  ethNote?: string;
+  nameKey: string;
+  descKey: string;
+  ethNoteKey?: string;
 }
 
-const SCENARIOS: Scenario[] = [
-  {
-    name: "Typical usage (2 KB)",
-    description:
-      "Average memory usage observed on Ethereum mainnet. ABI encoding a few parameters.",
-    bytes: 2 * 1024,
-  },
-  {
-    name: "ABI-encode a struct (1 KB)",
-    description: "Encoding a moderately sized struct for a cross-contract call.",
-    bytes: 1024,
-  },
-  {
-    name: "Batch process 100 txs (100 KB)",
-    description:
-      "Building a 100 KB buffer to process a batch of transactions in one call.",
-    bytes: 100 * 1024,
-  },
-  {
-    name: "On-chain data processing (1 MB)",
-    description:
-      "Decompressing, sorting, or transforming a large dataset in a single transaction.",
-    bytes: 1_048_576,
-  },
-  {
-    name: "Full 8 MB allocation",
-    description:
-      "Maximum memory under MIP-3. Enables large proof verification buffers, rollup batch processing.",
-    bytes: 8 * 1024 * 1024,
-    ethNote: "Exceeds 30M gas block limit",
-  },
+const SCENARIO_DATA: ScenarioData[] = [
+  { bytes: 2 * 1024, nameKey: "mip3.gasCalc.scenario1", descKey: "mip3.gasCalc.scenario1Desc" },
+  { bytes: 1024, nameKey: "mip3.gasCalc.scenario2", descKey: "mip3.gasCalc.scenario2Desc" },
+  { bytes: 100 * 1024, nameKey: "mip3.gasCalc.scenario3", descKey: "mip3.gasCalc.scenario3Desc" },
+  { bytes: 1_048_576, nameKey: "mip3.gasCalc.scenario4", descKey: "mip3.gasCalc.scenario4Desc" },
+  { bytes: 8 * 1024 * 1024, nameKey: "mip3.gasCalc.scenario5", descKey: "mip3.gasCalc.scenario5Desc", ethNoteKey: "mip3.gasCalc.scenario5Note" },
 ];
 
 export default function Mip3GasCalculatorSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const scenario = SCENARIOS[selectedIdx];
+
+  const scenarios = useMemo(() =>
+    SCENARIO_DATA.map((s) => ({
+      name: t(s.nameKey),
+      description: t(s.descKey),
+      bytes: s.bytes,
+      ethNote: s.ethNoteKey ? t(s.ethNoteKey) : undefined,
+    })),
+    [t]
+  );
+
+  const scenario = scenarios[selectedIdx];
 
   const ethGas = ethMemoryCost(scenario.bytes);
   const mip3Gas = mip3MemoryCost(scenario.bytes);
@@ -75,16 +63,15 @@ export default function Mip3GasCalculatorSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Compare the cost
+          {t("mip3.gasCalc.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          Select a scenario to see the memory expansion gas under the current
-          quadratic model versus MIP-3&apos;s linear model.
+          {t("mip3.gasCalc.desc")}
         </p>
 
         {/* Scenario picker */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {SCENARIOS.map((s, i) => (
+          {scenarios.map((s, i) => (
             <button
               key={s.name}
               onClick={() => setSelectedIdx(i)}
@@ -108,7 +95,7 @@ export default function Mip3GasCalculatorSection() {
           {/* Quadratic */}
           <div className="bg-problem-bg rounded-xl border border-problem-cell-hover p-6">
             <p className="font-mono text-xs text-problem-muted uppercase tracking-wider mb-4">
-              Quadratic (ETH)
+              {t("mip3.gasCalc.quadraticEth")}
             </p>
             <motion.p
               key={`eth-${selectedIdx}`}
@@ -119,14 +106,14 @@ export default function Mip3GasCalculatorSection() {
               {ethImpossible ? "IMPOSSIBLE" : ethGas.toLocaleString()}
             </motion.p>
             <p className="font-mono text-xs text-text-tertiary">
-              {ethImpossible ? scenario.ethNote : "gas"}
+              {ethImpossible ? scenario.ethNote : t("mip3.gasCalc.gas")}
             </p>
             <div className="mt-4 pt-4 border-t border-problem-cell-hover">
               <p className="font-mono text-xs text-text-secondary">
                 words&sup2;/512 + 3 * words
               </p>
               <p className="font-mono text-xs text-text-tertiary mt-1">
-                {Math.ceil(scenario.bytes / 32).toLocaleString()} words
+                {Math.ceil(scenario.bytes / 32).toLocaleString()} {t("mip3.gasCalc.words")}
               </p>
             </div>
           </div>
@@ -134,7 +121,7 @@ export default function Mip3GasCalculatorSection() {
           {/* Linear */}
           <div className="bg-solution-bg rounded-xl border border-solution-accent-light p-6">
             <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-4">
-              Linear (MIP-3)
+              {t("mip3.gasCalc.linearMip3")}
             </p>
             <motion.p
               key={`mip3-${selectedIdx}`}
@@ -144,13 +131,13 @@ export default function Mip3GasCalculatorSection() {
             >
               {mip3Gas.toLocaleString()}
             </motion.p>
-            <p className="font-mono text-xs text-text-tertiary">gas</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip3.gasCalc.gas")}</p>
             <div className="mt-4 pt-4 border-t border-solution-accent-light">
               <p className="font-mono text-xs text-text-secondary">
                 words / 2
               </p>
               <p className="font-mono text-xs text-text-tertiary mt-1">
-                {Math.ceil(scenario.bytes / 32).toLocaleString()} words
+                {Math.ceil(scenario.bytes / 32).toLocaleString()} {t("mip3.gasCalc.words")}
               </p>
             </div>
           </div>
@@ -160,11 +147,11 @@ export default function Mip3GasCalculatorSection() {
         <div className="bg-surface-elevated rounded-lg border border-border p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="font-mono text-xs text-text-tertiary">
-              Memory expansion savings
+              {t("mip3.gasCalc.savings")}
             </p>
             {ethImpossible ? (
               <p className="font-mono text-lg font-semibold text-solution-accent">
-                Only possible with MIP-3
+                {t("mip3.gasCalc.onlyMip3")}
               </p>
             ) : (
               <motion.p
@@ -173,7 +160,7 @@ export default function Mip3GasCalculatorSection() {
                 animate={{ scale: 1 }}
                 className="font-mono text-lg font-semibold text-solution-accent"
               >
-                {ratio.toFixed(ratio >= 100 ? 0 : 1)}x cheaper
+                {ratio.toFixed(ratio >= 100 ? 0 : 1)}{t("mip3.gasCalc.cheaper")}
               </motion.p>
             )}
           </div>

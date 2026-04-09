@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-const CARDS = [
+const CARD_STYLES = [
   {
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -11,9 +13,8 @@ const CARDS = [
         <path d="M4 24H28" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
-    title: "Predictable costs",
-    description:
-      "Linear pricing means doubling your memory doubles your cost. No quadratic surprises. Gas budgeting for memory-intensive operations becomes straightforward.",
+    titleKey: "mip3.takeaways.card1Title",
+    descKey: "mip3.takeaways.card1Desc",
     color: "text-solution-accent",
     bg: "bg-solution-bg",
     border: "border-solution-accent-light",
@@ -26,9 +27,8 @@ const CARDS = [
         <path d="M10 8V24" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
-    title: "Large buffers are feasible",
-    description:
-      "1 MB of working memory costs 16,384 gas. On-chain sorting, decompression, proof verification, and batch processing become practical within a single transaction.",
+    titleKey: "mip3.takeaways.card2Title",
+    descKey: "mip3.takeaways.card2Desc",
     color: "text-solution-accent",
     bg: "bg-solution-bg",
     border: "border-solution-accent-light",
@@ -43,9 +43,8 @@ const CARDS = [
         <path d="M18 22V24" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
-    title: "Shared memory pool",
-    description:
-      "Child calls borrow from the same 8 MB pool instead of getting isolated memory. When a call returns, its memory is released back. Nested calls no longer waste the budget.",
+    titleKey: "mip3.takeaways.card3Title",
+    descKey: "mip3.takeaways.card3Desc",
     color: "text-text-primary",
     bg: "bg-surface-elevated",
     border: "border-border",
@@ -53,7 +52,17 @@ const CARDS = [
 ];
 
 export default function Mip3TakeawaysSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
+
+  const cards = useMemo(() =>
+    CARD_STYLES.map((card) => ({
+      ...card,
+      title: t(card.titleKey),
+      description: t(card.descKey),
+    })),
+    [t]
+  );
 
   return (
     <section ref={ref} className="py-24 px-6 bg-solution-bg relative">
@@ -63,13 +72,13 @@ export default function Mip3TakeawaysSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-10">
-          What this means for developers
+          {t("mip3.takeaways.title")}
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {CARDS.map((card, i) => (
+          {cards.map((card, i) => (
             <motion.div
-              key={card.title}
+              key={card.titleKey}
               initial={{ opacity: 0, y: 20 }}
               animate={isVisible ? { opacity: 1, y: 0 } : {}}
               transition={{

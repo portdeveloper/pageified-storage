@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // A sampling of selector slots to show in the table (abbreviated view)
 const SAMPLE_SELECTORS = Array.from({ length: 32 }, (_, i) => i);
 
 export default function NamespaceSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
 
   return (
@@ -15,28 +17,23 @@ export default function NamespaceSection() {
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          The extension namespace
+          {t("mip7.namespace.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          MIP-7 reserves opcode{" "}
-          <code className="font-mono text-sm bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
-            0xAE
-          </code>{" "}
-          as a gateway. The byte that follows is a selector, giving Monad 256
-          safe extension slots under a single top-level opcode.
+          {t("mip7.namespace.desc")}
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Two-level decode diagram */}
           <div className="bg-surface-elevated rounded-xl border border-border p-6">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-6">
-              Two-byte dispatch
+              {t("mip7.namespace.twoByteDispatch")}
             </p>
 
             {/* Byte 1 */}
             <div className="mb-6">
               <p className="font-mono text-[10px] text-text-tertiary mb-2">
-                Byte 1: opcode
+                {t("mip7.namespace.byte1")}
               </p>
               <div className="flex items-center gap-3">
                 <div className="font-mono text-lg font-semibold px-4 py-2.5 rounded-lg bg-solution-accent text-white">
@@ -47,7 +44,7 @@ export default function NamespaceSection() {
                     EXTENSION
                   </p>
                   <p className="font-mono text-xs text-text-tertiary mt-0.5">
-                    reserved by EIP-8163 · INVALID on Ethereum L1
+                    {t("mip7.namespace.reservedBy")}
                   </p>
                 </div>
               </div>
@@ -72,14 +69,14 @@ export default function NamespaceSection() {
                 />
               </svg>
               <p className="font-mono text-[10px] text-text-tertiary">
-                dispatch on selector
+                {t("mip7.namespace.dispatchOnSelector")}
               </p>
             </div>
 
             {/* Byte 2 */}
             <div>
               <p className="font-mono text-[10px] text-text-tertiary mb-2">
-                Byte 2: selector (0x00–0xFF)
+                {t("mip7.namespace.byte2")}
               </p>
               <div className="space-y-2">
                 {[
@@ -105,7 +102,7 @@ export default function NamespaceSection() {
           <div className="space-y-4">
             <div className="bg-surface-elevated rounded-xl border border-border p-6">
               <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider mb-4">
-                On Ethereum L1
+                {t("mip7.namespace.onEthereumL1")}
               </p>
               <div className="font-mono text-sm space-y-2">
                 <div className="flex items-center gap-2">
@@ -124,14 +121,13 @@ export default function NamespaceSection() {
                 </div>
               </div>
               <p className="font-mono text-xs text-text-tertiary mt-4">
-                EIP-8163 permanently reserves 0xAE for non-L1 use.
-                Ethereum will never assign it to anything else.
+                {t("mip7.namespace.ethNote")}
               </p>
             </div>
 
             <div className="bg-solution-bg rounded-xl border border-solution-accent-light p-6">
               <p className="font-mono text-xs text-solution-muted uppercase tracking-wider mb-4">
-                On Monad
+                {t("mip7.namespace.onMonad")}
               </p>
               <div className="font-mono text-sm space-y-2">
                 <div className="flex items-center gap-2">
@@ -157,8 +153,7 @@ export default function NamespaceSection() {
                 </div>
               </div>
               <p className="font-mono text-xs text-solution-muted mt-4">
-                When a selector is undefined, behaves as INVALID.
-                Future MIPs assign specific selectors to Monad features.
+                {t("mip7.namespace.monadNote")}
               </p>
             </div>
           </div>
@@ -168,10 +163,10 @@ export default function NamespaceSection() {
         <div className="bg-surface-elevated rounded-xl border border-border p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="font-mono text-xs text-text-tertiary">
-              Extension selector table (first 32 of 256 shown)
+              {t("mip7.namespace.selectorTable")}
             </p>
             <p className="font-mono text-xs text-text-tertiary">
-              status: all unassigned
+              {t("mip7.namespace.statusAll")}
             </p>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -193,7 +188,7 @@ export default function NamespaceSection() {
             ))}
           </div>
           <p className="font-mono text-[10px] text-text-tertiary mt-3">
-            + 224 more selectors · all unassigned · future MIPs claim specific slots
+            {t("mip7.namespace.moreSelectors")}
           </p>
         </div>
       </div>

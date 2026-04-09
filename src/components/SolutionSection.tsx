@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COLS = 16;
 const ROWS = 8;
@@ -13,6 +14,7 @@ const COLD_COST = 8100;
 const WARM_COST = 100;
 
 export default function SolutionSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [loadedSlots, setLoadedSlots] = useState<number[]>([]);
   const [pageWarmed, setPageWarmed] = useState(false);
@@ -55,15 +57,13 @@ export default function SolutionSection() {
         }`}
       >
         <p className="font-mono text-xs tracking-[0.2em] text-solution-muted uppercase mb-3">
-          MIP-8
+          {t("mip8.solution.label")}
         </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          One page touch warms 128 slots
+          {t("mip8.solution.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-4">
-          MIP-8 groups 128 consecutive slots into a page. Touch one slot, and
-          the rest of that page becomes warm for the transaction. This demo uses
-          Monad&apos;s 8,100/100 cold-vs-warm read constants for illustration.
+          {t("mip8.solution.desc")}
         </p>
 
         {/* Interactive buttons */}
@@ -87,7 +87,7 @@ export default function SolutionSection() {
               onClick={reset}
               className="font-mono text-xs px-3 py-2 rounded-md text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
             >
-              reset
+              {t("mip8.solution.reset")}
             </button>
           )}
         </div>
@@ -115,7 +115,7 @@ export default function SolutionSection() {
         >
           <div className="flex items-center gap-2 mb-3">
             <p className="font-mono text-xs text-text-tertiary">
-              Example page - contiguous fields fit here
+              {t("mip8.solution.examplePage")}
             </p>
             {pageWarmed && (
               <motion.span
@@ -123,7 +123,7 @@ export default function SolutionSection() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-solution-accent text-white"
               >
-                WARM
+                {t("mip8.solution.warm")}
               </motion.span>
             )}
           </div>
@@ -157,15 +157,15 @@ export default function SolutionSection() {
           </div>
           <p className="font-mono text-[10px] text-text-tertiary mt-2">
             {pageWarmed
-              ? "All 128 slots are warm for this transaction - in this example, subsequent reads use the 100-gas warm cost"
-              : "Click a slot, watch the whole page warm up"}
+              ? t("mip8.solution.allWarmNote")
+              : t("mip8.solution.clickNote")}
           </p>
         </div>
 
         {/* Gas counter + comparison */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 bg-surface-elevated rounded-lg border border-border">
           <div>
-            <p className="font-mono text-xs text-text-tertiary">Total gas</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.solution.totalGas")}</p>
             <motion.p
               key={gasUsed}
               initial={{ scale: 1.2 }}
@@ -177,14 +177,14 @@ export default function SolutionSection() {
           </div>
           <div className="hidden sm:block h-10 w-px bg-border" />
           <div>
-            <p className="font-mono text-xs text-text-tertiary">Cold reads</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.solution.coldReads")}</p>
             <p className="font-mono text-3xl font-semibold text-text-primary tabular-nums">
               {pageWarmed ? 1 : 0}
             </p>
           </div>
           <div className="hidden sm:block h-10 w-px bg-border" />
           <div>
-            <p className="font-mono text-xs text-text-tertiary">Warm reads</p>
+            <p className="font-mono text-xs text-text-tertiary">{t("mip8.solution.warmReads")}</p>
             <p className="font-mono text-3xl font-semibold text-text-primary tabular-nums">
               {Math.max(0, loadedSlots.length - (pageWarmed ? 1 : 0))}
             </p>
@@ -202,7 +202,7 @@ export default function SolutionSection() {
                     32,400 gas
                   </p>
                   <p className="font-mono text-xs text-text-tertiary">
-                    Current EVM
+                    {t("mip8.solution.currentEvm")}
                   </p>
                 </div>
                 <span className="text-text-tertiary">→</span>
@@ -210,11 +210,11 @@ export default function SolutionSection() {
                   <p className="font-mono text-xs text-solution-accent font-semibold">
                     8,400 gas
                   </p>
-                  <p className="font-mono text-xs text-text-tertiary">MIP-8 example</p>
+                  <p className="font-mono text-xs text-text-tertiary">{t("mip8.solution.mip8Example")}</p>
                 </div>
                 <div className="px-2 py-1 rounded-md bg-solution-accent-light">
                   <p className="font-mono text-sm font-semibold text-solution-accent">
-                    74% cheaper here
+                    {t("mip8.solution.cheaperHere")}
                   </p>
                 </div>
               </div>

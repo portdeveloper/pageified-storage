@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const TABS = [
   { name: "MIP-8", href: "/mip-8", ready: true, beta: false },
@@ -12,6 +13,7 @@ const TABS = [
 
 export default function MipNav() {
   const pathname = usePathname();
+  const { locale, setLocale, t } = useLanguage();
 
   return (
     <nav className="sticky top-0 z-50 bg-surface-elevated/90 backdrop-blur-sm border-b border-border">
@@ -20,7 +22,7 @@ export default function MipNav() {
           href="/"
           className="font-mono text-xs text-text-tertiary hover:text-text-primary transition-colors"
         >
-          MIP Land
+          {t("nav.brand")}
         </Link>
         <div className="flex items-center gap-1 flex-1">
           {TABS.map((tab) => {
@@ -39,15 +41,21 @@ export default function MipNav() {
               >
                 {tab.name}
                 {!tab.ready && (
-                  <span className="ml-1.5 text-[10px] opacity-50">soon</span>
+                  <span className="ml-1.5 text-[10px] opacity-50">{t("nav.soon")}</span>
                 )}
                 {tab.beta && (
-                  <span className="ml-1.5 text-[10px] opacity-50">beta</span>
+                  <span className="ml-1.5 text-[10px] opacity-50">{t("nav.beta")}</span>
                 )}
               </Link>
             );
           })}
         </div>
+        <button
+          onClick={() => setLocale(locale === "en" ? "zh" : "en")}
+          className="font-mono text-xs px-2 py-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface transition-all"
+        >
+          {locale === "en" ? "中文" : "EN"}
+        </button>
       </div>
     </nav>
   );

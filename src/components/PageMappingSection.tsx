@@ -3,8 +3,10 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useInView } from "./useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function PageMappingSection() {
+  const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [slotInput, setSlotInput] = useState(0);
 
@@ -27,12 +29,10 @@ export default function PageMappingSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          Slot → Page mapping
+          {t("mip8.pageMapping.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-2xl leading-relaxed mb-10">
-          Every slot maps deterministically to a page. The math is simple: shift
-          right by 7 bits to get the page, mask the low 7 bits to get the
-          offset within it.
+          {t("mip8.pageMapping.desc")}
         </p>
 
         {/* Slider input */}
@@ -40,7 +40,7 @@ export default function PageMappingSection() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
             <div className="flex-1">
               <label htmlFor="slot-range" className="font-mono text-xs text-text-tertiary block mb-2">
-                Storage slot
+                {t("mip8.pageMapping.storageSlot")}
               </label>
               <input
                 id="slot-range"
@@ -122,7 +122,7 @@ export default function PageMappingSection() {
                       : "text-text-tertiary"
                   }`}
                 >
-                  Page {pageIdx}
+                  {t("mip8.pageMapping.page")} {pageIdx}
                 </p>
                 <div
                   className={`rounded-lg p-1.5 border transition-all duration-300 ${

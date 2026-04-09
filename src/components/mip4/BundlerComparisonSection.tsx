@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { useInView } from "../useInView";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface UserOp {
   id: number;
@@ -22,6 +23,7 @@ type OpStatus = "pending" | "executing" | "success" | "failed" | "flagged";
 
 export default function BundlerComparisonSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"without" | "with">("without");
   const [step, setStep] = useState(-1);
   const [opStatuses, setOpStatuses] = useState<OpStatus[]>(
@@ -74,9 +76,7 @@ export default function BundlerComparisonSection() {
         setTimeout(() => {
           if (op.causesViolation) {
             setOpStatuses(USER_OPS.map(() => "failed"));
-            setMessage(
-              "Reserve violation. Entire bundle reverts. The bundler receives no on-chain signal identifying which UserOp triggered the failure."
-            );
+            setMessage(t("mip4.bundler.withoutMessage"));
             setIsPlaying(false);
           } else {
             setOpStatuses((prev) => {
@@ -113,9 +113,7 @@ export default function BundlerComparisonSection() {
               next[nextStep] = "flagged";
               return next;
             });
-            setMessage(
-              "dippedIntoReserve() → true after UserOp #3. Bundle still reverts, but the offending op is now identified. Bundler excludes it from future bundles."
-            );
+            setMessage(t("mip4.bundler.withMessage"));
             setIsPlaying(false);
           } else {
             setOpStatuses((prev) => {
@@ -128,7 +126,7 @@ export default function BundlerComparisonSection() {
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [isPlaying, step, mode]);
+  }, [isPlaying, step, mode, t]);
 
   const finished =
     step >= USER_OPS.length - 1 ||
@@ -142,16 +140,13 @@ export default function BundlerComparisonSection() {
         }`}
       >
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
-          The bundler problem
+          {t("mip4.bundler.title")}
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-2">
-          An ERC-4337 bundler processes multiple UserOperations in one
-          transaction. A single reserve violation reverts the entire bundle.
+          {t("mip4.bundler.desc")}
         </p>
         <p className="text-sm text-text-tertiary font-light max-w-3xl leading-relaxed mb-10">
-          Without MIP-4, the bundler has no way to know which UserOp caused the
-          failure. With MIP-4, the bundler can call dippedIntoReserve() after
-          each op to identify the offender and exclude it from future bundles.
+          {t("mip4.bundler.subDesc")}
         </p>
 
         {/* Mode switcher */}
@@ -164,7 +159,7 @@ export default function BundlerComparisonSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary"
             }`}
           >
-            Without MIP-4
+            {t("mip4.bundler.withoutMip4")}
           </button>
           <button
             onClick={() => handleModeSwitch("with")}
@@ -174,7 +169,7 @@ export default function BundlerComparisonSection() {
                 : "bg-surface-elevated border-border hover:border-text-secondary"
             }`}
           >
-            With MIP-4
+            {t("mip4.bundler.withMip4")}
           </button>
         </div>
 
@@ -182,11 +177,11 @@ export default function BundlerComparisonSection() {
         <div className="bg-surface-elevated rounded-xl border border-border p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <p className="font-mono text-xs text-text-tertiary uppercase tracking-wider">
-              Bundler: 5 UserOperations
+              {t("mip4.bundler.userOps")}
             </p>
             {mode === "with" && (
               <p className="font-mono text-xs text-solution-accent">
-                dippedIntoReserve() checked after each op returns
+                {t("mip4.bundler.checkedAfter")}
               </p>
             )}
           </div>
@@ -250,7 +245,7 @@ export default function BundlerComparisonSection() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent text-white"
                     >
-                      identified
+                      {t("mip4.bundler.identified")}
                     </motion.span>
                   )}
                   {status === "failed" && mode === "without" && (
@@ -259,7 +254,7 @@ export default function BundlerComparisonSection() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
                     >
-                      lost
+                      {t("mip4.bundler.lost")}
                     </motion.span>
                   )}
                   {status === "failed" && mode === "with" && (
@@ -268,7 +263,7 @@ export default function BundlerComparisonSection() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
                     >
-                      reverted
+                      {t("mip4.bundler.reverted")}
                     </motion.span>
                   )}
                 </motion.div>
@@ -317,10 +312,10 @@ export default function BundlerComparisonSection() {
           }`}
         >
           {isPlaying
-            ? "Processing..."
+            ? t("mip4.bundler.processing")
             : finished
-            ? "Replay"
-            : "Run bundler"}
+            ? t("mip4.bundler.replay")
+            : t("mip4.bundler.runBundler")}
         </button>
       </div>
     </section>
