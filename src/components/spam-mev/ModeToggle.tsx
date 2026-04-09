@@ -1,46 +1,27 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useExplainMode, type ExplainMode } from "./ExplainModeContext";
-
-const MODES: { key: ExplainMode; label: string; badge?: string }[] = [
-  { key: "technical", label: "Technical" },
-  { key: "simple", label: "Simple", badge: "beta" },
-];
+import { useExplainMode } from "./ExplainModeContext";
 
 export default function ModeToggle() {
   const { mode, toggle } = useExplainMode();
+  const isSimple = mode === "simple";
 
   return (
-    <div className="sticky top-12 z-40 bg-surface/90 backdrop-blur-sm border-b border-border">
-      <div className="max-w-5xl mx-auto px-6 flex items-center justify-center h-10">
-        <div className="relative flex items-center bg-surface-elevated rounded-lg border border-border p-0.5">
-          {MODES.map((m) => (
-            <button
-              key={m.key}
-              onClick={() => mode !== m.key && toggle()}
-              className="relative font-mono text-xs px-5 py-1.5 rounded-md transition-colors cursor-pointer z-10"
-              style={{
-                color: mode === m.key ? "var(--color-surface)" : "var(--color-text-secondary)",
-              }}
-            >
-              {mode === m.key && (
-                <motion.div
-                  layoutId="mode-pill"
-                  className="absolute inset-0 bg-text-primary rounded-md"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className="relative">
-                {m.label}
-                {m.badge && (
-                  <span className="ml-1 text-[9px] opacity-50">{m.badge}</span>
-                )}
-              </span>
-            </button>
-          ))}
-        </div>
+    <button
+      onClick={toggle}
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 font-mono text-xs cursor-pointer select-none bg-surface-elevated rounded-full border border-border px-4 py-2.5 shadow-lg hover:shadow-xl transition-shadow"
+    >
+      <span className={`transition-colors ${isSimple ? "text-text-primary font-semibold" : "text-text-tertiary"}`}>
+        Explain Like I&apos;m 5
+      </span>
+      <div className={`relative w-8 h-[18px] rounded-full transition-colors ${isSimple ? "bg-text-primary" : "bg-border"}`}>
+        <motion.div
+          className="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-surface shadow-sm"
+          animate={{ left: isSimple ? 14 : 2 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
       </div>
-    </div>
+    </button>
   );
 }

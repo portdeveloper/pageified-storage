@@ -45,9 +45,9 @@ export default function WhatIsMevSection() {
                 First, what is MEV?
               </h2>
               <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-                <Hint term="mev">MEV</Hint> stands for Maximal Extractable
-                Value. It is the profit someone can make by choosing which
-                transactions go in a block and in what order.
+                MEV stands for Maximal Extractable Value. It is the profit
+                someone can make by choosing which transactions go in a block
+                and in what order.
               </p>
 
               {/* Visual example */}
