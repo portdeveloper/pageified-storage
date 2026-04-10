@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import MipNav from "@/components/MipNav";
 import LanguageBanner from "@/components/LanguageBanner";
+import GlobalFooter from "@/components/GlobalFooter";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import "./globals.css";
 
@@ -50,6 +51,7 @@ export default function RootLayout({
           <LanguageBanner />
           <MipNav />
           {children}
+          <GlobalFooter />
         </LanguageProvider>
       </body>
     </html>

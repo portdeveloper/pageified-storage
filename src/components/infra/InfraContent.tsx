@@ -91,49 +91,6 @@ export default function InfraContent() {
         {active === "indexers" && <IndexerPlayground />}
         {active === "swaps" && <SwapPlayground />}
       </motion.div>
-
-      {/* Footer — other projects */}
-      <footer className="w-full bg-text-primary text-surface mt-auto">
-        <div className="max-w-5xl mx-auto px-6 py-12">
-          <p className="font-mono text-xs tracking-wider uppercase text-surface/50 mb-5">
-            More from MIP Land
-          </p>
-          <div className="grid grid-cols-2 gap-4 mb-10 max-w-md">
-            <a
-              href="/spam-mev"
-              className="group rounded-xl border border-surface/10 hover:border-surface/25 p-4 transition-all"
-            >
-              <p className="font-mono text-[11px] text-surface/40 mb-1">Research</p>
-              <p className="text-sm text-surface/80 group-hover:text-surface transition-colors">
-                Spam MEV
-              </p>
-            </a>
-            <a
-              href="/infra"
-              className="group rounded-xl border border-surface/10 hover:border-surface/25 p-4 transition-all"
-            >
-              <p className="font-mono text-[11px] text-surface/40 mb-1">Tools</p>
-              <p className="text-sm text-surface/80 group-hover:text-surface transition-colors">
-                Monad Infra
-              </p>
-            </a>
-          </div>
-
-          <div className="pt-6 border-t border-surface/10 flex items-center justify-center">
-            <p className="font-mono text-xs text-surface/30">
-              made by{" "}
-              <a
-                href="https://x.com/port_dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-surface/50 hover:text-surface transition-colors underline underline-offset-2"
-              >
-                port
-              </a>
-            </p>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }
