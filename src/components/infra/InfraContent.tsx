@@ -34,9 +34,6 @@ export default function InfraContent() {
         transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-3xl w-full text-center mt-20 sm:mt-28 mb-10"
       >
-        <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-4">
-          Experiment
-        </p>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.05] tracking-tight mb-5">
           I want to&hellip;
         </h1>
