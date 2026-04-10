@@ -58,18 +58,39 @@ export default function FooterSection() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-surface/10 flex items-center justify-center">
-          <p className="font-mono text-xs text-surface/30">
-            {t("footer.madeBy")}{" "}
-            <a
-              href="https://x.com/port_dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-surface/50 hover:text-surface transition-colors underline underline-offset-2"
-            >
-              port
-            </a>
-          </p>
+        <div className="pt-8 border-t border-surface/10">
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-mono text-[10px] tracking-wider uppercase text-surface/30">
+              Experimental
+            </p>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 font-mono text-xs">
+              <a
+                href="/spam-mev"
+                className="text-surface/40 hover:text-surface transition-colors"
+              >
+                Blockspace Under Pressure
+              </a>
+              <a
+                href="/infra"
+                className="text-surface/40 hover:text-surface transition-colors"
+              >
+                Interactive Infra Playground
+              </a>
+            </div>
+            <p className="font-mono text-xs text-surface/30">
+              {t("footer.madeBy")}{" "}
+              <a
+                href="https://x.com/port_dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-surface/50 hover:text-surface transition-colors underline underline-offset-2"
+              >
+                port
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
