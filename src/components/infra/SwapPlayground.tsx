@@ -234,6 +234,7 @@ export default function SwapPlayground() {
   const { copied, copy } = useCopyToClipboard();
   const [codeTab, setCodeTab] = useState<"quick" | "component">("quick");
   const [aggregatorId, setAggregatorId] = useState("kuru");
+  const [showCode, setShowCode] = useState(false);
   const jwtRef = useRef<{ token: string; expires: number } | null>(null);
 
   const tokenIn = TOKENS[tokenInIdx];
@@ -580,8 +581,18 @@ export default function SwapPlayground() {
           </div>
         </div>
 
-        {/* ── Right: Code panel ────────────────────────────────────────── */}
-        <div className="bg-surface-elevated rounded-2xl border border-border overflow-hidden flex flex-col">
+        {/* Mobile code toggle */}
+        <button
+          onClick={() => setShowCode((s) => !s)}
+          className="lg:hidden w-full font-mono text-sm px-4 py-2.5 rounded-xl border border-border bg-surface-elevated text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-all flex items-center justify-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          {showCode ? "Hide code" : "View code"}
+        </button>
+        {/* Code panel */}
+        <div className={`bg-surface-elevated rounded-2xl border border-border overflow-hidden flex-col ${showCode ? "flex" : "hidden lg:flex"}`}>
           <div className="flex items-center border-b border-border px-4">
             <button
               onClick={() => setCodeTab("quick")}
@@ -620,7 +631,7 @@ export default function SwapPlayground() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-5">
+          <div className="flex-1 overflow-auto p-5 max-h-80 lg:max-h-none">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${tokenInIdx}-${tokenOutIdx}-${amount}-${codeTab}`}
@@ -644,7 +655,7 @@ export default function SwapPlayground() {
               onClick={() =>
                 copy(getAIPrompt(tokenIn, tokenOut, amount), "ai")
               }
-              className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
+              className="w-full font-mono text-sm px-4 py-3.5 rounded-xl bg-text-primary text-surface border border-solution-accent/30 hover:border-solution-accent/60 shadow-sm transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

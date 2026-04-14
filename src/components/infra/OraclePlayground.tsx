@@ -196,6 +196,7 @@ export default function OraclePlayground() {
   const [prices, setPrices] = useState<PricePoint[]>([]);
   const { copied, copy } = useCopyToClipboard();
   const [codeTab, setCodeTab] = useState<"js" | "sol">("js");
+  const [showCode, setShowCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const latestPriceRef = useRef<number | null>(null);
@@ -417,8 +418,18 @@ export default function OraclePlayground() {
           </div>
         </div>
 
-        {/* ── Right: Code panel ────────────────────────────────────────── */}
-        <div className="bg-surface-elevated rounded-2xl border border-border overflow-hidden flex flex-col">
+        {/* Mobile code toggle */}
+        <button
+          onClick={() => setShowCode((s) => !s)}
+          className="lg:hidden w-full font-mono text-sm px-4 py-2.5 rounded-xl border border-border bg-surface-elevated text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-all flex items-center justify-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          {showCode ? "Hide code" : "View code"}
+        </button>
+        {/* Code panel */}
+        <div className={`bg-surface-elevated rounded-2xl border border-border overflow-hidden flex-col ${showCode ? "flex" : "hidden lg:flex"}`}>
           {/* Code tabs */}
           <div className="flex items-center border-b border-border px-4">
             <button
@@ -459,7 +470,7 @@ export default function OraclePlayground() {
           </div>
 
           {/* Code block */}
-          <div className="flex-1 overflow-auto p-5">
+          <div className="flex-1 overflow-auto p-5 max-h-80 lg:max-h-none">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${selectedToken}-${codeTab}`}
@@ -480,7 +491,7 @@ export default function OraclePlayground() {
           <div className="border-t border-border p-4">
             <button
               onClick={() => copy(getAIPrompt(token), "ai")}
-              className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
+              className="w-full font-mono text-sm px-4 py-3.5 rounded-xl bg-text-primary text-surface border border-solution-accent/30 hover:border-solution-accent/60 shadow-sm transition-all flex items-center justify-center gap-2"
             >
               <svg
                 className="w-4 h-4"
