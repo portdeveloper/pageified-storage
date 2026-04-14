@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, useMemo } from "react";
+import CodeBlock from "./CodeBlock";
+import { useCopyToClipboard } from "./useCopyToClipboard";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -19,6 +21,7 @@ type Step = "idle" | "fetching" | "decoding" | "done";
 /* ─── Frameworks (from Monad docs) ───────────────────────────────────── */
 
 const FRAMEWORKS = [
+  { id: "envio", name: "Envio", ready: true },
   { id: "thegraph", name: "The Graph", ready: false },
   { id: "goldsky", name: "Goldsky", ready: false },
   { id: "ghost", name: "Ghost", ready: false },
@@ -264,8 +267,9 @@ export default function IndexerPlayground() {
   const [latencyMs, setLatencyMs] = useState(0);
   const [revealIndex, setRevealIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+  const { copied, copy } = useCopyToClipboard();
   const [codeTab, setCodeTab] = useState<"hypersync" | "hyperindex">("hypersync");
+  const [frameworkId, setFrameworkId] = useState("envio");
 
   const evt = EVENT_TYPES[eventType];
   const range = BLOCK_RANGES[blockRange];
@@ -290,12 +294,6 @@ export default function IndexerPlayground() {
       2
     );
   }, [evt.topic, range.value, activeAddress]);
-
-  const copyToClipboard = useCallback((text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  }, []);
 
   const runQuery = useCallback(async () => {
     setStep("fetching");
@@ -395,17 +393,23 @@ export default function IndexerPlayground() {
           Pick a framework
         </p>
         <div className="flex flex-wrap gap-2">
-          <button className="font-mono text-xs px-3 py-1.5 rounded-lg border bg-solution-accent text-white border-solution-accent">
-            Envio
-          </button>
           {FRAMEWORKS.map((f) => (
             <button
               key={f.id}
-              disabled
-              className="font-mono text-xs px-3 py-1.5 rounded-lg border text-text-tertiary/30 border-border/40 cursor-default"
+              onClick={() => f.ready && setFrameworkId(f.id)}
+              disabled={!f.ready}
+              className={`font-mono text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                frameworkId === f.id
+                  ? "bg-solution-accent text-white border-solution-accent"
+                  : f.ready
+                  ? "bg-surface-elevated text-text-secondary border-border hover:border-text-tertiary"
+                  : "text-text-tertiary/30 border-border/40 cursor-default"
+              }`}
             >
               {f.name}
-              <span className="ml-1.5 text-[10px] opacity-50">soon</span>
+              {!f.ready && (
+                <span className="ml-1.5 text-[10px] opacity-50">soon</span>
+              )}
             </button>
           ))}
         </div>
@@ -646,9 +650,10 @@ export default function IndexerPlayground() {
                     ))}
                   </tbody>
                 </table>
-                {totalCount > 12 && step === "done" && (
+                {step === "done" && (
                   <p className="font-mono text-[10px] text-text-tertiary mt-2">
-                    Showing 12 of {totalCount}
+                    {totalCount > 12 && <>Showing 12 of {totalCount} &middot; </>}
+                    Values are approximate (assumes 18 or 6 decimals)
                   </p>
                 )}
               </motion.div>
@@ -714,13 +719,14 @@ export default function IndexerPlayground() {
             <div className="flex-1" />
             <button
               onClick={() =>
-                copyToClipboard(
+                copy(
                   codeTab === "hypersync"
                     ? getHyperSyncSnippet(evt, activeAddress)
                     : getHyperIndexSnippet(evt, activeAddress),
                   "code"
                 )
               }
+              aria-label="Copy code snippet"
               className="font-mono text-[11px] text-text-tertiary hover:text-text-primary transition-colors px-2 py-1"
             >
               {copied === "code" ? "Copied!" : "Copy"}
@@ -730,25 +736,27 @@ export default function IndexerPlayground() {
           {/* Code block */}
           <div className="flex-1 overflow-auto p-5">
             <AnimatePresence mode="wait">
-              <motion.pre
+              <motion.div
                 key={`${eventType}-${contractIndex}-${customAddress}-${codeTab}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="font-mono text-[13px] leading-relaxed text-text-primary whitespace-pre-wrap break-words"
               >
-                {codeTab === "hypersync"
-                  ? getHyperSyncSnippet(evt, activeAddress)
-                  : getHyperIndexSnippet(evt, activeAddress)}
-              </motion.pre>
+                <CodeBlock
+                  code={codeTab === "hypersync"
+                    ? getHyperSyncSnippet(evt, activeAddress)
+                    : getHyperIndexSnippet(evt, activeAddress)}
+                  language={codeTab === "hypersync" ? "javascript" : "yaml"}
+                />
+              </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Copy for AI button */}
           <div className="border-t border-border p-4">
             <button
-              onClick={() => copyToClipboard(getAIPrompt(evt, range.value, activeAddress), "ai")}
+              onClick={() => copy(getAIPrompt(evt, range.value, activeAddress), "ai")}
               className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

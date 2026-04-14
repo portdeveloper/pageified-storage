@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import OraclePlayground from "./OraclePlayground";
 import IndexerPlayground from "./IndexerPlayground";
 import SwapPlayground from "./SwapPlayground";
 import PaymentsPlayground from "./PaymentsPlayground";
+import ErrorBoundary from "./ErrorBoundary";
 
 interface Category {
   id: string;
@@ -26,6 +27,26 @@ const CATEGORIES: Category[] = [
 
 export default function InfraContent() {
   const [active, setActive] = useState("oracles");
+  const [visited, setVisited] = useState(() => new Set(["oracles"]));
+
+  // Restore active tab from URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const valid = CATEGORIES.find((c) => c.id === hash && c.ready);
+    if (valid) {
+      setActive(hash);
+      setVisited((prev) => new Set(prev).add(hash));
+    }
+  }, []);
+
+  const selectCategory = (id: string) => {
+    setActive(id);
+    setVisited((prev) => {
+      if (prev.has(id)) return prev;
+      return new Set(prev).add(id);
+    });
+    window.history.replaceState(null, "", `#${id}`);
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center px-6">
@@ -57,7 +78,7 @@ export default function InfraContent() {
             return (
               <button
                 key={cat.id}
-                onClick={() => cat.ready && setActive(cat.id)}
+                onClick={() => cat.ready && selectCategory(cat.id)}
                 disabled={!cat.ready}
                 className={`
                   font-mono text-sm px-4 py-2.5 rounded-xl border transition-all duration-200
@@ -81,19 +102,37 @@ export default function InfraContent() {
         </div>
       </motion.div>
 
-      {/* Active playground */}
-      <motion.div
-        key={active}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-5xl mb-28"
-      >
-        {active === "oracles" && <OraclePlayground />}
-        {active === "indexers" && <IndexerPlayground />}
-        {active === "swaps" && <SwapPlayground />}
-        {active === "payments" && <PaymentsPlayground />}
-      </motion.div>
+      {/* Active playground — lazy mount, keep alive */}
+      <div className="w-full max-w-5xl mb-28">
+        {visited.has("oracles") && (
+          <div className={active !== "oracles" ? "hidden" : "playground-enter"}>
+            <ErrorBoundary>
+              <OraclePlayground />
+            </ErrorBoundary>
+          </div>
+        )}
+        {visited.has("indexers") && (
+          <div className={active !== "indexers" ? "hidden" : "playground-enter"}>
+            <ErrorBoundary>
+              <IndexerPlayground />
+            </ErrorBoundary>
+          </div>
+        )}
+        {visited.has("swaps") && (
+          <div className={active !== "swaps" ? "hidden" : "playground-enter"}>
+            <ErrorBoundary>
+              <SwapPlayground />
+            </ErrorBoundary>
+          </div>
+        )}
+        {visited.has("payments") && (
+          <div className={active !== "payments" ? "hidden" : "playground-enter"}>
+            <ErrorBoundary>
+              <PaymentsPlayground />
+            </ErrorBoundary>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

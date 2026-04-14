@@ -70,7 +70,7 @@ export default function OnChainCall({ symbol, address }: Props) {
     setRawHex("");
 
     // Small pause so user can see the request
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 400));
 
     try {
       const t0 = performance.now();

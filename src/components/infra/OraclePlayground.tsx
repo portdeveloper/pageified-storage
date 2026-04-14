@@ -1,8 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import OnChainCall from "./OnChainCall";
+import CodeBlock from "./CodeBlock";
+import { useCopyToClipboard } from "./useCopyToClipboard";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -192,7 +194,7 @@ export default function OraclePlayground() {
   const [selectedToken, setSelectedToken] = useState(0);
   const [providerId, setProviderId] = useState("redstone");
   const [prices, setPrices] = useState<PricePoint[]>([]);
-  const [copied, setCopied] = useState<string | null>(null);
+  const { copied, copy } = useCopyToClipboard();
   const [codeTab, setCodeTab] = useState<"js" | "sol">("js");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,12 +250,6 @@ export default function OraclePlayground() {
     prices.length > 1 ? prices[prices.length - 2].price : currentPrice;
   const delta = currentPrice - prevPrice;
   const deltaColor = delta >= 0 ? "#2a7d6a" : "#c4653a";
-
-  const copyToClipboard = useCallback((text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -411,8 +407,9 @@ export default function OraclePlayground() {
             </code>
             <button
               onClick={() =>
-                copyToClipboard(token.redstoneAddress, "address")
+                copy(token.redstoneAddress, "address")
               }
+              aria-label="Copy contract address"
               className="font-mono text-[10px] text-text-tertiary hover:text-text-primary transition-colors shrink-0"
             >
               {copied === "address" ? "Copied!" : "Copy"}
@@ -447,13 +444,14 @@ export default function OraclePlayground() {
             <div className="flex-1" />
             <button
               onClick={() =>
-                copyToClipboard(
+                copy(
                   codeTab === "js"
                     ? getJSSnippet(token)
                     : getSolSnippet(token),
                   "code"
                 )
               }
+              aria-label="Copy code snippet"
               className="font-mono text-[11px] text-text-tertiary hover:text-text-primary transition-colors px-2 py-1"
             >
               {copied === "code" ? "Copied!" : "Copy"}
@@ -463,25 +461,25 @@ export default function OraclePlayground() {
           {/* Code block */}
           <div className="flex-1 overflow-auto p-5">
             <AnimatePresence mode="wait">
-              <motion.pre
+              <motion.div
                 key={`${selectedToken}-${codeTab}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="font-mono text-[13px] leading-relaxed text-text-primary whitespace-pre-wrap break-words"
               >
-                {codeTab === "js"
-                  ? getJSSnippet(token)
-                  : getSolSnippet(token)}
-              </motion.pre>
+                <CodeBlock
+                  code={codeTab === "js" ? getJSSnippet(token) : getSolSnippet(token)}
+                  language={codeTab === "js" ? "javascript" : "sol"}
+                />
+              </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Copy for AI button */}
           <div className="border-t border-border p-4">
             <button
-              onClick={() => copyToClipboard(getAIPrompt(token), "ai")}
+              onClick={() => copy(getAIPrompt(token), "ai")}
               className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
             >
               <svg

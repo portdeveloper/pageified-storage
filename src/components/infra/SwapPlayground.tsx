@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, useRef, useEffect } from "react";
+import CodeBlock from "./CodeBlock";
+import { useCopyToClipboard } from "./useCopyToClipboard";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -37,6 +39,7 @@ const KURU_API = "https://ws.kuru.io";
 /* ─── Aggregators (from Monad docs) ──────────────────────────────────── */
 
 const AGGREGATORS = [
+  { id: "kuru", name: "Kuru Flow", ready: true },
   { id: "relay", name: "Relay", ready: false },
   { id: "lifi", name: "Li.Fi", ready: false },
   { id: "squid", name: "Squid", ready: false },
@@ -228,8 +231,9 @@ export default function SwapPlayground() {
   const [quote, setQuote] = useState<QuoteResult | null>(null);
   const [latencyMs, setLatencyMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+  const { copied, copy } = useCopyToClipboard();
   const [codeTab, setCodeTab] = useState<"quick" | "component">("quick");
+  const [aggregatorId, setAggregatorId] = useState("kuru");
   const jwtRef = useRef<{ token: string; expires: number } | null>(null);
 
   const tokenIn = TOKENS[tokenInIdx];
@@ -248,13 +252,7 @@ export default function SwapPlayground() {
       .then((d) => {
         jwtRef.current = { token: d.token, expires: d.expires_at };
       })
-      .catch(() => {});
-  }, []);
-
-  const copyToClipboard = useCallback((text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
+      .catch((e) => console.warn("Kuru JWT prefetch failed:", e));
   }, []);
 
   const flipTokens = () => {
@@ -352,17 +350,23 @@ export default function SwapPlayground() {
           Pick an aggregator
         </p>
         <div className="flex flex-wrap gap-2">
-          <button className="font-mono text-xs px-3 py-1.5 rounded-lg border bg-solution-accent text-white border-solution-accent">
-            Kuru Flow
-          </button>
           {AGGREGATORS.map((a) => (
             <button
               key={a.id}
-              disabled
-              className="font-mono text-xs px-3 py-1.5 rounded-lg border text-text-tertiary/30 border-border/40 cursor-default"
+              onClick={() => a.ready && setAggregatorId(a.id)}
+              disabled={!a.ready}
+              className={`font-mono text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                aggregatorId === a.id
+                  ? "bg-solution-accent text-white border-solution-accent"
+                  : a.ready
+                  ? "bg-surface-elevated text-text-secondary border-border hover:border-text-tertiary"
+                  : "text-text-tertiary/30 border-border/40 cursor-default"
+              }`}
             >
               {a.name}
-              <span className="ml-1.5 text-[10px] opacity-50">soon</span>
+              {!a.ready && (
+                <span className="ml-1.5 text-[10px] opacity-50">soon</span>
+              )}
             </button>
           ))}
         </div>
@@ -415,6 +419,7 @@ export default function SwapPlayground() {
           <div className="flex justify-center">
             <button
               onClick={flipTokens}
+              aria-label="Swap token direction"
               className="w-8 h-8 rounded-full border border-border bg-surface hover:bg-border/30 transition-all flex items-center justify-center"
             >
               <svg className="w-4 h-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -601,13 +606,14 @@ export default function SwapPlayground() {
             <div className="flex-1" />
             <button
               onClick={() =>
-                copyToClipboard(
+                copy(
                   codeTab === "quick"
                     ? getKuruSnippet(tokenIn, tokenOut, amount)
                     : getSwapComponentSnippet(tokenIn, tokenOut),
                   "code"
                 )
               }
+              aria-label="Copy code snippet"
               className="font-mono text-[11px] text-text-tertiary hover:text-text-primary transition-colors px-2 py-1"
             >
               {copied === "code" ? "Copied!" : "Copy"}
@@ -616,25 +622,27 @@ export default function SwapPlayground() {
 
           <div className="flex-1 overflow-auto p-5">
             <AnimatePresence mode="wait">
-              <motion.pre
+              <motion.div
                 key={`${tokenInIdx}-${tokenOutIdx}-${amount}-${codeTab}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="font-mono text-[13px] leading-relaxed text-text-primary whitespace-pre-wrap break-words"
               >
-                {codeTab === "quick"
-                  ? getKuruSnippet(tokenIn, tokenOut, amount)
-                  : getSwapComponentSnippet(tokenIn, tokenOut)}
-              </motion.pre>
+                <CodeBlock
+                  code={codeTab === "quick"
+                    ? getKuruSnippet(tokenIn, tokenOut, amount)
+                    : getSwapComponentSnippet(tokenIn, tokenOut)}
+                  language="javascript"
+                />
+              </motion.div>
             </AnimatePresence>
           </div>
 
           <div className="border-t border-border p-4">
             <button
               onClick={() =>
-                copyToClipboard(getAIPrompt(tokenIn, tokenOut, amount), "ai")
+                copy(getAIPrompt(tokenIn, tokenOut, amount), "ai")
               }
               className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
             >

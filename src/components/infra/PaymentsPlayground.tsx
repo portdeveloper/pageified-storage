@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, useRef } from "react";
+import CodeBlock from "./CodeBlock";
+import { useCopyToClipboard } from "./useCopyToClipboard";
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
@@ -89,42 +91,42 @@ function parseReceipt(header: string): ReceiptField[] {
 /* ─── Code snippets ──────────────────────────────────────────────────── */
 
 function getServerSnippet(): string {
-  return "// npm install @monad-crypto/mpp mppx viem hono\n" +
-    "import { Mppx } from \"mppx/hono\";\n" +
-    "import { monad } from \"@monad-crypto/mpp/server\";\n" +
-    "import { privateKeyToAccount } from \"viem/accounts\";\n" +
-    "import { createPublicClient, http } from \"viem\";\n" +
-    "import { Hono } from \"hono\";\n" +
-    "\n" +
-    "const account = privateKeyToAccount(process.env.SERVER_KEY);\n" +
-    "\n" +
-    "const mppx = Mppx.create({\n" +
-    "  methods: [\n" +
-    "    monad({\n" +
-    "      account,\n" +
-    "      recipient: account.address,\n" +
-    "      amount: \"0.10\",             // 0.10 USDC per request\n" +
-    "      currency: \"" + USDC_ADDRESS + "\",\n" +
-    "      decimals: 6,\n" +
-    "      description: \"Monad network stats\",\n" +
-    "      externalId: \"stats-v1\",\n" +
-    "      getClient: () => createPublicClient({\n" +
-    "        transport: http(\"https://rpc.monad.xyz\"),\n" +
-    "      }),\n" +
-    "      store: new Map(),           // replay protection (use Redis in prod)\n" +
-    "    }),\n" +
-    "  ],\n" +
-    "});\n" +
-    "\n" +
-    "const app = new Hono();\n" +
-    "\n" +
-    "// Protect any route with mppx.charge({})\n" +
-    "app.get(\"/api/stats\", mppx.charge({}), (c) => {\n" +
-    "  // Runs only after payment is verified on Monad (chain 10143)\n" +
-    "  return c.json({ block: 12345678, gasPrice: \"52\", tps: 10000 });\n" +
-    "});\n" +
-    "\n" +
-    "export default app;";
+  return `// npm install @monad-crypto/mpp mppx viem hono
+import { Mppx } from "mppx/hono";
+import { monad } from "@monad-crypto/mpp/server";
+import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, http } from "viem";
+import { Hono } from "hono";
+
+const account = privateKeyToAccount(process.env.SERVER_KEY);
+
+const mppx = Mppx.create({
+  methods: [
+    monad({
+      account,
+      recipient: account.address,
+      amount: "0.10",             // 0.10 USDC per request
+      currency: "${USDC_ADDRESS}",
+      decimals: 6,
+      description: "Monad network stats",
+      externalId: "stats-v1",
+      getClient: () => createPublicClient({
+        transport: http("https://rpc.monad.xyz"),
+      }),
+      store: new Map(),           // replay protection (use Redis in prod)
+    }),
+  ],
+});
+
+const app = new Hono();
+
+// Protect any route with mppx.charge({})
+app.get("/api/stats", mppx.charge({}), (c) => {
+  // Runs only after payment is verified on Monad (chain 10143)
+  return c.json({ block: 12345678, gasPrice: "52", tps: 10000 });
+});
+
+export default app;`;
 }
 
 function getClientSnippet(mode: Mode): string {
@@ -139,34 +141,34 @@ function getClientSnippet(mode: Mode): string {
     ? "verifies transfer on-chain"
     : "broadcasts transfer + verifies";
 
-  return "// npm install @monad-crypto/mpp mppx viem\n" +
-    "import { Mppx } from \"mppx/client\";\n" +
-    "import { monad } from \"@monad-crypto/mpp/client\";\n" +
-    "import { privateKeyToAccount } from \"viem/accounts\";\n" +
-    "\n" +
-    "const account = privateKeyToAccount(process.env.CLIENT_KEY);\n" +
-    "\n" +
-    "// Set up MPP — patches fetch to handle 402 responses\n" +
-    "Mppx.create({\n" +
-    "  methods: [\n" +
-    "    monad({\n" +
-    "      account,\n" +
-    "      mode: \"" + mode + "\",  // " + modeDesc + "\n" +
-    "    }),\n" +
-    "  ],\n" +
-    "});\n" +
-    "\n" +
-    "// Now just use fetch — MPP handles payment automatically\n" +
-    "const res = await fetch(\"https://stats-api.example.com/api/stats\");\n" +
-    "const data = await res.json();\n" +
-    "console.log(data); // { block: 12345678, gasPrice: \"52\", tps: 10000 }\n" +
-    "\n" +
-    "// Under the hood:\n" +
-    "// 1. fetch() sends GET /api/stats\n" +
-    "// 2. Server responds 402 + payment challenge\n" +
-    "// 3. Client " + step3 + "\n" +
-    "// 4. Client retries with " + step4cred + " as credential\n" +
-    "// 5. Server " + step5 + ", returns 200 OK";
+  return `// npm install @monad-crypto/mpp mppx viem
+import { Mppx } from "mppx/client";
+import { monad } from "@monad-crypto/mpp/client";
+import { privateKeyToAccount } from "viem/accounts";
+
+const account = privateKeyToAccount(process.env.CLIENT_KEY);
+
+// Set up MPP — patches fetch to handle 402 responses
+Mppx.create({
+  methods: [
+    monad({
+      account,
+      mode: "${mode}",  // ${modeDesc}
+    }),
+  ],
+});
+
+// Now just use fetch — MPP handles payment automatically
+const res = await fetch("https://stats-api.example.com/api/stats");
+const data = await res.json();
+console.log(data); // { block: 12345678, gasPrice: "52", tps: 10000 }
+
+// Under the hood:
+// 1. fetch() sends GET /api/stats
+// 2. Server responds 402 + payment challenge
+// 3. Client ${step3}
+// 4. Client retries with ${step4cred} as credential
+// 5. Server ${step5}, returns 200 OK`;
 }
 
 function getAIPrompt(mode: Mode): string {
@@ -174,40 +176,40 @@ function getAIPrompt(mode: Mode): string {
     ? "broadcasts ERC-20 transfer, credential = tx hash"
     : "signs ERC-3009 transferWithAuthorization, credential = signed auth";
 
-  return "I want to add per-request machine payments to my API using MPP on Monad.\n" +
-    "\n" +
-    "## What MPP is\n" +
-    "MPP (Machine Payments Protocol) is an open standard for machine-to-machine\n" +
-    "payments via HTTP 402. APIs charge per-request using USDC on Monad.\n" +
-    "\n" +
-    "## The flow\n" +
-    "1. Client sends GET /resource\n" +
-    "2. Server returns 402 Payment Required with WWW-Authenticate: Payment header\n" +
-    "3. Client pays (" + mode + " mode) — " + modeDesc + "\n" +
-    "4. Client retries with Authorization: Payment <credential>\n" +
-    "5. Server verifies, returns 200 OK with Payment-Receipt header\n" +
-    "\n" +
-    "## Server setup\n" +
-    getServerSnippet() + "\n" +
-    "\n" +
-    "## Client setup\n" +
-    getClientSnippet(mode) + "\n" +
-    "\n" +
-    "## Key details\n" +
-    "- npm install mppx @monad-crypto/mpp viem\n" +
-    "- Monad mainnet chain ID: 10143\n" +
-    "- Default token: USDC (6 decimals) at " + USDC_ADDRESS + "\n" +
-    "- Push mode: client pays gas, broadcasts ERC-20 transfer\n" +
-    "- Pull mode: server pays gas, client signs ERC-3009 authorization off-chain\n" +
-    "- Server: import { Mppx } from \"mppx/hono\", import { monad } from \"@monad-crypto/mpp/server\"\n" +
-    "- Client: import { Mppx } from \"mppx/client\", import { monad } from \"@monad-crypto/mpp/client\"\n" +
-    "- Client library patches fetch — after setup, just use fetch() normally\n" +
-    "- Server uses mppx.charge({}) as Hono middleware\n" +
-    "- MPP spec: https://mpp.dev\n" +
-    "- Monad docs: https://docs.monad.xyz/reference/mpp/overview\n" +
-    "- Package: https://www.npmjs.com/package/@monad-crypto/mpp\n" +
-    "\n" +
-    "Integrate this into my project following my existing code patterns.";
+  return `I want to add per-request machine payments to my API using MPP on Monad.
+
+## What MPP is
+MPP (Machine Payments Protocol) is an open standard for machine-to-machine
+payments via HTTP 402. APIs charge per-request using USDC on Monad.
+
+## The flow
+1. Client sends GET /resource
+2. Server returns 402 Payment Required with WWW-Authenticate: Payment header
+3. Client pays (${mode} mode) — ${modeDesc}
+4. Client retries with Authorization: Payment <credential>
+5. Server verifies, returns 200 OK with Payment-Receipt header
+
+## Server setup
+${getServerSnippet()}
+
+## Client setup
+${getClientSnippet(mode)}
+
+## Key details
+- npm install mppx @monad-crypto/mpp viem
+- Monad mainnet chain ID: 10143
+- Default token: USDC (6 decimals) at ${USDC_ADDRESS}
+- Push mode: client pays gas, broadcasts ERC-20 transfer
+- Pull mode: server pays gas, client signs ERC-3009 authorization off-chain
+- Server: import { Mppx } from "mppx/hono", import { monad } from "@monad-crypto/mpp/server"
+- Client: import { Mppx } from "mppx/client", import { monad } from "@monad-crypto/mpp/client"
+- Client library patches fetch — after setup, just use fetch() normally
+- Server uses mppx.charge({}) as Hono middleware
+- MPP spec: https://mpp.dev
+- Monad docs: https://docs.monad.xyz/reference/mpp/overview
+- Package: https://www.npmjs.com/package/@monad-crypto/mpp
+
+Integrate this into my project following my existing code patterns.`;
 }
 
 /* ─── Main component ─────────────────────────────────────────────────── */
@@ -216,7 +218,7 @@ export default function PaymentsPlayground() {
   const [mode, setMode] = useState<Mode>("push");
   const [flowStep, setFlowStep] = useState<FlowStep>("idle");
   const [revealIndex, setRevealIndex] = useState(-1);
-  const [copied, setCopied] = useState<string | null>(null);
+  const { copied, copy } = useCopyToClipboard();
   const [codeTab, setCodeTab] = useState<"server" | "client">("server");
   const [error, setError] = useState<string | null>(null);
   const [latencyMs, setLatencyMs] = useState(0);
@@ -228,12 +230,6 @@ export default function PaymentsPlayground() {
 
   const isAtOrPast = (step: FlowStep) =>
     STEP_ORDER.indexOf(flowStep) >= STEP_ORDER.indexOf(step);
-
-  const copyToClipboard = useCallback((text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  }, []);
 
   const handleModeChange = (m: Mode) => {
     genRef.current++;
@@ -356,11 +352,12 @@ export default function PaymentsPlayground() {
           </code>
           <button
             onClick={() =>
-              copyToClipboard(
+              copy(
                 "npm install @monad-crypto/mpp mppx viem",
                 "install"
               )
             }
+            aria-label="Copy install command"
             className="font-mono text-[10px] text-text-tertiary hover:text-text-primary transition-colors shrink-0"
           >
             {copied === "install" ? "Copied!" : "Copy"}
@@ -711,7 +708,8 @@ export default function PaymentsPlayground() {
               {USDC_ADDRESS}
             </code>
             <button
-              onClick={() => copyToClipboard(USDC_ADDRESS, "usdc")}
+              onClick={() => copy(USDC_ADDRESS, "usdc")}
+              aria-label="Copy USDC address"
               className="font-mono text-[10px] text-text-tertiary hover:text-text-primary transition-colors shrink-0"
             >
               {copied === "usdc" ? "Copied!" : "Copy"}
@@ -745,13 +743,14 @@ export default function PaymentsPlayground() {
             <div className="flex-1" />
             <button
               onClick={() =>
-                copyToClipboard(
+                copy(
                   codeTab === "server"
                     ? getServerSnippet()
                     : getClientSnippet(mode),
                   "code"
                 )
               }
+              aria-label="Copy code snippet"
               className="font-mono text-[11px] text-text-tertiary hover:text-text-primary transition-colors px-2 py-1"
             >
               {copied === "code" ? "Copied!" : "Copy"}
@@ -760,24 +759,24 @@ export default function PaymentsPlayground() {
 
           <div className="flex-1 overflow-auto p-5">
             <AnimatePresence mode="wait">
-              <motion.pre
+              <motion.div
                 key={mode + "-" + codeTab}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="font-mono text-[13px] leading-relaxed text-text-primary whitespace-pre-wrap break-words"
               >
-                {codeTab === "server"
-                  ? getServerSnippet()
-                  : getClientSnippet(mode)}
-              </motion.pre>
+                <CodeBlock
+                  code={codeTab === "server" ? getServerSnippet() : getClientSnippet(mode)}
+                  language="javascript"
+                />
+              </motion.div>
             </AnimatePresence>
           </div>
 
           <div className="border-t border-border p-4">
             <button
-              onClick={() => copyToClipboard(getAIPrompt(mode), "ai")}
+              onClick={() => copy(getAIPrompt(mode), "ai")}
               className="w-full font-mono text-sm px-4 py-3 rounded-xl bg-text-primary text-surface hover:bg-text-primary/90 transition-all flex items-center justify-center gap-2"
             >
               <svg
