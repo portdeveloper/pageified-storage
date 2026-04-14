@@ -5,6 +5,7 @@ import { useState } from "react";
 import OraclePlayground from "./OraclePlayground";
 import IndexerPlayground from "./IndexerPlayground";
 import SwapPlayground from "./SwapPlayground";
+import PaymentsPlayground from "./PaymentsPlayground";
 
 interface Category {
   id: string;
@@ -17,6 +18,7 @@ const CATEGORIES: Category[] = [
   { id: "oracles", label: "Use an Oracle", icon: "◎", ready: true },
   { id: "indexers", label: "Index Events", icon: "⦿", ready: true },
   { id: "swaps", label: "Swap Tokens", icon: "⇄", ready: true },
+  { id: "payments", label: "Accept Payments", icon: "◈", ready: true },
   { id: "bridges", label: "Bridge Assets", icon: "⌁", ready: false },
   { id: "rpcs", label: "Query an RPC", icon: "⟡", ready: false },
   { id: "auth", label: "Add Auth", icon: "⊡", ready: false },
@@ -90,6 +92,7 @@ export default function InfraContent() {
         {active === "oracles" && <OraclePlayground />}
         {active === "indexers" && <IndexerPlayground />}
         {active === "swaps" && <SwapPlayground />}
+        {active === "payments" && <PaymentsPlayground />}
       </motion.div>
     </main>
   );
