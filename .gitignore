@@ -17,3 +17,4 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .playwright-mcp/
+.gstack/
