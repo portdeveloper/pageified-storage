@@ -352,6 +352,7 @@ const zh = {
       identified: "已定位",
       lost: "丢失",
       reverted: "已回滚",
+      violatesReserve: "违反保证金余额",
       processing: "处理中...",
       replay: "重放",
       runBundler: "运行 bundler",

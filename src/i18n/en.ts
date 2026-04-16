@@ -361,11 +361,12 @@ const en = {
       identified: "identified",
       lost: "lost",
       reverted: "reverted",
+      violatesReserve: "violates reserve balance",
       processing: "Processing...",
       replay: "Replay",
       runBundler: "Run bundler",
       withoutMessage:
-        "Reserve violation. Entire bundle reverts. The bundler receives no on-chain signal identifying which UserOp triggered the failure.",
+        "Reserve violation in UserOp #3 causes the entire bundle to revert. The bundler has no way to know which UserOp was responsible — all 5 operations and their gas are lost.",
       withMessage:
         "dippedIntoReserve() \u2192 true after UserOp #3. Bundle still reverts, but the offending op is now identified. Bundler excludes it from future bundles.",
     },

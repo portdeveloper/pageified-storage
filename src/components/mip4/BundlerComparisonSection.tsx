@@ -19,7 +19,7 @@ const USER_OPS: UserOp[] = [
   { id: 5, label: "Swap 0.1 MON → WETH", causesViolation: false },
 ];
 
-type OpStatus = "pending" | "executing" | "success" | "failed" | "flagged";
+type OpStatus = "pending" | "executing" | "success" | "failed" | "flagged" | "warning";
 
 export default function BundlerComparisonSection() {
   const { ref, isVisible } = useInView(0.1);
@@ -59,11 +59,24 @@ export default function BundlerComparisonSection() {
     const nextStep = step + 1;
 
     if (mode === "without") {
-      // Without MIP-4: process until violation, then all fail. No diagnostics.
-      if (nextStep >= USER_OPS.length) {
+      // Without MIP-4: all ops execute (no early detection), then entire bundle reverts.
+      // The bundler has no way to know which op caused the failure.
+      if (nextStep > USER_OPS.length) {
         setIsPlaying(false);
         return;
       }
+
+      // After all ops processed, trigger the full bundle revert
+      if (nextStep === USER_OPS.length) {
+        const timer = setTimeout(() => {
+          setOpStatuses(USER_OPS.map(() => "failed"));
+          setMessage(t("mip4.bundler.withoutMessage"));
+          setStep(nextStep);
+          setIsPlaying(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+
       const op = USER_OPS[nextStep];
       const timer = setTimeout(() => {
         setStep(nextStep);
@@ -74,17 +87,13 @@ export default function BundlerComparisonSection() {
         });
 
         setTimeout(() => {
-          if (op.causesViolation) {
-            setOpStatuses(USER_OPS.map(() => "failed"));
-            setMessage(t("mip4.bundler.withoutMessage"));
-            setIsPlaying(false);
-          } else {
-            setOpStatuses((prev) => {
-              const next = [...prev];
-              next[nextStep] = "success";
-              return next;
-            });
-          }
+          setOpStatuses((prev) => {
+            const next = [...prev];
+            // Op passes execution — but if it causes a violation,
+            // show a warning (the bundler can't see this yet)
+            next[nextStep] = op.causesViolation ? "warning" : "success";
+            return next;
+          });
         }, 600);
       }, 800);
       return () => clearTimeout(timer);
@@ -129,7 +138,7 @@ export default function BundlerComparisonSection() {
   }, [isPlaying, step, mode, t]);
 
   const finished =
-    step >= USER_OPS.length - 1 ||
+    step >= USER_OPS.length ||
     opStatuses.some((s) => s === "failed" || s === "flagged");
 
   return (
@@ -197,6 +206,8 @@ export default function BundlerComparisonSection() {
                       ? "border-text-primary bg-surface"
                       : status === "success"
                       ? "border-solution-accent-light bg-solution-bg"
+                      : status === "warning"
+                      ? "border-solution-accent-light bg-solution-bg"
                       : status === "failed"
                       ? "border-problem-cell-hover bg-problem-bg"
                       : status === "flagged"
@@ -209,6 +220,8 @@ export default function BundlerComparisonSection() {
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-semibold shrink-0 ${
                       status === "success"
                         ? "bg-solution-accent text-white"
+                        : status === "warning"
+                        ? "bg-solution-accent text-white"
                         : status === "failed"
                         ? "bg-problem-accent text-white"
                         : status === "flagged"
@@ -220,6 +233,8 @@ export default function BundlerComparisonSection() {
                   >
                     {status === "success"
                       ? "\u2713"
+                      : status === "warning"
+                      ? "!"
                       : status === "failed" || status === "flagged"
                       ? "\u2717"
                       : op.id}
@@ -231,7 +246,7 @@ export default function BundlerComparisonSection() {
                         ? "text-problem-accent line-through"
                         : status === "flagged"
                         ? "text-problem-accent font-semibold"
-                        : status === "success"
+                        : status === "success" || status === "warning"
                         ? "text-solution-accent"
                         : "text-text-primary"
                     }`}
@@ -248,7 +263,25 @@ export default function BundlerComparisonSection() {
                       {t("mip4.bundler.identified")}
                     </motion.span>
                   )}
-                  {status === "failed" && mode === "without" && (
+                  {status === "warning" && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-solution-accent/20 text-solution-accent"
+                    >
+                      {t("mip4.bundler.violatesReserve")}
+                    </motion.span>
+                  )}
+                  {status === "failed" && mode === "without" && op.causesViolation && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent text-white"
+                    >
+                      {t("mip4.bundler.violatesReserve")}
+                    </motion.span>
+                  )}
+                  {status === "failed" && mode === "without" && !op.causesViolation && (
                     <motion.span
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
