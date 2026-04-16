@@ -353,12 +353,12 @@ const en = {
       title: "The bundler problem",
       desc: "An ERC-4337 bundler processes multiple UserOperations in one transaction. A single reserve violation reverts the entire bundle.",
       subDesc:
-        "Without MIP-4, the bundler has no way to know which UserOp caused the failure. With MIP-4, the bundler can call dippedIntoReserve() after each op to identify the offender and exclude it from future bundles.",
+        "Without MIP-4, the bundler has no way to know which UserOp caused the failure. With MIP-4, the bundler can call dippedIntoReserve() after each op to identify and revert only the offending op, letting the rest of the bundle complete.",
       withoutMip4: "Without MIP-4",
       withMip4: "With MIP-4",
       userOps: "Bundler: 5 UserOperations",
       checkedAfter: "dippedIntoReserve() checked after each op returns",
-      identified: "identified",
+      identified: "identified & reverted",
       lost: "lost",
       reverted: "reverted",
       violatesReserve: "violates reserve balance",
@@ -368,7 +368,7 @@ const en = {
       withoutMessage:
         "Reserve violation in UserOp #3 causes the entire bundle to revert. The bundler has no way to know which UserOp was responsible — all 5 operations and their gas are lost.",
       withMessage:
-        "dippedIntoReserve() \u2192 true after UserOp #3. Bundle still reverts, but the offending op is now identified. Bundler excludes it from future bundles.",
+        "dippedIntoReserve() \u2192 true after UserOp #3. The offending op is identified and reverted. The remaining UserOps complete successfully.",
     },
     timeline: {
       title: "Watch the reserve in action",

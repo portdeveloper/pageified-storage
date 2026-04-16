@@ -98,9 +98,13 @@ export default function BundlerComparisonSection() {
       }, 800);
       return () => clearTimeout(timer);
     } else {
-      // With MIP-4: bundle still fails, but bundler can identify the offending op
+      // With MIP-4: dippedIntoReserve() identifies the violating op.
+      // That op is reverted, but the rest of the bundle continues.
       if (nextStep >= USER_OPS.length) {
         setIsPlaying(false);
+        if (opStatuses.some((s) => s === "flagged")) {
+          setMessage(t("mip4.bundler.withMessage"));
+        }
         return;
       }
       const op = USER_OPS[nextStep];
@@ -114,16 +118,12 @@ export default function BundlerComparisonSection() {
 
         setTimeout(() => {
           if (op.causesViolation) {
-            // Bundle still fails, but the violating op is identified
+            // dippedIntoReserve() detects the violation — this op is reverted
             setOpStatuses((prev) => {
-              const next = prev.map((s) =>
-                s === "success" ? "failed" : s
-              );
+              const next = [...prev];
               next[nextStep] = "flagged";
               return next;
             });
-            setMessage(t("mip4.bundler.withMessage"));
-            setIsPlaying(false);
           } else {
             setOpStatuses((prev) => {
               const next = [...prev];
@@ -288,15 +288,6 @@ export default function BundlerComparisonSection() {
                       className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
                     >
                       {t("mip4.bundler.lost")}
-                    </motion.span>
-                  )}
-                  {status === "failed" && mode === "with" && (
-                    <motion.span
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full bg-problem-accent/20 text-problem-accent"
-                    >
-                      {t("mip4.bundler.reverted")}
                     </motion.span>
                   )}
                 </motion.div>
