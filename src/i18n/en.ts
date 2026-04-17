@@ -496,7 +496,7 @@ const en = {
       example5Name: "Forbidden: PUSH selector",
     },
     encoding: {
-      title: "Argument encoding",
+      title: "Immediate argument encoding",
       desc: "Extension opcodes have two ways to pass arguments. The choice depends on whether argument bytes need to include values in the restricted range (0x5B or 0x60\u20130x7F).",
       modeA: "Mode A: Restricted-range",
       modeB: "Mode B: PUSH-prefix",

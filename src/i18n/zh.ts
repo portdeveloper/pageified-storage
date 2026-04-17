@@ -487,7 +487,7 @@ const zh = {
       example5Name: "禁止：PUSH 选择器",
     },
     encoding: {
-      title: "参数编码",
+      title: "立即数参数编码",
       desc: "扩展操作码有两种传参方式。选哪种取决于参数字节是否需要包含受限范围内的值（0x5B 或 0x60–0x7F）。",
       modeA: "模式 A：受限范围",
       modeB: "模式 B：PUSH 前缀",
