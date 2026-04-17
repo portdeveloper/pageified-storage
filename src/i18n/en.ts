@@ -33,7 +33,7 @@ const en = {
       title: "Extension Opcodes",
       subtitle: "Safe opcode expansion via 0xAE namespace",
       description:
-        "One reserved slot expands to 256 selectors. Monad adds opcode-level features without risking collision with future Ethereum upgrades.",
+        "One reserved slot expands to ~220 selectors. Monad adds opcode-level features without risking collision with future Ethereum upgrades.",
     },
   },
   mip8: {
@@ -419,7 +419,7 @@ const en = {
   mip7: {
     hero: {
       title1: "One reserved slot.",
-      titleHighlight: "256 possible functions.",
+      titleHighlight: "~220 possible functions.",
       desc: "Adding opcodes to an EVM chain risks collision with future Ethereum upgrades. MIP-7 claims one reserved slot as a safe extension namespace.",
       opcodeSpace: "EVM opcode space (0x00\u20130xFF)",
       defined: "defined",
@@ -428,7 +428,7 @@ const en = {
       clickToExpand: "Click 0xAE to expand the extension namespace",
       extensionSelectors: "0xAE XX: Monad extension selectors",
       allInvalid: "all INVALID today",
-      selectorsFuture: "256 selectors \u00b7 future MIPs assign specific functionality",
+      selectorsFuture: "~220 selectors \u00b7 future MIPs assign specific functionality",
     },
     collision: {
       title: "The collision problem",
@@ -451,7 +451,7 @@ const en = {
     },
     namespace: {
       title: "The extension namespace",
-      desc: "MIP-7 reserves opcode 0xAE as a gateway. The byte that follows is a selector, giving Monad 256 safe extension slots under a single top-level opcode.",
+      desc: "MIP-7 reserves opcode 0xAE as a gateway. The byte that follows is a selector, giving Monad ~220 safe extension slots under a single top-level opcode.",
       twoByteDispatch: "Two-byte dispatch",
       byte1: "Byte 1: opcode",
       reservedBy: "reserved by EIP-8163 \u00b7 INVALID on Ethereum L1",
@@ -462,9 +462,9 @@ const en = {
       ethNote: "EIP-8163 permanently reserves 0xAE for non-L1 use. Ethereum will never assign it to anything else.",
       monadNote:
         "When a selector is undefined, behaves as INVALID. Future MIPs assign specific selectors to Monad features.",
-      selectorTable: "Extension selector table (first 32 of 256 shown)",
+      selectorTable: "Extension selector table (first 32 of ~220 shown)",
       statusAll: "status: all unassigned",
-      moreSelectors: "+ 224 more selectors \u00b7 all unassigned \u00b7 future MIPs claim specific slots",
+      moreSelectors: "+ ~190 more selectors \u00b7 all unassigned \u00b7 future MIPs claim specific slots",
     },
     jumpdest: {
       title: "JUMPDEST analysis",
@@ -526,9 +526,9 @@ const en = {
       card2Title: "EVM-portable bytecode",
       card2Desc:
         "Contracts using 0xAE XX on Monad run on Ethereum as INVALID, not as some wrong function. Silent misbehavior is impossible. Bytecode that does work on Monad is predictably inert on Ethereum.",
-      card3Title: "256 slots for future MIPs",
+      card3Title: "~220 slots for future MIPs",
       card3Desc:
-        "All 256 selectors are unassigned today. Each future Monad feature claims its own selector via a new MIP. The encoding format never changes; only the dispatch table grows.",
+        "All ~220 selectors are unassigned today. Each future Monad feature claims its own selector via a new MIP. The encoding format never changes; only the dispatch table grows.",
     },
   },
   footer: {
@@ -542,7 +542,7 @@ const en = {
     mip4Note:
       "MIP-4 shipped as part of the MONAD_NINE network upgrade. The precompile at 0x1001 lets contracts detect reserve balance violations mid-execution.",
     mip7Note:
-      "MIP-7 aligns with EIP-8163, which reserves 0xAE on Ethereum L1 for non-L1 extension use. All 256 selectors are currently unassigned; future MIPs will claim specific slots.",
+      "MIP-7 aligns with EIP-8163, which reserves 0xAE on Ethereum L1 for non-L1 extension use. All ~220 selectors are currently unassigned; future MIPs will claim specific slots.",
   },
   discussion: {
     title: "Continue the discussion on Monad Forum",

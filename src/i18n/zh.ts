@@ -33,7 +33,7 @@ const zh = {
       title: "扩展操作码",
       subtitle: "通过 0xAE 命名空间安全地扩展操作码",
       description:
-        "一个操作码位，256 种扩展可能。Monad 可以添加新功能，而不会跟以太坊未来的升级冲突。",
+        "一个操作码位，约 220 种扩展可能。Monad 可以添加新功能，而不会跟以太坊未来的升级冲突。",
     },
   },
   mip8: {
@@ -410,7 +410,7 @@ const zh = {
   mip7: {
     hero: {
       title1: "一个保留位，",
-      titleHighlight: "256 种可能。",
+      titleHighlight: "约 220 种可能。",
       desc: "给 EVM 链添加操作码可能会跟以太坊未来的升级冲突。MIP-7 占用一个永久保留的位置作为安全的扩展空间。",
       opcodeSpace: "EVM 操作码空间 (0x00–0xFF)",
       defined: "已定义",
@@ -419,7 +419,7 @@ const zh = {
       clickToExpand: "点击 0xAE 展开扩展空间",
       extensionSelectors: "0xAE XX：Monad 扩展选择器",
       allInvalid: "目前全部为 INVALID",
-      selectorsFuture: "256 个选择器 · 由后续 MIP 分配具体功能",
+      selectorsFuture: "约 220 个选择器 · 由后续 MIP 分配具体功能",
     },
     collision: {
       title: "冲突问题",
@@ -442,7 +442,7 @@ const zh = {
     },
     namespace: {
       title: "扩展命名空间",
-      desc: "MIP-7 把操作码 0xAE 留作入口。后面跟的字节是选择器，一个顶级操作码即可提供 256 个安全的扩展位。",
+      desc: "MIP-7 把操作码 0xAE 留作入口。后面跟的字节是选择器，一个顶级操作码即可提供约 220 个安全的扩展位。",
       twoByteDispatch: "双字节分发",
       byte1: "字节 1：操作码",
       reservedBy: "由 EIP-8163 保留 · 在以太坊 L1 上为 INVALID",
@@ -453,9 +453,9 @@ const zh = {
       ethNote: "EIP-8163 永久将 0xAE 保留给非 L1 使用。以太坊永远不会把它分配给其他功能。",
       monadNote:
         "选择器未定义时，表现为 INVALID。后续的 MIP 会把特定选择器分配给 Monad 的功能。",
-      selectorTable: "扩展选择器表（显示前 32 个，共 256 个）",
+      selectorTable: "扩展选择器表（显示前 32 个，共约 220 个）",
       statusAll: "状态：全部未分配",
-      moreSelectors: "+ 另外 224 个选择器 · 全部未分配 · 由后续 MIP 认领",
+      moreSelectors: "+ 另外约 190 个选择器 · 全部未分配 · 由后续 MIP 认领",
     },
     jumpdest: {
       title: "JUMPDEST 分析",
@@ -516,9 +516,9 @@ const zh = {
       card2Title: "字节码可跨链",
       card2Desc:
         "使用 0xAE XX 的合约在以太坊上会直接 INVALID，不会静默执行成其他功能。Monad 上可运行的字节码在以太坊上会可预测地失败。",
-      card3Title: "为未来保留 256 个位置",
+      card3Title: "为未来保留约 220 个位置",
       card3Desc:
-        "256 个选择器目前全空着。以后每个 Monad 新功能用一个新 MIP 认领自己的选择器就行。编码格式不变，只是分发表多一行。",
+        "约 220 个选择器目前全空着。以后每个 Monad 新功能用一个新 MIP 认领自己的选择器就行。编码格式不变，只是分发表多一行。",
     },
   },
   footer: {
@@ -532,7 +532,7 @@ const zh = {
     mip4Note:
       "MIP-4 随 MONAD_NINE 网络升级发布。地址 0x1001 的预编译合约让合约可以检测保证金违规。",
     mip7Note:
-      "MIP-7 与 EIP-8163 保持一致。EIP-8163 在以太坊 L1 上将 0xAE 保留给非 L1 扩展使用。所有 256 个选择器目前未分配，由后续 MIP 认领。",
+      "MIP-7 与 EIP-8163 保持一致。EIP-8163 在以太坊 L1 上将 0xAE 保留给非 L1 扩展使用。所有约 220 个选择器目前未分配，由后续 MIP 认领。",
   },
   discussion: {
     title: "到 Monad 论坛继续讨论",

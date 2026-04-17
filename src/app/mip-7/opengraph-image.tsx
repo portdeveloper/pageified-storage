@@ -75,7 +75,7 @@ export default function Image() {
             marginBottom: "40px",
           }}
         >
-          One reserved slot. 256 possible functions.
+          One reserved slot. ~220 possible functions.
         </div>
 
         {/* Opcode grid (16×8, showing 0x00–0x7F) */}
