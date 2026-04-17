@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SpecDisclaimer from "@/components/SpecDisclaimer";
 
 // Quadratic: words²/512 + 3*words
 function ethMemoryCost(bytes: number): number {
@@ -81,6 +82,7 @@ export default function Mip3HeroSection() {
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
           {t("mip3.hero.desc")}
         </p>
+        <SpecDisclaimer />
       </motion.div>
 
       {/* Animated counter comparison */}

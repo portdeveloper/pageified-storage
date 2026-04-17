@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SpecDisclaimer from "@/components/SpecDisclaimer";
 
 // All Ethereum-defined opcodes as of Prague + PUSH0
 const DEFINED_OPCODES = new Set<number>([
@@ -54,6 +55,7 @@ export default function Mip7HeroSection() {
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
           {t("mip7.hero.desc")}
         </p>
+        <SpecDisclaimer />
       </motion.div>
 
       <motion.div

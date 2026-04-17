@@ -544,6 +544,10 @@ const en = {
     mip7Note:
       "MIP-7 aligns with EIP-8163, which reserves 0xAE on Ethereum L1 for non-L1 extension use. All ~220 selectors are currently unassigned; future MIPs will claim specific slots.",
   },
+  specDisclaimer: {
+    prefix: "The information on this page should not be quoted. Please refer to ",
+    suffix: " for the authoritative spec.",
+  },
   discussion: {
     title: "Continue the discussion on Monad Forum",
     desc: "Questions, feedback, or a better idea? Weigh in on the forum thread.",

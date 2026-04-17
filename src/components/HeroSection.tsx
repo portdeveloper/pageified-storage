@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SpecDisclaimer from "@/components/SpecDisclaimer";
 
 const COLS = 16;
 const ROWS = 8;
@@ -62,6 +63,7 @@ export default function HeroSection() {
           <br />
           {t("mip8.hero.desc2")}
         </p>
+        <SpecDisclaimer />
       </motion.div>
 
       {/* Animated page grid */}

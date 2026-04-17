@@ -534,6 +534,10 @@ const zh = {
     mip7Note:
       "MIP-7 与 EIP-8163 保持一致。EIP-8163 在以太坊 L1 上将 0xAE 保留给非 L1 扩展使用。所有约 220 个选择器目前未分配，由后续 MIP 认领。",
   },
+  specDisclaimer: {
+    prefix: "本页信息不应作为引用来源。请以 ",
+    suffix: " 原文为准。",
+  },
   discussion: {
     title: "到 Monad 论坛继续讨论",
     desc: "有问题、反馈、或者更好的方案？来论坛帖子聊聊。",

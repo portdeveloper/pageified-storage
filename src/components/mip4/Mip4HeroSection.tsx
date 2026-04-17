@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SpecDisclaimer from "@/components/SpecDisclaimer";
 
 const RESERVE_MON = 10;
 
@@ -59,6 +60,7 @@ export default function Mip4HeroSection() {
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
           {t("mip4.hero.desc")}
         </p>
+        <SpecDisclaimer />
       </motion.div>
 
       {/* Animated balance visualization */}
