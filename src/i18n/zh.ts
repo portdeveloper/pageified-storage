@@ -430,7 +430,7 @@ const zh = {
       step1Message:
         "Monad 把操作码 0xAB 定义为 FAST_HASH，一个 Monad 专属的优化哈希。在 Monad 上运行正常。",
       step2Message:
-        "以太坊的下一次升级把 0xAB 分配给了一个新的系统预编译。同一个位置，完全不同的功能。",
+        "以太坊的下一次升级把 0xAB 分配给了一个新的操作码 SWAP17。同一个位置，完全不同的功能。",
       step3Message:
         "部署在 Monad 上的合约用了 0xAB。如果这段字节码在以太坊上运行，0xAB 意味着完全不同的东西。没有报错，只有悄无声息的错误行为。",
       notAssigned: "尚未分配",

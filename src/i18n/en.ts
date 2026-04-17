@@ -439,7 +439,7 @@ const en = {
       step1Message:
         "Monad adds opcode 0xAB as FAST_HASH, a Monad-specific optimized hash. Works great on Monad.",
       step2Message:
-        "Ethereum's next upgrade assigns 0xAB to a new system precompile. The same slot, a completely different function.",
+        "Ethereum's next upgrade assigns 0xAB to SWAP17, a new opcode. The same slot, a completely different function.",
       step3Message:
         "A contract deployed on Monad uses 0xAB. If that bytecode ever runs on Ethereum, 0xAB means something entirely different. No error, just silent wrong behavior.",
       notAssigned: "not yet assigned",

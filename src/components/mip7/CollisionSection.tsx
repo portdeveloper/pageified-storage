@@ -22,14 +22,14 @@ export default function CollisionSection() {
       id: "eth-claims",
       label: t("mip7.collision.step2Label"),
       monad: { byte: "0xAB", name: "FAST_HASH", status: "claimed" },
-      ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "claimed" },
+      ethereum: { byte: "0xAB", name: "SWAP17", status: "claimed" },
       message: t("mip7.collision.step2Message"),
     },
     {
       id: "divergence",
       label: t("mip7.collision.step3Label"),
       monad: { byte: "0xAB", name: "FAST_HASH", status: "conflict" },
-      ethereum: { byte: "0xAB", name: "NEW_PRECOMPILE", status: "conflict" },
+      ethereum: { byte: "0xAB", name: "SWAP17", status: "conflict" },
       message: t("mip7.collision.step3Message"),
     },
   ];
@@ -158,7 +158,7 @@ export default function CollisionSection() {
             {step.ethereum.status === "claimed" || step.ethereum.status === "conflict" ? (
               <div className="font-mono text-xs bg-surface rounded-lg p-3 border border-border">
                 <span className="text-text-tertiary">// executes </span>
-                <span className="text-problem-accent">Ethereum NEW_PRECOMPILE</span>
+                <span className="text-problem-accent">Ethereum SWAP17</span>
               </div>
             ) : (
               <div className="font-mono text-xs bg-surface rounded-lg p-3 border border-border text-text-tertiary">
