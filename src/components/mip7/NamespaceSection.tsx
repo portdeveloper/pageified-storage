@@ -82,7 +82,7 @@ export default function NamespaceSection() {
                 {[
                   { sel: "0x00", label: "unassigned → INVALID", future: false },
                   { sel: "0x01", label: "unassigned → INVALID", future: false },
-                  { sel: "...", label: "all 254 others → INVALID", future: false },
+                  { sel: "...", label: "unassigned → INVALID", future: false },
                   { sel: "0xFF", label: "unassigned → INVALID", future: false },
                 ].map((row) => (
                   <div key={row.sel} className="flex items-center gap-3">
