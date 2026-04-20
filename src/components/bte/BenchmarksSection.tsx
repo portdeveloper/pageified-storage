@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "../useInView";
+import { Card } from "../ui/Card";
 
 interface BarProps {
   label: string;
@@ -70,7 +71,7 @@ export default function BenchmarksSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Total decryption */}
-          <div className="bg-surface-elevated rounded-xl border border-border p-6">
+          <Card>
             <p className="font-mono text-[11px] text-text-tertiary uppercase tracking-wider mb-1">
               Total decryption time
             </p>
@@ -94,10 +95,10 @@ export default function BenchmarksSection() {
               highlight
               sub="2.0× faster overall"
             />
-          </div>
+          </Card>
 
           {/* Per-ct open phase */}
-          <div className="bg-surface-elevated rounded-xl border border-border p-6">
+          <Card>
             <p className="font-mono text-[11px] text-text-tertiary uppercase tracking-wider mb-1">
               Open phase, per ciphertext
             </p>
@@ -122,10 +123,10 @@ export default function BenchmarksSection() {
               highlight
               sub="1 pairing per ciphertext — 4.2× faster"
             />
-          </div>
+          </Card>
         </div>
 
-        <div className="bg-surface-elevated rounded-xl border border-border p-6">
+        <Card>
           <p className="font-mono text-[11px] text-text-tertiary uppercase tracking-wider mb-4">
             How decryption time scales with batch size
           </p>
@@ -136,7 +137,7 @@ export default function BenchmarksSection() {
             library over BLS12-381 with AVX-512, compiled with Clang 21.1.8.
             Per-ciphertext numbers from BTX Table 4; totals from §8.
           </p>
-        </div>
+        </Card>
       </div>
     </section>
   );

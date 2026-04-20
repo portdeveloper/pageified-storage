@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "../useInView";
+import { Card } from "../ui/Card";
 
 export default function ConstructionSection() {
   const { ref, isVisible } = useInView(0.1);
@@ -41,7 +42,7 @@ export default function ConstructionSection() {
             </p>
           </div>
           <div className="md:col-span-3">
-            <div className="bg-surface rounded-xl border border-border p-6 font-mono text-sm">
+            <Card tone="flat" className="font-mono text-sm">
               <p className="text-[11px] text-text-tertiary uppercase tracking-wider mb-3">
                 Ciphertext
               </p>
@@ -89,7 +90,7 @@ export default function ConstructionSection() {
                 Core size: |G₁| + |G_T| — same as standard ElGamal. A short
                 Schnorr NIZK proof rides alongside for CCA security.
               </p>
-            </div>
+            </Card>
           </div>
         </div>
 
@@ -113,7 +114,7 @@ export default function ConstructionSection() {
         </div>
 
         {/* The FFT trick */}
-        <div className="bg-solution-bg rounded-xl border border-solution-accent/20 p-6">
+        <Card tone="solution">
           <p className="font-mono text-[11px] text-solution-accent uppercase tracking-wider font-semibold mb-2">
             3. The speed trick
           </p>
@@ -135,7 +136,7 @@ export default function ConstructionSection() {
             finish proportionally faster — you only pay for the ciphertexts
             you&apos;re actually decrypting.
           </p>
-        </div>
+        </Card>
       </div>
     </section>
   );
@@ -145,7 +146,7 @@ function CommitteeFlowDiagram() {
   const servers = [0, 1, 2, 3, 4];
 
   return (
-    <div className="bg-surface rounded-xl border border-border p-6">
+    <Card tone="flat">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
         {/* Ciphertexts */}
         <div>
@@ -228,7 +229,7 @@ function CommitteeFlowDiagram() {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 

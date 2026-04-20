@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "../useInView";
+import { Card } from "../ui/Card";
 
 interface ApproachCardProps {
   name: string;
@@ -13,7 +14,7 @@ interface ApproachCardProps {
 function ApproachCard({ name, idea, problem, tone }: ApproachCardProps) {
   const color = tone === "bad" ? "#c4653a" : "#a8856e";
   return (
-    <div className="bg-surface-elevated rounded-xl border border-border p-5">
+    <Card>
       <p
         className="font-mono text-[11px] font-semibold tracking-wider uppercase mb-2"
         style={{ color }}
@@ -32,7 +33,7 @@ function ApproachCard({ name, idea, problem, tone }: ApproachCardProps) {
           {problem}
         </p>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -129,7 +130,7 @@ export default function EncryptedMempoolSection() {
           />
         </div>
 
-        <div className="bg-surface-elevated rounded-xl border-2 border-solution-accent/30 p-6">
+        <Card tone="highlighted">
           <p className="font-mono text-xs text-solution-accent uppercase tracking-wider mb-2">
             BTX fills the gap
           </p>
@@ -139,7 +140,7 @@ export default function EncryptedMempoolSection() {
             ElGamal), and fast (decryption scales with the{" "}
             <em>actual</em> batch size, not the maximum).
           </p>
-        </div>
+        </Card>
       </div>
     </section>
   );

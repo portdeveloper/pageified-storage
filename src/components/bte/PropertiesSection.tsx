@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useInView } from "../useInView";
+import { Card } from "../ui/Card";
 
 /* Property 1: Compact ciphertext — visual bar chart of group elements */
 function CompactViz() {
@@ -423,7 +424,7 @@ interface PropertyProps {
 
 function Property({ tag, title, body, children }: PropertyProps) {
   return (
-    <div className="bg-surface-elevated rounded-xl border border-border p-6 h-full flex flex-col">
+    <Card className="h-full flex flex-col">
       <p className="font-mono text-[11px] text-solution-accent uppercase tracking-wider font-semibold mb-2">
         {tag}
       </p>
@@ -432,7 +433,7 @@ function Property({ tag, title, body, children }: PropertyProps) {
         {body}
       </div>
       <div className="mt-auto pt-2">{children}</div>
-    </div>
+    </Card>
   );
 }
 
