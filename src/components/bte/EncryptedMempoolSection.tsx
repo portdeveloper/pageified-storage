@@ -40,7 +40,7 @@ export default function EncryptedMempoolSection() {
   const { ref, isVisible } = useInView(0.1);
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-surface">
+    <section id="the-problem" ref={ref} className="py-24 px-6 bg-surface scroll-mt-16">
       <div
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
