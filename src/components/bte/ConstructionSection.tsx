@@ -101,8 +101,8 @@ export default function ConstructionSection() {
             One G₁ element per server, regardless of batch size
           </h3>
           <p className="text-sm text-text-secondary leading-relaxed max-w-3xl mb-6">
-            The secret key τ is Shamir-shared across N servers. Any t + 1 of
-            them can collectively decrypt a batch. Crucially, each server
+            The powers of the secret key τ are Shamir-shared across N
+            servers. Any t + 1 of them can collectively decrypt a batch. Crucially, each server
             sends exactly <strong>one group element</strong> to the combiner —
             the server&apos;s message size doesn&apos;t depend on how large
             the batch is.

@@ -26,8 +26,8 @@ const RELATED = [
   {
     title: "Efficient batch threshold encryption using partial fraction techniques",
     authors: "Boneh, Nema, Roy, Tas (PFE)",
-    venue: "Cryptology ePrint Archive, 2026",
-    href: "https://eprint.iacr.org/",
+    venue: "ePrint 2026/674",
+    href: "https://eprint.iacr.org/2026/674",
   },
 ];
 

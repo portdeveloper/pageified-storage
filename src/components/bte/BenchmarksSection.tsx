@@ -134,7 +134,7 @@ export default function BenchmarksSection() {
             Measured on an AWS instance with an Intel Xeon Platinum 8488C
             (3.8 GHz), using the <span className="font-mono">blst</span>{" "}
             library over BLS12-381 with AVX-512, compiled with Clang 21.1.8.
-            Numbers are from BTX Tables 2–4.
+            Per-ciphertext numbers from BTX Table 4; totals from §8.
           </p>
         </div>
       </div>

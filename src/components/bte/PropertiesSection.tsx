@@ -404,8 +404,8 @@ function ScalingViz() {
         </text>
       </svg>
       <p className="font-mono text-[10px] text-text-tertiary mt-2 leading-relaxed">
-        Prior schemes pay for Bmax whether it&apos;s used or not. BTX pays only
-        for the actual batch size.
+        PFE and BEAT++ pay for Bmax whether it&apos;s used or not. BTX pays
+        only for the actual batch size.
       </p>
     </div>
   );
