@@ -86,7 +86,8 @@ export default function ConstructionSection() {
                 </div>
               </div>
               <p className="text-[11px] text-text-tertiary mt-4">
-                Total size: |G₁| + |G_T|. Exactly ElGamal.
+                Core size: |G₁| + |G_T| — same as standard ElGamal. A short
+                Schnorr NIZK proof rides alongside for CCA security.
               </p>
             </div>
           </div>
