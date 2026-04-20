@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { colors } from "@/lib/colors";
 
 const COLS = 8;
 const ROWS = 6;
@@ -161,12 +162,12 @@ export default function BteHeroSection() {
                     animate={{
                       backgroundColor:
                         state === "encrypted"
-                          ? "#e2ddd7"
+                          ? colors.border
                           : state === "selected"
-                            ? "#f0d9c8"
+                            ? colors.problemAccentLight
                             : state === "revealed"
-                              ? "#c8e6df"
-                              : "#e8e2da",
+                              ? colors.solutionAccentLight
+                              : "#e8e2da", // one-off faded "skipped" tint; no reusable token
                       scale: state === "selected" ? 1.05 : 1,
                     }}
                     transition={{
@@ -211,9 +212,9 @@ export default function BteHeroSection() {
           {/* Legend */}
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
             {[
-              ["#e2ddd7", "Encrypted"],
-              ["#f0d9c8", "Selected for block"],
-              ["#c8e6df", "Decrypted by committee"],
+              [colors.border, "Encrypted"],
+              [colors.problemAccentLight, "Selected for block"],
+              [colors.solutionAccentLight, "Decrypted by committee"],
             ].map(([bg, label]) => (
               <div key={label} className="flex items-center gap-1.5">
                 <div
@@ -234,10 +235,10 @@ export default function BteHeroSection() {
 
 function PhaseLabel({ phase }: { phase: "encrypt" | "select" | "decrypt" | "done" }) {
   const labels = {
-    encrypt: { text: "users submit", color: "#9b9084" },
-    select: { text: "block builder picks batch", color: "#c4653a" },
-    decrypt: { text: "committee opens batch", color: "#2a7d6a" },
-    done: { text: "block executes", color: "#2a7d6a" },
+    encrypt: { text: "users submit", color: colors.textTertiary },
+    select: { text: "block builder picks batch", color: colors.problemAccent },
+    decrypt: { text: "committee opens batch", color: colors.solutionAccent },
+    done: { text: "block executes", color: colors.solutionAccent },
   } as const;
   const label = labels[phase];
   return (
@@ -261,7 +262,7 @@ function Committee({ active }: { active: boolean }) {
           key={i}
           className="w-2 h-2 rounded-full"
           animate={{
-            backgroundColor: active ? "#2a7d6a" : "#9b9084",
+            backgroundColor: active ? colors.solutionAccent : colors.textTertiary,
             scale: active ? [1, 1.3, 1] : 1,
           }}
           transition={{
@@ -283,7 +284,7 @@ function LockIcon({
   highlight?: boolean;
   muted?: boolean;
 }) {
-  const color = highlight ? "#c4653a" : muted ? "#9b9084" : "#6b6259";
+  const color = highlight ? colors.problemAccent : muted ? colors.textTertiary : colors.textSecondary;
   return (
     <svg viewBox="0 0 16 16" className="w-2.5 h-2.5 opacity-60" fill="none" aria-hidden="true">
       <rect
@@ -309,7 +310,7 @@ function CheckIcon() {
     <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" aria-hidden="true">
       <path
         d="M3.5 8.5L6.5 11.5L12.5 5"
-        stroke="#2a7d6a"
+        stroke={colors.solutionAccent}
         strokeWidth={1.8}
         strokeLinecap="round"
         strokeLinejoin="round"

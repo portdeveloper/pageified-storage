@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "../useInView";
 import { Card } from "../ui/Card";
+import { colors } from "@/lib/colors";
 
 interface BarProps {
   label: string;
@@ -84,14 +85,14 @@ export default function BenchmarksSection() {
               value={1197}
               max={1200}
               unit="ms"
-              color="#c4653a"
+              color={colors.problemAccent}
             />
             <Bar
               label="BTX"
               value={598}
               max={1200}
               unit="ms"
-              color="#2a7d6a"
+              color={colors.solutionAccent}
               highlight
               sub="2.0× faster overall"
             />
@@ -111,7 +112,7 @@ export default function BenchmarksSection() {
               value={0.723}
               max={0.75}
               unit="ms"
-              color="#c4653a"
+              color={colors.problemAccent}
               sub="4 pairings per ciphertext"
             />
             <Bar
@@ -119,7 +120,7 @@ export default function BenchmarksSection() {
               value={0.171}
               max={0.75}
               unit="ms"
-              color="#2a7d6a"
+              color={colors.solutionAccent}
               highlight
               sub="1 pairing per ciphertext — 4.2× faster"
             />
