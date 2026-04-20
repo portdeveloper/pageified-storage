@@ -84,11 +84,11 @@ export default function BteHeroSection() {
           <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-4">
             Category Labs research
           </p>
-          <h1 className="text-5xl sm:text-6xl font-light leading-[1.05] tracking-tight mb-2">
-            BTX
-          </h1>
-          <h1 className="text-5xl sm:text-6xl font-semibold leading-[1.05] tracking-tight mb-8 text-solution-accent">
-            Batched Threshold Encryption
+          <h1 className="text-5xl sm:text-6xl leading-[1.05] tracking-tight mb-8">
+            <span className="block font-light mb-2">BTX</span>
+            <span className="block font-semibold text-solution-accent">
+              Batched Threshold Encryption
+            </span>
           </h1>
           <p className="text-lg text-text-secondary font-light leading-relaxed mb-6 max-w-md">
             A critique echoing from traditional finance: public blockchains
