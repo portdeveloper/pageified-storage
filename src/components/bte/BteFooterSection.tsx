@@ -52,7 +52,7 @@ export default function BteFooterSection() {
           href="https://category-labs.github.io/category-research/BTX-paper.pdf"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-text-primary text-surface px-4 py-2.5 rounded-lg font-mono text-xs hover:bg-text-secondary transition-colors"
+          className="inline-flex items-center gap-2 bg-text-primary text-surface px-5 py-3 rounded-lg font-mono text-xs hover:bg-text-secondary transition-colors min-h-11"
         >
           Read the paper (PDF)
           <svg
