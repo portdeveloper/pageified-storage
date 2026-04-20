@@ -61,6 +61,7 @@ export default function BteFooterSection() {
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"

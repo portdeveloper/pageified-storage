@@ -254,7 +254,7 @@ function LockIcon({
 }) {
   const color = highlight ? "#c4653a" : muted ? "#9b9084" : "#6b6259";
   return (
-    <svg viewBox="0 0 16 16" className="w-2.5 h-2.5 opacity-60" fill="none">
+    <svg viewBox="0 0 16 16" className="w-2.5 h-2.5 opacity-60" fill="none" aria-hidden="true">
       <rect
         x={4}
         y={7}
@@ -275,7 +275,7 @@ function LockIcon({
 
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none">
+    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" aria-hidden="true">
       <path
         d="M3.5 8.5L6.5 11.5L12.5 5"
         stroke="#2a7d6a"

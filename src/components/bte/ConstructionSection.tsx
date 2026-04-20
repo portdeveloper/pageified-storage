@@ -234,7 +234,7 @@ function CommitteeFlowDiagram() {
 
 function CheckMini() {
   return (
-    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none">
+    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" aria-hidden="true">
       <path
         d="M3.5 8.5L6.5 11.5L12.5 5"
         stroke="#2a7d6a"
