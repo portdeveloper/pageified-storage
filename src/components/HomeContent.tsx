@@ -405,6 +405,58 @@ function MiniSpamGrid() {
   );
 }
 
+/* ─── Mini-visualization: BTE encrypted mempool ──────────────────────── */
+function MiniBteGrid() {
+  const cols = 9;
+  const rows = 4;
+  const total = cols * rows;
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [phase, setPhase] = useState<"encrypt" | "decrypt">("encrypt");
+
+  useEffect(() => {
+    let cancelled = false;
+    const t: ReturnType<typeof setTimeout>[] = [];
+
+    const run = () => {
+      if (cancelled) return;
+      const s = new Set<number>();
+      const target = Math.floor(total * 0.4);
+      while (s.size < target) s.add(Math.floor(Math.random() * total));
+      setSelected(s);
+      setPhase("encrypt");
+      t.push(setTimeout(() => !cancelled && setPhase("decrypt"), 1500));
+      t.push(setTimeout(() => !cancelled && run(), 3800));
+    };
+    run();
+    return () => {
+      cancelled = true;
+      t.forEach(clearTimeout);
+    };
+  }, []);
+
+  return (
+    <div
+      className="grid gap-[2px]"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {Array.from({ length: total }, (_, i) => {
+        const isSelected = selected.has(i);
+        const decrypted = phase === "decrypt" && isSelected;
+        return (
+          <motion.div
+            key={i}
+            animate={{
+              backgroundColor: decrypted ? "#c8e6df" : "#e2ddd7",
+            }}
+            transition={{ duration: 0.3, delay: decrypted ? (i * 0.01) : 0 }}
+            className="aspect-square rounded-[2px]"
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Main page ──────────────────────────────────────────────────────── */
 
 export default function HomeContent() {
@@ -555,7 +607,7 @@ export default function HomeContent() {
         </p>
       </motion.div>
 
-      <div className="w-full max-w-4xl mb-28">
+      <div className="w-full max-w-4xl mb-28 space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -593,6 +645,65 @@ export default function HomeContent() {
                   Explore how block capacity, gas price floors, and transaction
                   ordering jointly determine spam volumes. Play with the
                   equilibrium model from the paper.
+                </p>
+                <span className="inline-flex items-center gap-1 mt-5 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
+                  Explore
+                  <svg
+                    className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.7,
+            delay: 1.05,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        >
+          <Link
+            href="/bte"
+            aria-label="Explore BTX: Batched Threshold Encryption"
+            className="group block bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+              <div className="p-8 flex flex-col justify-center">
+                <MiniBteGrid />
+                <p className="font-mono text-[10px] text-text-tertiary mt-3">
+                  Committee opens only the batch; the rest stays encrypted
+                </p>
+              </div>
+              <div className="p-8 flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-mono text-[11px] text-text-tertiary tracking-wider">
+                    Category Labs
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-semibold mb-2 group-hover:text-solution-accent transition-colors duration-300">
+                  BTX
+                </h2>
+                <p className="font-mono text-[11px] text-text-tertiary mb-3">
+                  Batched threshold encryption, finally practical
+                </p>
+                <p className="text-sm text-text-secondary leading-relaxed">
+                  A new scheme for encrypted mempools. Shortest ciphertext of
+                  any BTE, collision-free, epochless, and fast enough to keep
+                  up with real block times.
                 </p>
                 <span className="inline-flex items-center gap-1 mt-5 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
                   Explore
