@@ -96,11 +96,42 @@ export default function BteHeroSection() {
             mempools are the answer. BTX is what finally makes them
             practical.
           </p>
-          <p className="text-base text-solution-accent/90 font-light italic leading-relaxed max-w-md">
+          <p className="text-base text-solution-accent/90 font-light italic leading-relaxed max-w-md mb-8">
             Shortest ciphertext. Collision-free. Epochless.
             <br />
             Fast enough for real block times.
           </p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <a
+              href="https://category-labs.github.io/category-research/BTX-paper.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-text-primary text-surface px-5 py-3 rounded-lg font-mono text-xs hover:bg-text-secondary transition-colors min-h-11"
+            >
+              Read the paper (PDF)
+              <svg
+                viewBox="0 0 24 24"
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+            </a>
+            <a
+              href="#the-problem"
+              className="inline-flex items-center gap-1.5 font-mono text-xs text-text-secondary hover:text-text-primary transition-colors min-h-11 px-2"
+            >
+              Or read the explainer
+              <span aria-hidden="true">↓</span>
+            </a>
+          </div>
         </div>
 
         {/* Right: encrypted pool visualization */}
