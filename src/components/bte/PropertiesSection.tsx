@@ -301,6 +301,7 @@ function ScalingViz() {
         step={16}
         value={actualBatch}
         onChange={(e) => setActualBatch(Number(e.target.value))}
+        aria-label={`Actual batch size, ${actualBatch} of ${maxBatch}`}
         className="w-full accent-solution-accent cursor-pointer"
       />
       <div className="flex justify-between font-mono text-[9px] text-text-tertiary mt-0.5 mb-3">
