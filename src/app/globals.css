@@ -9,6 +9,7 @@
   /* Problem palette - warm */
   --color-problem-bg: #fdf6ef;
   --color-problem-accent: #c4653a;
+  --color-problem-accent-strong: #b05226; /* AA-safe (4.80:1 on problem-bg) for small text */
   --color-problem-accent-light: #f0d9c8;
   --color-problem-muted: #a8856e;
   --color-problem-cell: #ede0d4;

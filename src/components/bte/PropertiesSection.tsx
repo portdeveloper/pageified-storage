@@ -73,7 +73,7 @@ function CollisionViz() {
     <div className="space-y-4">
       {/* Indexed BTE — collision */}
       <div>
-        <p className="font-mono text-[10px] text-problem-accent font-semibold mb-2">
+        <p className="font-mono text-[10px] text-problem-accent-strong font-semibold mb-2">
           Indexed BTE
         </p>
         <div className="bg-surface rounded-lg p-3 border border-border">
@@ -100,12 +100,12 @@ function CollisionViz() {
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0, 1] }}
               transition={{ duration: 2.5, times: [0, 0.5, 0.7] }}
-              className="font-mono text-[10px] text-problem-accent bg-problem-accent/10 rounded px-1.5 py-0.5 font-semibold"
+              className="font-mono text-[10px] text-problem-accent-strong bg-problem-accent/10 rounded px-1.5 py-0.5 font-semibold"
             >
               ct_attack ✓
             </motion.div>
           </div>
-          <p className="font-mono text-[10px] text-problem-accent mt-2">
+          <p className="font-mono text-[10px] text-problem-accent-strong mt-2">
             Collision → Alice&apos;s tx censored
           </p>
         </div>
@@ -165,7 +165,7 @@ function EpochlessViz() {
     <div className="space-y-4">
       {/* Epoch-bound */}
       <div>
-        <p className="font-mono text-[10px] text-problem-accent font-semibold mb-2">
+        <p className="font-mono text-[10px] text-problem-accent-strong font-semibold mb-2">
           Epoch-bound BTE
         </p>
         <div className="flex items-center gap-2">
@@ -186,13 +186,13 @@ function EpochlessViz() {
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0, 1] }}
               transition={{ duration: 2.5, times: [0, 0.5, 0.6] }}
-              className="font-mono text-[10px] text-problem-accent"
+              className="font-mono text-[10px] text-problem-accent-strong"
             >
               ✗ expired
             </motion.span>
           </BlockBox>
         </div>
-        <p className="font-mono text-[10px] text-problem-accent mt-2">
+        <p className="font-mono text-[10px] text-problem-accent-strong mt-2">
           Miss one block → ciphertext dies
         </p>
       </div>
