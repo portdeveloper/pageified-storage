@@ -50,6 +50,13 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+h1, h2, h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
 *:focus {
   outline: none;
 }
