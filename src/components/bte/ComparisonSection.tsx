@@ -81,7 +81,7 @@ function Check({ value }: { value: "yes" | "no" | "mixed" }) {
   }
   if (value === "no") {
     return (
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-problem-accent/10 text-problem-accent font-semibold text-xs">
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-problem-accent/10 text-problem-accent-strong font-semibold text-xs">
         ✗
       </span>
     );
