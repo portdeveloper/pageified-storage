@@ -66,6 +66,15 @@ p {
   border-radius: 2px;
 }
 
+/* Hide scrollbar utility (used by horizontally-scrollable nav on mobile) */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

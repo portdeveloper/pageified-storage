@@ -17,21 +17,21 @@ export default function MipNav() {
 
   return (
     <nav className="sticky top-0 z-50 bg-surface-elevated/90 backdrop-blur-sm border-b border-border">
-      <div className="max-w-5xl mx-auto px-6 flex items-center h-12 gap-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 flex items-center h-12 gap-3 sm:gap-6">
         <Link
           href="/"
-          className="font-mono text-xs text-text-tertiary hover:text-text-primary transition-colors"
+          className="font-mono text-xs text-text-tertiary hover:text-text-primary transition-colors whitespace-nowrap flex-shrink-0"
         >
           {t("nav.brand")}
         </Link>
-        <div className="flex items-center gap-1 flex-1">
+        <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.name}
                 href={tab.href}
-                className={`font-mono text-xs px-3 py-1.5 rounded-md transition-all ${
+                className={`font-mono text-xs px-3 py-1.5 rounded-md transition-all whitespace-nowrap flex-shrink-0 ${
                   isActive
                     ? "bg-text-primary text-surface"
                     : tab.ready
@@ -52,7 +52,7 @@ export default function MipNav() {
         </div>
         <button
           onClick={() => setLocale(locale === "en" ? "zh" : "en")}
-          className="font-mono text-xs px-2 py-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface transition-all"
+          className="font-mono text-xs px-2 py-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface transition-all whitespace-nowrap flex-shrink-0"
         >
           {locale === "en" ? "中文" : "EN"}
         </button>
