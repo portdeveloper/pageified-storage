@@ -16,7 +16,7 @@ export default function ConstructionSection() {
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
           BTX builds on pairing-friendly elliptic curves (BLS12-381 in the
-          implementation). Everything below is deliberately a sketch — the
+          implementation). Everything below is deliberately a sketch. The
           paper has the full protocol, proofs, and security reductions.
         </p>
 
@@ -35,7 +35,7 @@ export default function ConstructionSection() {
               the public encryption key.
             </p>
             <p className="text-sm text-text-secondary leading-relaxed">
-              That&apos;s it. No index, no epoch tag, no batch coordination.
+              That&apos;s it. The ciphertext carries nothing else.
             </p>
           </div>
           <div className="md:col-span-3">
@@ -84,7 +84,7 @@ export default function ConstructionSection() {
                 </div>
               </div>
               <p className="text-[11px] text-text-tertiary mt-4">
-                Core size: |G₁| + |G_T| — same as standard ElGamal. A short
+                Core size: |G₁| + |G_T|, same as standard ElGamal. A short
                 Schnorr NIZK proof rides alongside for CCA security.
               </p>
             </Card>
@@ -101,10 +101,10 @@ export default function ConstructionSection() {
           </h3>
           <p className="text-sm text-text-secondary leading-relaxed max-w-3xl mb-6">
             The powers of the secret key τ are Shamir-shared across N
-            servers. Any t + 1 of them can collectively decrypt a batch. Crucially, each server
-            sends exactly <strong>one group element</strong> to the combiner —
-            the server&apos;s message size doesn&apos;t depend on how large
-            the batch is.
+            servers. Any t + 1 of them can collectively decrypt a batch. Each
+            server sends exactly <strong>one group element</strong> to the
+            combiner. The server&apos;s message size doesn&apos;t depend on
+            how large the batch is.
           </p>
 
           <CommitteeFlowDiagram />
@@ -130,7 +130,7 @@ export default function ConstructionSection() {
           </p>
           <p className="text-sm text-text-secondary leading-relaxed max-w-3xl">
             Because the FFT size adapts to the actual batch, smaller batches
-            finish proportionally faster — you only pay for the ciphertexts
+            finish proportionally faster. You only pay for the ciphertexts
             you&apos;re actually decrypting.
           </p>
         </Card>

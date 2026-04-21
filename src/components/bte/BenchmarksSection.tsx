@@ -62,8 +62,8 @@ export default function BenchmarksSection() {
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
           The authors reimplemented the two strongest prior schemes (PFE and
           BEAT++) in the same aggressively-optimized C++ codebase as BTX
-          itself — AVX-512 vectorization, FFT backends, optimized MSM and
-          pairing paths. This is a comparison against tuned baselines, not
+          itself, with AVX-512 vectorization, FFT backends, and optimized MSM
+          and pairing paths. This is a comparison against tuned baselines, not
           reference code.
         </p>
 
@@ -119,7 +119,7 @@ export default function BenchmarksSection() {
               unit="ms"
               color={colors.solutionAccent}
               highlight
-              sub="1 pairing per ciphertext — 4.2× faster"
+              sub="1 pairing per ciphertext. 4.2× faster."
             />
           </Card>
         </div>

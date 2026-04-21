@@ -52,8 +52,8 @@ export default function EncryptedMempoolSection() {
           When a transaction is submitted, it sits pending in the mempool
           where anyone can see it and front-run it. The clean fix is to
           encrypt transactions until they land in a block. But doing that
-          efficiently has been an open problem for years — every prior
-          approach trades off in a way that breaks the design.
+          efficiently has been an open problem for years. Every prior approach
+          trades off in a way that breaks the design.
         </p>
 
         {/* What we actually want */}
@@ -98,7 +98,7 @@ export default function EncryptedMempoolSection() {
           <ApproachCard
             name="Threshold identity-based encryption (IBE)"
             idea="Encrypt to an epoch label. At the end of the epoch, validators release one small decryption key for that epoch."
-            problem="All-or-nothing. Releasing the epoch key decrypts every ciphertext in the epoch — including the ones that weren't included in any block. No selective privacy."
+            problem="All-or-nothing. Releasing the epoch key decrypts every ciphertext in the epoch, including the ones that weren't included in any block. No selective privacy."
             tone="bad"
           />
           <ApproachCard
@@ -110,7 +110,7 @@ export default function EncryptedMempoolSection() {
           <ApproachCard
             name="Indexed BTE (BEAT-MEV, BEAT++)"
             idea="Users pick an index from a small namespace when they encrypt. Each block's committee decrypts at most one ciphertext per index."
-            problem="Two honest users can collide on the same index. And worse — an attacker can censor a target by publishing a ciphertext with the same index."
+            problem="Two honest users can collide on the same index. And worse: an attacker can censor a target by publishing a ciphertext with the same index."
             tone="bad"
           />
           <ApproachCard
@@ -132,10 +132,10 @@ export default function EncryptedMempoolSection() {
             BTX fills the gap
           </p>
           <p className="text-base text-text-primary leading-relaxed">
-            BTX is the first BTE scheme that is <strong>simultaneously</strong>{" "}
-            collision-free, epochless, compact (ciphertext as small as plain
-            ElGamal), and fast (decryption scales with the{" "}
-            <em>actual</em> batch size, not the maximum).
+            BTX is the first BTE scheme that is collision-free, epochless,
+            compact (ciphertext as small as plain ElGamal), and fast
+            (decryption scales with the <em>actual</em> batch size, not the
+            maximum).
           </p>
         </Card>
       </div>

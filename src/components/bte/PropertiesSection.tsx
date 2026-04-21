@@ -345,7 +345,7 @@ function ScalingViz() {
           fill="#c4653a"
           textAnchor="end"
         >
-          O(Bmax log Bmax) — PFE, BEAT++
+          O(Bmax log Bmax), PFE / BEAT++
         </text>
 
         {/* BTX: scales with actual */}
@@ -448,9 +448,9 @@ export default function PropertiesSection() {
           Four properties, all at once
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          BTX is the first BTE scheme that simultaneously delivers these four
-          properties. No trade-offs to navigate, no coordination required
-          from users, no growing parameters over time.
+          BTX is the first BTE scheme that has all four at once. Users
+          don&apos;t coordinate. Parameters don&apos;t grow. Nothing to trade
+          off.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -460,7 +460,7 @@ export default function PropertiesSection() {
             body={
               <>
                 The ciphertext has{" "}
-                <strong>the same size as a plain ElGamal encryption</strong> —
+                <strong>the same size as a plain ElGamal encryption</strong>:
                 one source group element plus one target group element. Every
                 prior BTE scheme uses at least two source group elements.
               </>
@@ -474,8 +474,8 @@ export default function PropertiesSection() {
             title="Collision-free"
             body={
               <>
-                A user just encrypts. No index, no namespace, no coordination.
-                An attacker can&apos;t collide with your transaction to force
+                A user just encrypts, with nothing to coordinate on. An
+                attacker can&apos;t collide with your transaction to force
                 censorship because there&apos;s nothing to collide on.
               </>
             }
@@ -490,7 +490,7 @@ export default function PropertiesSection() {
               <>
                 A ciphertext isn&apos;t bound to a specific block or session.
                 If the block builder doesn&apos;t include it in block N, it
-                stays valid — and stays private — for block N+1 and beyond.
+                stays valid (and stays private) for block N+1 and beyond.
               </>
             }
           >
@@ -499,7 +499,7 @@ export default function PropertiesSection() {
 
           <Property
             tag="Property 4"
-            title="Fast — scales with actual batch"
+            title="Fast. Scales with actual batch."
             body={
               <>
                 Decryption is <span className="font-mono">O(B log B)</span>{" "}

@@ -42,7 +42,7 @@ export default function BteFooterSection() {
           BTX: Simple and Efficient Batch Threshold Encryption
         </h2>
         <p className="text-sm text-text-secondary mb-5">
-          {AUTHORS.join(" · ")} — Category Labs
+          {AUTHORS.join(" · ")}, Category Labs
         </p>
 
         <a
