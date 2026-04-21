@@ -228,8 +228,8 @@ export default function ComparisonSection() {
         <p className="font-mono text-[11px] text-text-tertiary mt-5 leading-relaxed">
           B is the actual batch size, Bmax the maximum supported.
           |G₁|, |G_T| refer to the group element sizes of the pairing-friendly
-          curve used (BLS12-381 in the implementation). Table reproduced from
-          BTX, Table 1.
+          curve used (BLS12-381 in the implementation). Adapted from BTX,
+          Table 1.
         </p>
       </div>
     </section>

@@ -19,7 +19,7 @@ const RELATED = [
   },
   {
     title: "TrX: Encrypted mempools in high-performance BFT protocols",
-    authors: "Fernando, Polidharla, Tonkikh, Xiang",
+    authors: "Fernando, Policharla, Tonkikh, Xiang",
     venue: "ePrint 2025/2032",
     href: "https://eprint.iacr.org/2025/2032",
   },

@@ -53,8 +53,8 @@ export default function EncryptedMempoolSection() {
           where anyone can see it and front-run it. The fix is to encrypt
           transactions until they&apos;re included in a block. Doing this
           efficiently has been open for years. Every prior BTE scheme gives
-          up something critical: coordination, epoch safety, ciphertext size,
-          or decryption cost.
+          up something critical: coordination, epoch independence, ciphertext
+          size, or decryption cost.
         </p>
 
         {/* What we actually want */}
