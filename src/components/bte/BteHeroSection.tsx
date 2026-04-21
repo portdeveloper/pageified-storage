@@ -88,11 +88,14 @@ export default function BteHeroSection() {
               Batched Threshold Encryption
             </span>
           </h1>
-          <p className="text-lg text-text-secondary font-light leading-relaxed mb-6 max-w-md">
-            A critique echoing from traditional finance: public blockchains
-            can&apos;t resist MEV, so they&apos;re not fit for markets. Encrypted
-            mempools are the answer. BTX is what finally makes them
-            practical.
+          <p className="text-lg text-text-secondary font-light leading-relaxed mb-6 max-w-lg">
+            Batched threshold encryption lets a committee of servers decrypt
+            any chosen subset of ciphertexts while the rest stay private.
+            It&apos;s a key building block for encrypted mempools, where
+            transactions are encrypted until block inclusion to mitigate MEV.
+            BTX is a simple and concretely efficient BTE construction that is
+            both epochless and collision-free: encryption does not require a
+            user-chosen batch index.
           </p>
           <p className="text-base text-solution-accent/90 font-light italic leading-relaxed max-w-md mb-8">
             Shortest ciphertext. Collision-free. Epochless.
