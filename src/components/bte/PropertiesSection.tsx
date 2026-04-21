@@ -448,9 +448,9 @@ export default function PropertiesSection() {
           Four properties, all at once
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          BTX is the first BTE scheme that has all four at once. Users
-          don&apos;t coordinate. Parameters don&apos;t grow. Nothing to trade
-          off.
+          BTX is the first BTE scheme with all four. Encryption takes no
+          coordination, setup is one-time, and decryption cost scales with
+          the actual batch.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -499,7 +499,7 @@ export default function PropertiesSection() {
 
           <Property
             tag="Property 4"
-            title="Fast. Scales with actual batch."
+            title="Fast, with dynamic batch sizing"
             body={
               <>
                 Decryption is <span className="font-mono">O(B log B)</span>{" "}

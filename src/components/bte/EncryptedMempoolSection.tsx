@@ -50,10 +50,11 @@ export default function EncryptedMempoolSection() {
         </h2>
         <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
           When a transaction is submitted, it sits pending in the mempool
-          where anyone can see it and front-run it. The clean fix is to
-          encrypt transactions until they land in a block. But doing that
-          efficiently has been an open problem for years. Every prior approach
-          trades off in a way that breaks the design.
+          where anyone can see it and front-run it. The fix is to encrypt
+          transactions until they&apos;re included in a block. Doing this
+          efficiently has been open for years. Every prior BTE scheme gives
+          up something critical: coordination, epoch safety, ciphertext size,
+          or decryption cost.
         </p>
 
         {/* What we actually want */}
@@ -84,8 +85,8 @@ export default function EncryptedMempoolSection() {
           Why naïve approaches don&apos;t work
         </h3>
         <p className="text-base text-text-secondary font-light max-w-3xl leading-relaxed mb-6">
-          Cryptographers have tried several routes. Each one has a flaw that
-          an encrypted mempool can&apos;t tolerate.
+          Several BTE schemes have been proposed. The cards below walk through
+          each one and what breaks.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
