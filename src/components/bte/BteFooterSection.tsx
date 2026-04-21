@@ -38,9 +38,6 @@ export default function BteFooterSection() {
       <div
         className={`max-w-4xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
-        <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-3">
-          The paper
-        </p>
         <h2 className="text-3xl font-semibold tracking-tight mb-4">
           BTX: Simple and Efficient Batch Threshold Encryption
         </h2>
@@ -72,9 +69,9 @@ export default function BteFooterSection() {
         </a>
 
         <div className="mt-12">
-          <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-4">
+          <h3 className="text-base font-semibold mb-4">
             Related work cited by BTX
-          </p>
+          </h3>
           <div className="space-y-3">
             {RELATED.map((r) => (
               <a

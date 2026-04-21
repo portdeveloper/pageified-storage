@@ -444,9 +444,6 @@ export default function PropertiesSection() {
       <div
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
-        <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-3">
-          What BTX gets right
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           Four properties, all at once
         </h2>

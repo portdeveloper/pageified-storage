@@ -56,9 +56,6 @@ export default function BenchmarksSection() {
       <div
         className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
-        <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-3">
-          Benchmarks
-        </p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
           Faster than the best prior schemes
         </h2>

@@ -82,9 +82,6 @@ export default function BteHeroSection() {
       >
         {/* Left: text */}
         <div>
-          <p className="font-mono text-[11px] text-text-tertiary tracking-widest uppercase mb-4">
-            Category Labs research
-          </p>
           <h1 className="text-5xl sm:text-6xl leading-[1.05] tracking-tight mb-8">
             <span className="block font-light mb-2">BTX</span>
             <span className="block font-semibold text-solution-accent">
