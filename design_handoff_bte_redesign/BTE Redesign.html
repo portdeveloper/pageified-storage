@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BTX: Batched Threshold Encryption — redesigned visualizations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* palette lifted from globals.css */
+    --problem-bg: #fdf6ef;
+    --problem-accent: #c4653a;
+    --problem-accent-strong: #b05226;
+    --problem-accent-light: #f0d9c8;
+    --problem-muted: #a8856e;
+    --problem-cell: #ede0d4;
+
+    --solution-bg: #f0f7f5;
+    --solution-accent: #2a7d6a;
+    --solution-accent-light: #c8e6df;
+    --solution-muted: #6da396;
+    --solution-cell: #d4e8e2;
+
+    --user-bg: #edf3fc;
+    --user-accent: #3b7dd8;
+    --user-accent-light: #b8d4f0;
+
+    --surface: #f8f6f3;
+    --surface-elevated: #ffffff;
+    --border: #e2ddd7;
+    --border-soft: #ede8e1;
+    --text-primary: #1a1714;
+    --text-secondary: #6b6259;
+    --text-tertiary: #8a7d6f;
+
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(2.5rem, 4.5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 600; letter-spacing: -0.015em; }
+  h3 { font-size: 1.15rem; font-weight: 600; }
+  p { text-wrap: pretty; margin: 0; }
+  .mono { font-family: var(--mono); }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--solution-accent);
+  }
+  .lede {
+    font-size: 1.075rem;
+    color: var(--text-secondary);
+    font-weight: 300;
+    line-height: 1.6;
+    max-width: 46rem;
+  }
+  section { padding: 96px 24px; position: relative; }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .alt { background: var(--surface-elevated); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  /* global reveal */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  a { color: inherit; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--text-primary); color: var(--surface);
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    padding: 12px 18px; border-radius: 10px; text-decoration: none;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #332b22; }
+  .btn svg { width: 13px; height: 13px; }
+
+  /* ---------- Tweaks panel ---------- */
+  .tweaks {
+    position: fixed; right: 20px; bottom: 20px; z-index: 100;
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 18px 18px;
+    box-shadow: 0 20px 40px -20px rgba(26,23,20,0.2), 0 0 0 1px rgba(26,23,20,0.02);
+    width: 280px; display: none;
+    font-family: var(--sans);
+  }
+  .tweaks.open { display: block; }
+  .tweaks h4 { margin: 0 0 12px; font-size: 11px; font-family: var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); font-weight: 600; }
+  .tweak-row { margin-bottom: 14px; }
+  .tweak-row:last-child { margin-bottom: 0; }
+  .tweak-row label { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+  .tweak-row label .val { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tweak-row input[type=range] { width: 100%; accent-color: var(--solution-accent); }
+
+  /* shared card */
+  .card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .card.solution { background: var(--solution-bg); border-color: color-mix(in oklab, var(--solution-accent) 22%, transparent); }
+  .card.flat { background: var(--surface); }
+</style>
+</head>
+<body>
+
+<!-- Tweaks UI -->
+<div class="tweaks" id="tweaks">
+  <h4>Tweaks</h4>
+  <div class="tweak-row">
+    <label for="tw-N">Committee size (N) <span class="val" id="tw-N-val">5</span></label>
+    <input id="tw-N" type="range" min="3" max="9" step="1" value="5" />
+  </div>
+  <div class="tweak-row">
+    <label for="tw-B">Batch size (B) <span class="val" id="tw-B-val">128</span></label>
+    <input id="tw-B" type="range" min="16" max="512" step="16" value="128" />
+  </div>
+  <div class="tweak-row">
+    <label for="tw-speed">Motion speed <span class="val" id="tw-speed-val">1.0×</span></label>
+    <input id="tw-speed" type="range" min="0.5" max="2" step="0.1" value="1" />
+  </div>
+</div>
+
+<!-- Placeholder roots, filled by modules -->
+<div id="hero-root"></div>
+<div id="problem-root"></div>
+<div id="comparison-root"></div>
+<div id="properties-root"></div>
+<div id="construction-root"></div>
+<div id="benchmarks-root"></div>
+
+<!-- shared state + loader -->
+<script>
+  // Shared tweak state — any viz can read from window.__bte
+  window.__bte = {
+    N: 5,
+    B: 128,
+    speed: 1.0,
+    listeners: new Set(),
+    subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); },
+    set(key, val) { this[key] = val; this.listeners.forEach(fn => fn(this)); }
+  };
+
+  // reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  window.registerReveal = (el) => io.observe(el);
+
+  // hook up tweaks
+  const tw = document.getElementById('tweaks');
+  const bindTweak = (id, key, fmt = v => v) => {
+    const el = document.getElementById('tw-' + id);
+    const val = document.getElementById('tw-' + id + '-val');
+    el.addEventListener('input', () => {
+      const v = Number(el.value);
+      val.textContent = fmt(v);
+      window.__bte.set(key, v);
+    });
+  };
+  bindTweak('N', 'N');
+  bindTweak('B', 'B');
+  bindTweak('speed', 'speed', v => v.toFixed(1) + '×');
+
+  // host toggle protocol
+  window.addEventListener('message', (e) => {
+    if (!e.data) return;
+    if (e.data.type === '__activate_edit_mode') tw.classList.add('open');
+    if (e.data.type === '__deactivate_edit_mode') tw.classList.remove('open');
+  });
+  window.parent && window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+  // default open for preview if ?tweaks
+  if (new URLSearchParams(location.search).has('tweaks')) tw.classList.add('open');
+</script>
+
+<!-- visualization modules -->
+<script src="viz/hero.js" defer></script>
+<script src="viz/problem.js" defer></script>
+<script src="viz/comparison.js" defer></script>
+<script src="viz/properties.js?v=3" defer></script>
+<script src="viz/construction.js" defer></script>
+<script src="viz/benchmarks.js" defer></script>
+
+</body>
+</html>
