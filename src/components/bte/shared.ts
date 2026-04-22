@@ -54,7 +54,7 @@ export const SCHEMES: SchemeRow[] = [
     ref: "[7]",
     cr: "yes",
     ep: "yes",
-    decrypt: "O(Bmax log Bmax)",
+    decrypt: "O(Bmax log Bmax)*",
     ctxt: "2·|G₁| + |G_T|",
   },
   {
@@ -90,16 +90,18 @@ export interface BenchmarkRow {
   b: number;
   pfePre: number;
   btxPre: number;
+  beatPre: number;
   pfeOpen: number;
   btxOpen: number;
+  beatOpen: number;
 }
 
 export const BENCHMARKS: BenchmarkRow[] = [
-  { b: 32, pfePre: 0.963, btxPre: 0.644, pfeOpen: 0.721, btxOpen: 0.171 },
-  { b: 64, pfePre: 1.12, btxPre: 0.722, pfeOpen: 0.721, btxOpen: 0.171 },
-  { b: 128, pfePre: 1.278, btxPre: 0.801, pfeOpen: 0.721, btxOpen: 0.171 },
-  { b: 256, pfePre: 1.436, btxPre: 0.88, pfeOpen: 0.722, btxOpen: 0.171 },
-  { b: 512, pfePre: 1.596, btxPre: 0.959, pfeOpen: 0.723, btxOpen: 0.171 },
+  { b: 32, pfePre: 0.963, btxPre: 0.644, beatPre: 0.642, pfeOpen: 0.721, btxOpen: 0.171, beatOpen: 0.171 },
+  { b: 64, pfePre: 1.12, btxPre: 0.722, beatPre: 0.722, pfeOpen: 0.721, btxOpen: 0.171, beatOpen: 0.172 },
+  { b: 128, pfePre: 1.278, btxPre: 0.801, beatPre: 0.8, pfeOpen: 0.721, btxOpen: 0.171, beatOpen: 0.171 },
+  { b: 256, pfePre: 1.436, btxPre: 0.88, beatPre: 0.88, pfeOpen: 0.722, btxOpen: 0.171, beatOpen: 0.171 },
+  { b: 512, pfePre: 1.596, btxPre: 0.959, beatPre: 0.96, pfeOpen: 0.723, btxOpen: 0.171, beatOpen: 0.171 },
 ];
 
 export const PAPER_URL =

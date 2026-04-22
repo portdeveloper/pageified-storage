@@ -210,6 +210,12 @@ export default function ComparisonSection() {
         <p className="font-mono text-[11px] text-text-tertiary mt-4 leading-[1.6]">
           B = actual batch size, Bmax = maximum supported. |G₁|, |G_T| are
           group element sizes (BLS12-381). Adapted from BTX, Table 1.
+          <br />
+          <span className="text-text-tertiary/80">
+            * Original PFE is O(B²); the BTX authors&apos; FFT-based
+            re-implementation reduces it to O(Bmax log Bmax), still ~2× slower
+            than BTX in practice.
+          </span>
         </p>
       </div>
     </section>

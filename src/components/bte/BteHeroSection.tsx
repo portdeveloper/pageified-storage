@@ -252,7 +252,7 @@ export default function BteHeroSection() {
             <p className="font-mono text-[13px] text-solution-accent leading-[1.6] mb-7">
               Shortest ciphertext. Collision-free. Epochless.
               <br />
-              Fast enough for real block times.
+              Fast enough for tight latency budgets.
             </p>
             <div className="flex gap-3.5 items-center flex-wrap">
               <a

@@ -72,7 +72,7 @@ export default function BenchmarksSection() {
               Decryption time vs batch size. Drag across the chart to
               inspect.
             </p>
-            <div className="flex gap-3.5 font-mono text-[11px]">
+            <div className="flex gap-3.5 font-mono text-[11px] flex-wrap">
               <LegendSwatch
                 color={colors.problemAccent}
                 label="PFE precompute"
@@ -81,12 +81,21 @@ export default function BenchmarksSection() {
                 color={colors.solutionAccent}
                 label="BTX precompute"
               />
+              <LegendSwatch
+                color={colors.textTertiary}
+                label="BEAT++ precompute"
+                dashed
+              />
             </div>
           </div>
 
           <BenchmarkChart />
 
           <p className="font-mono text-[10.5px] text-text-tertiary mt-4 leading-[1.6]">
+            BEAT++ traces BTX within fractions of a millisecond — same
+            internal algebra, but BEAT++ is collision-prone. The censorship
+            resistance is free.
+            <br />
             Intel Xeon Platinum 8488C (3.8 GHz),{" "}
             <span className="font-mono">blst</span> over BLS12-381 with
             AVX-512, Clang 21.1.8. Per-ciphertext from BTX Table 4; totals
@@ -98,12 +107,28 @@ export default function BenchmarksSection() {
   );
 }
 
-function LegendSwatch({ color, label }: { color: string; label: string }) {
+function LegendSwatch({
+  color,
+  label,
+  dashed,
+}: {
+  color: string;
+  label: string;
+  dashed?: boolean;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
         className="inline-block w-[14px] h-[2px]"
-        style={{ background: color }}
+        style={
+          dashed
+            ? {
+                backgroundImage: `linear-gradient(to right, ${color} 50%, transparent 50%)`,
+                backgroundSize: "5px 2px",
+                backgroundRepeat: "repeat-x",
+              }
+            : { background: color }
+        }
       />
       {label}
     </span>
@@ -225,6 +250,13 @@ function BenchmarkChart() {
     () =>
       BENCHMARKS.map(
         (r, i) => `${i === 0 ? "M" : "L"}${xOf(r.b)},${yOf(r.btxPre)}`,
+      ).join(" "),
+    [],
+  );
+  const beatPath = useMemo(
+    () =>
+      BENCHMARKS.map(
+        (r, i) => `${i === 0 ? "M" : "L"}${xOf(r.b)},${yOf(r.beatPre)}`,
       ).join(" "),
     [],
   );
@@ -379,6 +411,15 @@ function BenchmarkChart() {
           stroke={colors.solutionAccent}
           strokeWidth={2.5}
           strokeLinecap="round"
+        />
+        <path
+          d={beatPath}
+          fill="none"
+          stroke={colors.textTertiary}
+          strokeWidth={1.5}
+          strokeDasharray="4 3"
+          strokeLinecap="round"
+          opacity={0.7}
         />
 
         {/* dots */}
