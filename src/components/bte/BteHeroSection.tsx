@@ -1,320 +1,654 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
+import { PAPER_URL } from "./shared";
 
-const COLS = 8;
-const ROWS = 6;
-const TOTAL = COLS * ROWS;
+const MP_COLS = 6;
+const MP_ROWS = 8;
+const CELL = 22;
+const GAP = 2;
+const TOTAL_CELLS = MP_COLS * MP_ROWS;
+const COMMITTEE_N = 5;
 
-type CellState = "encrypted" | "selected" | "revealed" | "skipped";
+type Phase = "encrypt" | "select" | "decrypt" | "done";
 
-function generateSelection(): Set<number> {
-  // ~35-45% of ciphertexts land in the block
-  const target = Math.floor(TOTAL * (0.35 + Math.random() * 0.1));
-  const set = new Set<number>();
-  while (set.size < target) {
-    set.add(Math.floor(Math.random() * TOTAL));
-  }
-  return set;
+const PHASE_META: Record<Phase, { label: string; color: string }> = {
+  encrypt: { label: "users encrypt", color: colors.userAccent },
+  select: { label: "builder picks batch", color: colors.problemAccentStrong },
+  decrypt: { label: "committee opens", color: colors.solutionAccent },
+  done: { label: "block executes", color: colors.solutionAccent },
+};
+
+function pickBatch(): Set<number> {
+  const target = Math.floor(TOTAL_CELLS * 0.4);
+  const s = new Set<number>();
+  while (s.size < target) s.add(Math.floor(Math.random() * TOTAL_CELLS));
+  return s;
 }
 
-const INITIAL_SELECTION = new Set<number>([
-  2, 5, 9, 11, 14, 17, 20, 23, 26, 29, 32, 35, 39, 42, 45,
-]);
+interface Particle {
+  id: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  color: string;
+  duration: number;
+  start: number;
+}
 
 export default function BteHeroSection() {
-  const [cycle, setCycle] = useState(0);
-  const [selected, setSelected] = useState<Set<number>>(INITIAL_SELECTION);
-  const [phase, setPhase] = useState<"encrypt" | "select" | "decrypt" | "done">(
-    "encrypt"
+  const [phase, setPhase] = useState<Phase>("encrypt");
+  const [cellStates, setCellStates] = useState<number[]>(
+    () => new Array(TOTAL_CELLS).fill(0),
   );
+  const [serverOn, setServerOn] = useState<boolean[]>(() =>
+    new Array(COMMITTEE_N).fill(false),
+  );
+  const [blockSlots, setBlockSlots] = useState<number>(0);
+  const [revealed, setRevealed] = useState(0);
+  const [kept, setKept] = useState(0);
+  const [selectedBatch, setSelectedBatch] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const nextParticleId = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
-    const t: ReturnType<typeof setTimeout>[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const t = setTimeout(() => resolve(), ms);
+        timers.push(t);
+      });
 
-    const run = () => {
-      if (cancelled) return;
-      setSelected(generateSelection());
-      setPhase("encrypt");
-      t.push(setTimeout(() => !cancelled && setPhase("select"), 1400));
-      t.push(setTimeout(() => !cancelled && setPhase("decrypt"), 2600));
-      t.push(setTimeout(() => !cancelled && setPhase("done"), 3800));
-      t.push(
-        setTimeout(() => {
-          if (!cancelled) {
-            setCycle((c) => c + 1);
-            run();
-          }
-        }, 5800)
-      );
+    const emit = (
+      x0: number,
+      y0: number,
+      x1: number,
+      y1: number,
+      color: string,
+      duration = 500,
+    ) => {
+      const id = nextParticleId.current++;
+      const p: Particle = {
+        id,
+        x0,
+        y0,
+        x1,
+        y1,
+        color,
+        duration,
+        start: performance.now(),
+      };
+      setParticles((ps) => [...ps, p]);
+      const cleanup = setTimeout(() => {
+        setParticles((ps) => ps.filter((q) => q.id !== id));
+      }, duration + 50);
+      timers.push(cleanup);
     };
-    run();
+
+    async function cycle() {
+      if (cancelled) return;
+      // reset
+      setCellStates(new Array(TOTAL_CELLS).fill(0));
+      setServerOn(new Array(COMMITTEE_N).fill(false));
+      setBlockSlots(0);
+      setRevealed(0);
+      setKept(0);
+      setParticles([]);
+      const batch = pickBatch();
+      setSelectedBatch(batch);
+
+      // phase 1: users emit → mempool fills (state 1 = filled)
+      setPhase("encrypt");
+      for (let i = 0; i < TOTAL_CELLS; i++) {
+        if (cancelled) return;
+        const user = i % 3;
+        const userX = 40;
+        const userY = 60 + user * 80;
+        const col = i % MP_COLS;
+        const row = Math.floor(i / MP_COLS);
+        const cellX = 150 + col * (CELL + GAP) + CELL / 2;
+        const cellY = 70 + row * (CELL + GAP) + CELL / 2;
+        emit(userX, userY, cellX, cellY, colors.userAccent, 500);
+        const idx = i;
+        const markTimer = setTimeout(() => {
+          if (cancelled) return;
+          setCellStates((arr) => {
+            const next = arr.slice();
+            next[idx] = 1;
+            return next;
+          });
+        }, 500);
+        timers.push(markTimer);
+        if (i % 4 === 0) await delay(40);
+      }
+      await delay(800);
+
+      // phase 2: builder selects
+      if (cancelled) return;
+      setPhase("select");
+      const selArr = [...batch];
+      selArr.forEach((idx, j) => {
+        const t = setTimeout(() => {
+          if (cancelled) return;
+          setCellStates((arr) => {
+            const next = arr.slice();
+            next[idx] = 2;
+            return next;
+          });
+        }, (j % 8) * 20);
+        timers.push(t);
+      });
+      await delay(1100);
+
+      // phase 3: committee lights up + emits shares
+      if (cancelled) return;
+      setPhase("decrypt");
+      for (let i = 0; i < COMMITTEE_N; i++) {
+        const t = setTimeout(() => {
+          if (cancelled) return;
+          setServerOn((arr) => {
+            const next = arr.slice();
+            next[i] = true;
+            return next;
+          });
+          const angle = (i / COMMITTEE_N) * Math.PI * 2 - Math.PI / 2;
+          const sx = 380 + Math.cos(angle) * 40;
+          const sy = 170 + Math.sin(angle) * 40;
+          emit(sx, sy, 380, 170, colors.solutionAccent, 400);
+        }, i * 80);
+        timers.push(t);
+      }
+      await delay(700);
+
+      // decrypt each selected ct
+      let rev = 0;
+      for (const idx of selArr) {
+        if (cancelled) return;
+        const col = idx % MP_COLS;
+        const row = Math.floor(idx / MP_COLS);
+        const cellX = 150 + col * (CELL + GAP) + CELL / 2;
+        const cellY = 70 + row * (CELL + GAP) + CELL / 2;
+        emit(380, 170, cellX, cellY, colors.solutionAccent, 300);
+        const thisIdx = idx;
+        const t = setTimeout(() => {
+          if (cancelled) return;
+          setCellStates((arr) => {
+            const next = arr.slice();
+            next[thisIdx] = 3;
+            return next;
+          });
+          rev += 1;
+          setRevealed(rev);
+          setKept(TOTAL_CELLS - rev);
+        }, 300);
+        timers.push(t);
+        await delay(30);
+      }
+      await delay(400);
+
+      // phase 4: block fills
+      if (cancelled) return;
+      setPhase("done");
+      const rows = Math.min(selArr.length, 10);
+      for (let i = 0; i < rows; i++) {
+        const idx = selArr[i];
+        const col = idx % MP_COLS;
+        const row = Math.floor(idx / MP_COLS);
+        const cellX = 150 + col * (CELL + GAP) + CELL / 2;
+        const cellY = 70 + row * (CELL + GAP) + CELL / 2;
+        const slotY = 102 + i * 16;
+        emit(cellX, cellY, 520, slotY, colors.solutionAccent, 400);
+        const slotIndex = i + 1;
+        const t = setTimeout(() => {
+          if (cancelled) return;
+          setBlockSlots(slotIndex);
+        }, 400 + i * 50);
+        timers.push(t);
+      }
+      await delay(2200);
+
+      if (!cancelled) {
+        await delay(800);
+        cycle();
+      }
+    }
+
+    cycle();
 
     return () => {
       cancelled = true;
-      t.forEach(clearTimeout);
+      timers.forEach(clearTimeout);
     };
   }, []);
 
-  const cellState = (i: number): CellState => {
-    const isSelected = selected.has(i);
-    if (phase === "encrypt") return "encrypted";
-    if (phase === "select") return isSelected ? "selected" : "encrypted";
-    if (phase === "decrypt")
-      return isSelected ? "revealed" : "skipped";
-    return isSelected ? "revealed" : "skipped";
-  };
-
-  const revealedCount = phase === "decrypt" || phase === "done" ? selected.size : 0;
-  const keptPrivateCount =
-    phase === "decrypt" || phase === "done" ? TOTAL - selected.size : 0;
+  const phaseMeta = PHASE_META[phase];
 
   return (
-    <section className="min-h-[85vh] flex items-center justify-center px-6 relative overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center py-20"
-      >
-        {/* Left: text */}
-        <div>
-          <h1 className="text-5xl sm:text-6xl leading-[1.05] tracking-tight mb-8">
-            <span className="block font-light mb-2">BTX</span>
-            <span className="block font-semibold text-solution-accent">
-              Batched Threshold Encryption
-            </span>
-          </h1>
-          <p className="text-lg text-text-secondary font-light leading-relaxed mb-6 max-w-lg">
-            Batched threshold encryption lets a committee of servers decrypt
-            any chosen subset of ciphertexts while the rest stay private.
-            It&apos;s a key building block for encrypted mempools, where
-            transactions are encrypted until block inclusion to mitigate MEV.
-            BTX is a simple and concretely efficient BTE construction that is
-            both epochless and collision-free: encryption does not require a
-            user-chosen batch index.
-          </p>
-          <p className="text-base text-solution-accent/90 font-light italic leading-relaxed max-w-md mb-8">
-            Shortest ciphertext. Collision-free. Epochless.
-            <br />
-            Fast enough for real block times.
-          </p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <a
-              href="https://category-labs.github.io/category-research/BTX-paper.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-text-primary text-surface px-5 py-3 rounded-lg font-mono text-xs hover:bg-text-secondary transition-colors min-h-11"
-            >
-              Read the paper (PDF)
-              <svg
-                viewBox="0 0 24 24"
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden="true"
+    <section
+      id="hero-root"
+      className="min-h-[92vh] flex items-center px-6 pt-20"
+    >
+      <RevealBlock className="max-w-[1120px] mx-auto w-full">
+        <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,0.85fr)_minmax(0,1.15fr)] gap-10 md:gap-16 items-center py-10 md:py-16">
+          <div>
+            <div className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] uppercase text-solution-accent bg-solution-accent-light/70 px-2.5 py-1.5 rounded-full font-semibold mb-5">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: colors.solutionAccent }}
+              />
+              Category Labs research
+            </div>
+            <h1 className="mb-5 leading-[1.05] tracking-[-0.02em] text-[clamp(2.5rem,4.5vw,3.5rem)]">
+              <span className="block font-light text-text-secondary mb-1.5">
+                BTX
+              </span>
+              <span className="block font-semibold text-solution-accent">
+                Batched Threshold Encryption
+              </span>
+            </h1>
+            <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-5">
+              A committee of servers decrypts any chosen subset of ciphertexts
+              while the rest stay private — the key primitive for encrypted
+              mempools that stop MEV.
+            </p>
+            <p className="font-mono text-[13px] text-solution-accent leading-[1.6] mb-7">
+              Shortest ciphertext. Collision-free. Epochless.
+              <br />
+              Fast enough for real block times.
+            </p>
+            <div className="flex gap-3.5 items-center flex-wrap">
+              <a
+                href={PAPER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-text-primary text-surface font-mono text-xs font-medium px-[18px] py-3 rounded-[10px] hover:bg-[#332b22] transition-colors min-h-11"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M14 5l7 7m0 0l-7 7m7-7H3"
-                />
-              </svg>
-            </a>
-            <a
-              href="#the-problem"
-              className="inline-flex items-center gap-1.5 font-mono text-xs text-text-secondary hover:text-text-primary transition-colors min-h-11 px-2"
+                Read the paper (PDF)
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </a>
+              <a
+                href="#problem-root"
+                className="inline-flex items-center gap-1.5 font-mono text-xs text-text-secondary hover:text-text-primary transition-colors min-h-11 px-2"
+              >
+                Or read the explainer <span aria-hidden="true">↓</span>
+              </a>
+            </div>
+          </div>
+
+          <div
+            className="bg-surface-elevated border border-border rounded-2xl p-[22px]"
+            style={{ boxShadow: "0 30px 60px -40px rgba(26,23,20,0.18)" }}
+          >
+            <div className="flex justify-between items-center mb-3.5">
+              <p className="font-mono text-[10px] text-text-tertiary tracking-[0.12em] uppercase m-0">
+                Encrypted mempool · end-to-end
+              </p>
+              <span
+                key={phase}
+                className="font-mono text-[10px] font-semibold px-2.5 py-[3px] rounded-full transition-all duration-300"
+                style={{
+                  color: phaseMeta.color,
+                  backgroundColor: phaseMeta.color + "18",
+                }}
+              >
+                {phaseMeta.label}
+              </span>
+            </div>
+
+            <svg
+              viewBox="0 0 560 340"
+              className="w-full h-auto block"
+              aria-hidden="true"
             >
-              Or read the explainer
-              <span aria-hidden="true">↓</span>
-            </a>
+              <defs>
+                <linearGradient id="hero-flow-grad" x1="0" x2="1">
+                  <stop offset="0" stopColor={colors.solutionAccent} stopOpacity="0" />
+                  <stop offset="0.5" stopColor={colors.solutionAccent} stopOpacity="0.6" />
+                  <stop offset="1" stopColor={colors.solutionAccent} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              <g
+                fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                fontSize={9}
+                fill={colors.textTertiary}
+                letterSpacing={1.2}
+              >
+                <text x={40} y={18} textAnchor="middle">USERS</text>
+                <text x={220} y={18} textAnchor="middle">MEMPOOL</text>
+                <text x={380} y={18} textAnchor="middle">COMMITTEE</text>
+                <text x={520} y={18} textAnchor="middle">BLOCK</text>
+              </g>
+
+              {/* User pool */}
+              <g>
+                {[60, 140, 220].map((y, i) => (
+                  <g key={i} transform={`translate(40 ${y})`}>
+                    <circle
+                      r={9}
+                      fill={colors.userBg}
+                      stroke={colors.userAccent}
+                      strokeWidth={1.2}
+                    />
+                    <text
+                      x={0}
+                      y={3}
+                      textAnchor="middle"
+                      fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                      fontSize={9}
+                      fill={colors.userAccent}
+                      fontWeight={600}
+                    >
+                      {["A", "B", "C"][i]}
+                    </text>
+                  </g>
+                ))}
+              </g>
+
+              {/* Mempool */}
+              <g>
+                <rect
+                  x={140}
+                  y={40}
+                  width={160}
+                  height={260}
+                  rx={10}
+                  fill={colors.surface}
+                  stroke={colors.border}
+                />
+                <text
+                  x={220}
+                  y={58}
+                  textAnchor="middle"
+                  fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                  fontSize={9}
+                  fill={colors.textTertiary}
+                  letterSpacing={0.8}
+                >
+                  ciphertexts
+                </text>
+                {Array.from({ length: TOTAL_CELLS }).map((_, i) => {
+                  const col = i % MP_COLS;
+                  const row = Math.floor(i / MP_COLS);
+                  const x = 150 + col * (CELL + GAP);
+                  const y = 70 + row * (CELL + GAP);
+                  const state = cellStates[i];
+                  const fill =
+                    state === 0
+                      ? colors.border
+                      : state === 1
+                        ? "#d6cfc5"
+                        : state === 2
+                          ? colors.problemAccentLight
+                          : colors.solutionAccentLight;
+                  return (
+                    <rect
+                      key={i}
+                      x={x}
+                      y={y}
+                      width={CELL}
+                      height={CELL}
+                      rx={3}
+                      fill={fill}
+                      style={{ transition: "fill 0.35s" }}
+                    />
+                  );
+                })}
+                <g
+                  style={{
+                    opacity: phase === "select" || phase === "decrypt" || phase === "done" ? 1 : 0,
+                    transition: "opacity 0.3s",
+                  }}
+                >
+                  <rect x={145} y={66} width={150} height={3} fill={colors.problemAccent} />
+                  <text
+                    x={220}
+                    y={80}
+                    textAnchor="middle"
+                    fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                    fontSize={9}
+                    fontWeight={600}
+                    fill={colors.problemAccentStrong}
+                  >
+                    builder picks batch
+                  </text>
+                </g>
+              </g>
+
+              <line
+                x1={300}
+                y1={170}
+                x2={340}
+                y2={170}
+                stroke={colors.border}
+                strokeWidth={1.5}
+              />
+              <polygon points="340,170 334,166 334,174" fill={colors.border} />
+
+              {/* Committee */}
+              <g transform="translate(380 170)">
+                <circle
+                  r={55}
+                  fill={colors.surfaceElevated}
+                  stroke={colors.border}
+                  strokeDasharray="3 3"
+                />
+                <text
+                  x={0}
+                  y={-65}
+                  textAnchor="middle"
+                  fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                  fontSize={9}
+                  fill={colors.textTertiary}
+                >
+                  threshold t+1 of N
+                </text>
+                {Array.from({ length: COMMITTEE_N }).map((_, i) => {
+                  const angle = (i / COMMITTEE_N) * Math.PI * 2 - Math.PI / 2;
+                  const cx = Math.cos(angle) * 40;
+                  const cy = Math.sin(angle) * 40;
+                  const on = serverOn[i];
+                  return (
+                    <circle
+                      key={i}
+                      cx={cx}
+                      cy={cy}
+                      r={on ? 6 : 5}
+                      fill={on ? colors.solutionAccent : colors.solutionAccentLight}
+                      stroke={colors.solutionAccent}
+                      strokeWidth={1.2}
+                      style={{ transition: "fill 0.3s, r 0.3s" }}
+                    />
+                  );
+                })}
+                <text
+                  x={0}
+                  y={4}
+                  textAnchor="middle"
+                  fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                  fontSize={13}
+                  fontWeight={600}
+                  fill={colors.solutionAccent}
+                >
+                  {COMMITTEE_N}
+                </text>
+                <text
+                  x={0}
+                  y={18}
+                  textAnchor="middle"
+                  fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                  fontSize={8}
+                  fill={colors.textTertiary}
+                >
+                  servers
+                </text>
+              </g>
+
+              <line
+                x1={440}
+                y1={170}
+                x2={480}
+                y2={170}
+                stroke={colors.border}
+                strokeWidth={1.5}
+              />
+              <polygon points="480,170 474,166 474,174" fill={colors.border} />
+
+              {/* Block */}
+              <g>
+                <rect
+                  x={480}
+                  y={70}
+                  width={80}
+                  height={200}
+                  rx={10}
+                  fill={colors.solutionBg}
+                  stroke={colors.solutionAccentLight}
+                />
+                <text
+                  x={520}
+                  y={88}
+                  textAnchor="middle"
+                  fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+                  fontSize={9}
+                  fontWeight={600}
+                  fill={colors.solutionAccent}
+                >
+                  BLOCK N
+                </text>
+                {Array.from({ length: Math.min(selectedBatch.size, 10) }).map(
+                  (_, i) => (
+                    <rect
+                      key={i}
+                      x={490}
+                      y={96 + i * 16}
+                      width={60}
+                      height={12}
+                      rx={2}
+                      fill={colors.solutionAccentLight}
+                      opacity={i < blockSlots ? 1 : 0}
+                      style={{ transition: "opacity 0.4s" }}
+                    />
+                  ),
+                )}
+              </g>
+
+              {/* Particles */}
+              <g>
+                {particles.map((p) => (
+                  <ParticleDot key={p.id} {...p} />
+                ))}
+              </g>
+            </svg>
+
+            <div className="flex justify-between mt-3.5 font-mono text-[10px] text-text-tertiary flex-wrap gap-y-2">
+              <div>
+                <span
+                  className="text-solution-accent font-semibold"
+                  style={{ color: colors.solutionAccent }}
+                >
+                  {revealed}
+                </span>{" "}
+                revealed
+                <span className="mx-1.5">·</span>
+                <span>{kept}</span> stay private
+              </div>
+              <div className="flex gap-3.5 flex-wrap">
+                <LegendDot color={colors.border} label="encrypted" />
+                <LegendDot color={colors.problemAccentLight} label="selected" />
+                <LegendDot color={colors.solutionAccentLight} label="decrypted" />
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Right: encrypted pool visualization */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-mono text-[11px] text-text-tertiary tracking-wider uppercase">
-              Encrypted mempool
-            </p>
-            <PhaseLabel phase={phase} />
-          </div>
-
-          <div className="bg-surface-elevated rounded-xl p-5 border border-border shadow-sm">
-            <div
-              className="grid gap-[4px]"
-              style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
-            >
-              {Array.from({ length: TOTAL }, (_, i) => {
-                const state = cellState(i);
-                return (
-                  <motion.div
-                    key={`${cycle}-${i}`}
-                    className="aspect-square rounded-[4px] flex items-center justify-center relative overflow-hidden"
-                    animate={{
-                      backgroundColor:
-                        state === "encrypted"
-                          ? colors.border
-                          : state === "selected"
-                            ? colors.problemAccentLight
-                            : state === "revealed"
-                              ? colors.solutionAccentLight
-                              : "#e8e2da", // one-off faded "skipped" tint; no reusable token
-                      scale: state === "selected" ? 1.05 : 1,
-                    }}
-                    transition={{
-                      duration: 0.35,
-                      delay: state === "revealed" ? (i * 0.012) % 0.4 : 0,
-                    }}
-                  >
-                    {state === "encrypted" && <LockIcon />}
-                    {state === "selected" && <LockIcon highlight />}
-                    {state === "revealed" && <CheckIcon />}
-                    {state === "skipped" && <LockIcon muted />}
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Committee + stats row */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <div className="flex items-center gap-1.5">
-                <Committee active={phase !== "encrypt"} />
-                <span className="font-mono text-[10px] text-text-tertiary ml-2">
-                  committee of N
-                </span>
-              </div>
-              <div className="flex items-center gap-4 font-mono text-[10px]">
-                <motion.span
-                  animate={{ opacity: revealedCount > 0 ? 1 : 0.3 }}
-                  className="text-solution-accent"
-                >
-                  {revealedCount} revealed
-                </motion.span>
-                <motion.span
-                  animate={{ opacity: keptPrivateCount > 0 ? 1 : 0.3 }}
-                  className="text-text-tertiary"
-                >
-                  {keptPrivateCount} stay private
-                </motion.span>
-              </div>
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-            {[
-              [colors.border, "Encrypted"],
-              [colors.problemAccentLight, "Selected for block"],
-              [colors.solutionAccentLight, "Decrypted by committee"],
-            ].map(([bg, label]) => (
-              <div key={label} className="flex items-center gap-1.5">
-                <div
-                  className="w-3 h-3 rounded-[2px]"
-                  style={{ backgroundColor: bg }}
-                />
-                <span className="font-mono text-[10px] text-text-tertiary">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </motion.div>
+      </RevealBlock>
     </section>
   );
 }
 
-function PhaseLabel({ phase }: { phase: "encrypt" | "select" | "decrypt" | "done" }) {
-  const labels = {
-    encrypt: { text: "users submit", color: colors.textTertiary },
-    select: { text: "block builder picks batch", color: colors.problemAccent },
-    decrypt: { text: "committee opens batch", color: colors.solutionAccent },
-    done: { text: "block executes", color: colors.solutionAccent },
-  } as const;
-  const label = labels[phase];
+function ParticleDot({ x0, y0, x1, y1, color, duration, start }: Particle) {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const step = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setT(eased);
+      if (progress < 1) {
+        raf = requestAnimationFrame(step);
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [start, duration]);
+
+  const cx = x0 + (x1 - x0) * t;
+  const cy = y0 + (y1 - y0) * t;
   return (
-    <motion.span
-      key={phase}
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded"
-      style={{ color: label.color, backgroundColor: label.color + "15" }}
-    >
-      {label.text}
-    </motion.span>
+    <circle cx={cx} cy={cy} r={2.5} fill={color} opacity={0.9 * (1 - t)} />
   );
 }
 
-function Committee({ active }: { active: boolean }) {
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: 5 }, (_, i) => (
-        <motion.div
-          key={i}
-          className="w-2 h-2 rounded-full"
-          animate={{
-            backgroundColor: active ? colors.solutionAccent : colors.textTertiary,
-            scale: active ? [1, 1.3, 1] : 1,
-          }}
-          transition={{
-            duration: 0.6,
-            delay: i * 0.08,
-            repeat: active ? Infinity : 0,
-            repeatDelay: 1.2,
-          }}
-        />
-      ))}
-    </div>
+    <span className="inline-flex items-center gap-1">
+      <span
+        className="inline-block w-2 h-2 rounded-[2px]"
+        style={{ backgroundColor: color }}
+      />
+      {label}
+    </span>
   );
 }
 
-function LockIcon({
-  highlight,
-  muted,
+function RevealBlock({
+  children,
+  className = "",
 }: {
-  highlight?: boolean;
-  muted?: boolean;
+  children: React.ReactNode;
+  className?: string;
 }) {
-  const color = highlight ? colors.problemAccent : muted ? colors.textTertiary : colors.textSecondary;
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <svg viewBox="0 0 16 16" className="w-2.5 h-2.5 opacity-60" fill="none" aria-hidden="true">
-      <rect
-        x={4}
-        y={7}
-        width={8}
-        height={6}
-        rx={1}
-        stroke={color}
-        strokeWidth={1.2}
-      />
-      <path
-        d="M5.5 7V5.5a2.5 2.5 0 1 1 5 0V7"
-        stroke={color}
-        strokeWidth={1.2}
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" aria-hidden="true">
-      <path
-        d="M3.5 8.5L6.5 11.5L12.5 5"
-        stroke={colors.solutionAccent}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <div
+      ref={ref}
+      className={`section-reveal ${shown ? "visible" : ""} ${className}`}
+    >
+      {children}
+    </div>
   );
 }

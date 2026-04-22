@@ -1,174 +1,637 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
-import { Card } from "../ui/Card";
+import { usePrefersReducedMotion } from "./useReducedMotion";
 
-interface ApproachCardProps {
+type SchemeKind =
+  | "comms"
+  | "allornothing"
+  | "slow"
+  | "collision"
+  | "crs"
+  | "expensive";
+
+interface Scheme {
+  id: string;
   name: string;
-  idea: string;
-  problem: string;
-  tone: "warn" | "bad";
+  fail: string;
+  kind: SchemeKind;
 }
 
-function ApproachCard({ name, idea, problem, tone }: ApproachCardProps) {
-  const color = tone === "bad" ? "#c4653a" : "#a8856e";
-  return (
-    <Card>
-      <p
-        className="font-mono text-[11px] font-semibold tracking-wider uppercase mb-2"
-        style={{ color }}
-      >
-        {name}
-      </p>
-      <p className="text-sm text-text-primary leading-relaxed mb-3">{idea}</p>
-      <div className="flex items-start gap-2 mt-3 pt-3 border-t border-border">
-        <span
-          className="font-mono text-[10px] mt-0.5 shrink-0"
-          style={{ color }}
-        >
-          ✗
-        </span>
-        <p className="text-[13px] text-text-secondary leading-relaxed">
-          {problem}
-        </p>
-      </div>
-    </Card>
-  );
-}
+const SCHEMES: Scheme[] = [
+  {
+    id: "naive",
+    name: "Naïve threshold encryption",
+    fail: "O(N·B) comms",
+    kind: "comms",
+  },
+  {
+    id: "ibe",
+    name: "Threshold IBE",
+    fail: "all-or-nothing",
+    kind: "allornothing",
+  },
+  {
+    id: "early",
+    name: "Early BTE (per-block MPC)",
+    fail: "too slow",
+    kind: "slow",
+  },
+  {
+    id: "indexed",
+    name: "Indexed BTE (BEAT-MEV, BEAT++)",
+    fail: "index collision",
+    kind: "collision",
+  },
+  { id: "trx", name: "TrX (Fernando et al.)", fail: "CRS grows forever", kind: "crs" },
+  {
+    id: "pfe",
+    name: "PFE (Boneh et al.)",
+    fail: "expensive compute",
+    kind: "expensive",
+  },
+];
 
 export default function EncryptedMempoolSection() {
   const { ref, isVisible } = useInView(0.1);
+  const [activeId, setActiveId] = useState(SCHEMES[0].id);
+  const active = SCHEMES.find((s) => s.id === activeId) ?? SCHEMES[0];
 
   return (
-    <section id="the-problem" ref={ref} className="py-24 px-6 bg-surface scroll-mt-16">
+    <section
+      id="problem-root"
+      ref={ref}
+      className="py-24 px-6 scroll-mt-16"
+    >
       <div
-        className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
+        className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
-        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
+        <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
           Why encrypted mempools are hard
         </h2>
-        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
-          When a transaction is submitted, it sits pending in the mempool
-          where anyone can see it and front-run it. The fix is to encrypt
-          transactions until they&apos;re included in a block. Doing this
-          efficiently has been open for years. Every prior BTE scheme gives
-          up something critical: coordination, epoch independence, ciphertext
-          size, or decryption cost.
+        <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
+          Transactions sit in the mempool where anyone can read and
+          front-run them. The fix: encrypt until block inclusion. Every prior
+          scheme gives up something critical — pick an approach to see what
+          breaks.
         </p>
 
-        {/* What we actually want */}
-        <div className="bg-solution-bg rounded-xl border border-solution-cell p-6 mb-10">
-          <p className="font-mono text-xs text-solution-accent uppercase tracking-wider mb-3">
-            What we want
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Wanted
-              step="1"
-              title="User encrypts"
-              body="Transaction goes into the mempool as ciphertext. No one can read it."
-            />
-            <Wanted
-              step="2"
-              title="Block builder picks a batch"
-              body="Only the transactions landing in the block are designated for decryption."
-            />
-            <Wanted
-              step="3"
-              title="Committee jointly decrypts"
-              body="A threshold of validators opens exactly that batch. Everything else stays private for the next block."
-            />
+        <div className="grid gap-6 md:[grid-template-columns:minmax(260px,340px)_1fr]">
+          <div className="flex flex-col gap-1.5">
+            {SCHEMES.map((s) => {
+              const isActive = s.id === activeId;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActiveId(s.id)}
+                  className={`text-left border rounded-[10px] px-3.5 py-3 flex justify-between items-center gap-2.5 transition-all duration-150 ${
+                    isActive
+                      ? "border-solution-accent bg-solution-bg"
+                      : "border-border bg-surface-elevated hover:border-text-tertiary"
+                  }`}
+                  style={
+                    isActive
+                      ? {
+                          boxShadow:
+                            "0 0 0 3px color-mix(in oklab, " +
+                            colors.solutionAccent +
+                            " 12%, transparent)",
+                        }
+                      : undefined
+                  }
+                  aria-pressed={isActive}
+                >
+                  <span className="text-[13.5px] font-medium text-text-primary">
+                    {s.name}
+                  </span>
+                  <span
+                    className="font-mono text-[10px] uppercase tracking-[0.06em]"
+                    style={{
+                      color: isActive
+                        ? colors.solutionAccent
+                        : colors.problemAccentStrong,
+                    }}
+                  >
+                    {s.fail}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="bg-surface-elevated border border-border rounded-2xl p-[22px] min-h-[360px] relative overflow-hidden">
+            <SchemeCanvas scheme={active} />
           </div>
         </div>
 
-        <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-2">
-          Why naïve approaches don&apos;t work
-        </h3>
-        <p className="text-base text-text-secondary font-light max-w-3xl leading-relaxed mb-6">
-          Several BTE schemes have been proposed. The cards below walk through
-          each one and what breaks.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <ApproachCard
-            name="Naïve threshold encryption"
-            idea="Every validator holds a share of the decryption key. To decrypt a batch of B transactions with N validators, they all send shares."
-            problem="Communication scales as O(N · B). With hundreds of validators and thousands of transactions per block, this is prohibitive."
-            tone="bad"
-          />
-          <ApproachCard
-            name="Threshold identity-based encryption (IBE)"
-            idea="Encrypt to an epoch label. At the end of the epoch, validators release one small decryption key for that epoch."
-            problem="All-or-nothing. Releasing the epoch key decrypts every ciphertext in the epoch, including the ones that weren't included in any block. No selective privacy."
-            tone="bad"
-          />
-          <ApproachCard
-            name="Early batched threshold encryption"
-            idea="The committee runs a fresh setup protocol for each block, then uses it to decrypt exactly that block's batch."
-            problem="A full MPC-based setup ceremony every single block is far too slow to keep up with block times."
-            tone="bad"
-          />
-          <ApproachCard
-            name="Indexed BTE (BEAT-MEV, BEAT++)"
-            idea="Users pick an index from a small namespace when they encrypt. Each block's committee decrypts at most one ciphertext per index."
-            problem="Two honest users can collide on the same index. And worse: an attacker can censor a target by publishing a ciphertext with the same index."
-            tone="bad"
-          />
-          <ApproachCard
-            name="TrX (Fernando et al.)"
-            idea="Collision-free and epochless, fixing the indexed-BTE problems."
-            problem="Needs a common reference string that grows with the number of decryption sessions. For a long-lived chain, the CRS grows without bound."
-            tone="warn"
-          />
-          <ApproachCard
-            name="PFE (Boneh et al.)"
-            idea="Collision-free, epochless, constant-size CRS. Uses partial-fraction techniques."
-            problem="Works, but the concrete computation is expensive. And the ciphertext is still 3 group elements."
-            tone="warn"
-          />
+        <div
+          className="mt-6 rounded-2xl border px-[22px] py-5 flex gap-3.5 items-start"
+          style={{
+            background: colors.solutionBg,
+            borderColor:
+              "color-mix(in oklab, " + colors.solutionAccent + " 22%, transparent)",
+          }}
+        >
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center font-semibold text-white shrink-0"
+            style={{ backgroundColor: colors.solutionAccent }}
+            aria-hidden="true"
+          >
+            ✓
+          </div>
+          <div>
+            <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent mb-1">
+              BTX fills the gap
+            </p>
+            <p className="text-text-primary leading-[1.55]">
+              First BTE scheme that is{" "}
+              <strong>collision-free, epochless, compact</strong>{" "}
+              (ciphertext as small as plain ElGamal), and <strong>fast</strong>{" "}
+              (decryption scales with the actual batch, not the maximum).
+            </p>
+          </div>
         </div>
-
-        <Card tone="highlighted">
-          <p className="font-mono text-xs text-solution-accent uppercase tracking-wider mb-2">
-            BTX fills the gap
-          </p>
-          <p className="text-base text-text-primary leading-relaxed">
-            BTX is the first BTE scheme that is collision-free, epochless,
-            compact (ciphertext as small as plain ElGamal), and fast
-            (decryption scales with the <em>actual</em> batch size, not the
-            maximum).
-          </p>
-        </Card>
       </div>
     </section>
   );
 }
 
-function Wanted({
-  step,
-  title,
-  body,
-}: {
-  step: string;
-  title: string;
-  body: string;
-}) {
+function SchemeCanvas({ scheme }: { scheme: Scheme }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: Number(step) * 0.08 }}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <span className="font-mono text-[10px] w-5 h-5 rounded-full bg-solution-accent text-white flex items-center justify-center font-semibold">
-          {step}
+    <>
+      <div className="mb-4">
+        <p
+          className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold mb-1"
+          style={{ color: colors.problemAccentStrong }}
+        >
+          {scheme.fail}
+        </p>
+        <p className="text-[15px] font-semibold m-0">{scheme.name}</p>
+      </div>
+      {scheme.kind === "comms" && <CommsViz />}
+      {scheme.kind === "allornothing" && <AllOrNothingViz />}
+      {scheme.kind === "slow" && <SlowViz />}
+      {scheme.kind === "collision" && <CollisionViz />}
+      {scheme.kind === "crs" && <CrsViz />}
+      {scheme.kind === "expensive" && <ExpensiveViz />}
+    </>
+  );
+}
+
+/* ---------- 1. Naïve: O(N·B) comms ---------- */
+function CommsViz() {
+  const N = 5;
+  const B = 16;
+  const lines = useMemo(() => {
+    const out: { y1: number; y2: number }[] = [];
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < B; j++) {
+        const y1 = 20 + (i / Math.max(1, N - 1)) * 160;
+        const y2 = 15 + (j / Math.max(1, B - 1)) * 170;
+        out.push({ y1, y2 });
+      }
+    }
+    return out;
+  }, [N, B]);
+
+  return (
+    <div>
+      <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
+        Every validator sends a decryption share for every ciphertext. With N
+        validators × B transactions per block, messages scale as O(N·B) —
+        unmanageable at scale.
+      </p>
+      <div className="h-[200px] flex items-center justify-center">
+        <svg viewBox="0 0 400 200" className="w-full h-full">
+          {lines.map((l, k) => (
+            <line
+              key={k}
+              x1={48}
+              y1={l.y1}
+              x2={353}
+              y2={l.y2}
+              stroke={colors.problemAccent}
+              strokeWidth={0.4}
+              opacity={0.35}
+            />
+          ))}
+          {Array.from({ length: N }).map((_, i) => {
+            const y = 20 + (i / Math.max(1, N - 1)) * 160;
+            return (
+              <circle
+                key={i}
+                cx={40}
+                cy={y}
+                r={7}
+                fill={colors.solutionAccentLight}
+                stroke={colors.solutionAccent}
+              />
+            );
+          })}
+          {Array.from({ length: B }).map((_, j) => {
+            const y = 15 + (j / Math.max(1, B - 1)) * 170;
+            return (
+              <rect
+                key={j}
+                x={355}
+                y={y - 3}
+                width={12}
+                height={6}
+                rx={1}
+                fill={colors.problemAccentLight}
+              />
+            );
+          })}
+        </svg>
+      </div>
+      <p className="font-mono text-[11px] text-text-tertiary mt-2">
+        N = {N}, B = {B} →{" "}
+        <span
+          className="font-semibold"
+          style={{ color: colors.problemAccentStrong }}
+        >
+          {N * B}
+        </span>{" "}
+        messages
+      </p>
+    </div>
+  );
+}
+
+/* ---------- 2. IBE: all-or-nothing ---------- */
+function AllOrNothingViz() {
+  const [released, setReleased] = useState(false);
+  const [selected] = useState<Set<number>>(() => {
+    const s = new Set<number>();
+    while (s.size < 12) s.add(Math.floor(Math.random() * 48));
+    return s;
+  });
+  return (
+    <div>
+      <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
+        Releasing the epoch key decrypts <em>every</em> ciphertext in the
+        epoch — including ones that weren&apos;t in any block. No selective
+        privacy.
+      </p>
+      <div className="flex gap-1.5 p-3 bg-surface rounded-lg flex-wrap">
+        {Array.from({ length: 48 }).map((_, i) => {
+          const bg = released
+            ? colors.solutionAccentLight
+            : selected.has(i)
+              ? colors.problemAccentLight
+              : colors.border;
+          return (
+            <div
+              key={i}
+              className="w-4 h-4 rounded-[2px]"
+              style={{
+                backgroundColor: bg,
+                transition: `background 0.3s ${released ? (i * 15) / 1000 : 0}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+      <div className="flex justify-center mt-3">
+        <button
+          type="button"
+          onClick={() => setReleased(true)}
+          className="font-mono text-[11px] px-3.5 py-2 rounded-lg text-white"
+          style={{ backgroundColor: colors.problemAccent }}
+        >
+          Release epoch key
+        </button>
+      </div>
+      {released && (
+        <p
+          className="font-mono text-[11px] mt-2.5 text-center"
+          style={{ color: colors.problemAccentStrong }}
+        >
+          ✗ all 48 revealed — privacy gone
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ---------- 3. Early BTE: too slow ---------- */
+function SlowViz() {
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimate(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div>
+      <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
+        Running a fresh MPC setup every single block is far too slow to keep
+        up with modern block times.
+      </p>
+      <div className="flex gap-4 items-stretch">
+        <div className="flex-1 bg-surface rounded-lg p-3.5">
+          <p className="font-mono text-[10px] text-text-tertiary uppercase mb-2">
+            Block time budget
+          </p>
+          <div className="h-[18px] bg-border rounded-full overflow-hidden relative">
+            <div
+              className="absolute inset-y-0 left-0"
+              style={{ width: "20%", background: colors.solutionAccent }}
+            />
+          </div>
+          <p className="font-mono text-[11px] mt-1.5 text-text-secondary">
+            ~400ms
+          </p>
+        </div>
+        <div
+          className="flex-1 rounded-lg p-3.5"
+          style={{ background: colors.problemBg }}
+        >
+          <p
+            className="font-mono text-[10px] uppercase mb-2"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            MPC setup ceremony
+          </p>
+          <div className="h-[18px] bg-border rounded-full overflow-hidden relative">
+            <div
+              className="absolute inset-y-0 left-0"
+              style={{
+                width: animate ? "420%" : "0%",
+                background: colors.problemAccent,
+                transition: "width 1.8s linear",
+              }}
+            />
+          </div>
+          <p
+            className="font-mono text-[11px] mt-1.5"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            seconds → minutes
+          </p>
+        </div>
+      </div>
+      <p
+        className="font-mono text-[11px] mt-3 text-center"
+        style={{ color: colors.problemAccentStrong }}
+      >
+        ✗ ceremony overflows budget on every block
+      </p>
+    </div>
+  );
+}
+
+/* ---------- 4. Indexed BTE: collision ---------- */
+function CollisionViz() {
+  const reduced = usePrefersReducedMotion();
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    if (reduced) return;
+    let raf = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const step = () => {
+      setT((prev) => (prev + 1) % 240);
+      timer = setTimeout(() => {
+        raf = requestAnimationFrame(step);
+      }, 50);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [reduced]);
+
+  const effectiveT = reduced ? 140 : t;
+  const alicePos = Math.min(100, effectiveT * 1.2);
+  const attackPos = Math.min(100, (effectiveT + 40) * 1.2);
+  const aliceFaded = effectiveT > 80 && effectiveT < 120;
+  const attackerLanded = effectiveT > 100;
+  const collided = effectiveT > 120;
+
+  return (
+    <div>
+      <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
+        Two users can collide on the same index. Worse: an attacker can
+        deliberately publish a ciphertext at index 7 to <em>censor</em>{" "}
+        Alice&apos;s.
+      </p>
+      <div className="grid [grid-template-columns:auto_1fr_auto] gap-x-3 gap-y-2 items-center font-mono text-[12px]">
+        <span
+          className="font-semibold px-2 py-0.5 rounded-full text-[11px]"
+          style={{ color: colors.userAccent, background: colors.userBg }}
+        >
+          Alice
         </span>
-        <p className="font-mono text-xs text-solution-accent font-semibold">
-          {title}
+        <div className="relative h-7 bg-surface rounded-md overflow-hidden">
+          <div
+            className="absolute top-1/2 px-2 py-0.5 rounded"
+            style={{
+              left: alicePos + "%",
+              transform: "translate(-50%, -50%)",
+              background: colors.userAccentLight,
+              color: colors.userAccent,
+              fontSize: 10,
+              opacity: aliceFaded ? 0.2 : 1,
+              transition: "opacity 0.3s",
+            }}
+          >
+            ct_A
+          </div>
+        </div>
+        <span className="text-text-tertiary text-[10px]">idx 7</span>
+
+        <span
+          className="font-semibold px-2 py-0.5 rounded-full text-[11px]"
+          style={{
+            color: colors.problemAccent,
+            background: colors.problemBg,
+          }}
+        >
+          Attacker
+        </span>
+        <div className="relative h-7 bg-surface rounded-md overflow-hidden">
+          <div
+            className="absolute top-1/2 px-2 py-0.5 rounded"
+            style={{
+              left: attackPos + "%",
+              transform: "translate(-50%, -50%)",
+              background: attackerLanded
+                ? colors.problemAccent
+                : colors.problemAccentLight,
+              color: attackerLanded ? "white" : colors.problemAccent,
+              fontSize: 10,
+            }}
+          >
+            ct_X {attackerLanded ? "✓" : ""}
+          </div>
+        </div>
+        <span className="text-text-tertiary text-[10px]">idx 7</span>
+      </div>
+
+      <div
+        className="mt-4 px-3.5 py-2.5 rounded-lg border transition-all"
+        style={{
+          background: collided ? colors.problemBg : colors.surface,
+          borderColor: collided ? colors.problemAccentLight : colors.border,
+        }}
+      >
+        <p
+          className="font-mono text-[11px] m-0"
+          style={{
+            color: collided ? colors.problemAccentStrong : colors.textTertiary,
+          }}
+        >
+          {collided
+            ? "✗ Collision on idx 7 — Alice censored"
+            : "… both users send to same slot"}
         </p>
       </div>
-      <p className="text-sm text-text-secondary leading-relaxed">{body}</p>
-    </motion.div>
+    </div>
+  );
+}
+
+/* ---------- 5. TrX: CRS grows forever ---------- */
+function CrsViz() {
+  const reduced = usePrefersReducedMotion();
+  const [b, setB] = useState(1);
+  useEffect(() => {
+    if (reduced) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (stopped) return;
+      setB((prev) => {
+        const next = prev + Math.ceil(Math.random() * 50);
+        if (next / 20 >= 100) return 1;
+        return next;
+      });
+      timer = setTimeout(tick, 120);
+    };
+    timer = setTimeout(tick, 120);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [reduced]);
+  const pct = Math.min(100, b / 20);
+  return (
+    <div>
+      <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
+        Common Reference String grows with the number of decryption sessions.
+        On a long-lived chain, it grows without bound.
+      </p>
+      <div className="p-5 bg-surface rounded-[10px]">
+        <div className="h-3 bg-border rounded-md overflow-hidden mb-2">
+          <div
+            className="h-full"
+            style={{
+              background: colors.problemAccent,
+              width: pct + "%",
+              transition: "width 0.3s",
+            }}
+          />
+        </div>
+        <div className="flex justify-between font-mono text-[11px] text-text-secondary">
+          <span>Block {b.toLocaleString()}</span>
+          <span>
+            CRS size:{" "}
+            <span
+              className="font-semibold"
+              style={{ color: colors.problemAccentStrong }}
+            >
+              {(32 + b * 0.04).toFixed(1)} KB
+            </span>
+          </span>
+        </div>
+      </div>
+      <p
+        className="font-mono text-[11px] mt-3.5 text-center"
+        style={{ color: colors.problemAccentStrong }}
+      >
+        ✗ unbounded growth
+      </p>
+    </div>
+  );
+}
+
+/* ---------- 6. PFE: expensive compute ---------- */
+function ExpensiveViz() {
+  return (
+    <div>
+      <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
+        PFE is collision-free and epochless — but uses 3 group elements per
+        ciphertext and performs 4 pairings during open. Heavy concretely.
+      </p>
+      <div className="grid grid-cols-2 gap-4">
+        <div
+          className="p-3.5 rounded-[10px] border"
+          style={{
+            background: colors.problemBg,
+            borderColor: colors.problemAccentLight,
+          }}
+        >
+          <p
+            className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold mb-2.5"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            PFE ciphertext
+          </p>
+          <div className="flex gap-1">
+            <Seg color={colors.problemAccentLight} fg={colors.problemAccentStrong} label="G₁" flex={1} />
+            <Seg color={colors.problemAccentLight} fg={colors.problemAccentStrong} label="G₁" flex={1} />
+            <Seg color={colors.problemAccent} fg="white" label="G_T" flex={2} />
+          </div>
+          <p
+            className="font-mono text-[10px] mt-2.5"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            4 pairings per open · 0.723 ms/ct
+          </p>
+        </div>
+        <div
+          className="p-3.5 rounded-[10px] border"
+          style={{
+            background: colors.solutionBg,
+            borderColor:
+              "color-mix(in oklab, " + colors.solutionAccent + " 30%, transparent)",
+          }}
+        >
+          <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold mb-2.5 text-solution-accent">
+            BTX ciphertext
+          </p>
+          <div className="flex gap-1">
+            <Seg color={colors.solutionAccentLight} fg={colors.solutionAccent} label="G₁" flex={1} />
+            <Seg color={colors.solutionAccent} fg="white" label="G_T" flex={2} />
+          </div>
+          <p className="font-mono text-[10px] mt-2.5 text-solution-accent">
+            1 pairing per open · 0.171 ms/ct
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Seg({
+  color,
+  fg,
+  label,
+  flex,
+}: {
+  color: string;
+  fg: string;
+  label: string;
+  flex: number;
+}) {
+  return (
+    <div
+      className="h-[26px] rounded flex items-center justify-center font-mono text-[10px]"
+      style={{ background: color, color: fg, flex }}
+    >
+      {label}
+    </div>
   );
 }

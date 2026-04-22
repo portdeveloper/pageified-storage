@@ -1,183 +1,143 @@
 "use client";
 
+import { useState } from "react";
+import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
+import { PROPERTY_EXPLAIN, SCHEMES, type SchemeRow } from "./shared";
 
-interface Scheme {
-  name: string;
-  ref?: string;
-  cr: "yes" | "no" | "mixed";
-  epochless: "yes" | "no";
-  decrypt: string;
-  ctxt: string;
-  highlight?: boolean;
-}
+type PropKey = keyof typeof PROPERTY_EXPLAIN;
 
-const SCHEMES: Scheme[] = [
-  {
-    name: "Batched IBE",
-    ref: "[2]",
-    cr: "mixed",
-    epochless: "no",
-    decrypt: "O(B log² B)  /  O(Bmax log Bmax)",
-    ctxt: "3·|G₁| + |G_T|",
-  },
-  {
-    name: "Fernando et al. (TrX)",
-    ref: "[15]",
-    cr: "yes",
-    epochless: "yes",
-    decrypt: "O(B log² B)",
-    ctxt: "2·|G₁| + |G_T|",
-  },
-  {
-    name: "BEAT-MEV",
-    ref: "[10]",
-    cr: "no",
-    epochless: "yes",
-    decrypt: "O(B²)",
-    ctxt: "3·|G₁| + |G_T|",
-  },
-  {
-    name: "Gong et al.",
-    ref: "[19]",
-    cr: "mixed",
-    epochless: "no",
-    decrypt: "O(B log² B)  /  O(Bmax log Bmax)",
-    ctxt: "2·|G₁| + |G_T|",
-  },
-  {
-    name: "BEAT++ (Agarwal et al.)",
-    ref: "[1]",
-    cr: "no",
-    epochless: "yes",
-    decrypt: "O(Bmax log Bmax)",
-    ctxt: "2·|G₁| + |G_T|",
-  },
-  {
-    name: "PFE (Boneh et al.)",
-    ref: "[7]",
-    cr: "yes",
-    epochless: "yes",
-    decrypt: "O(Bmax log Bmax)",
-    ctxt: "2·|G₁| + |G_T|",
-  },
-  {
-    name: "BTX",
-    cr: "yes",
-    epochless: "yes",
-    decrypt: "O(B log B)",
-    ctxt: "|G₁| + |G_T|",
-    highlight: true,
-  },
-];
-
-function Check({ value }: { value: "yes" | "no" | "mixed" }) {
+function Mark({ value }: { value: "yes" | "no" | "mixed" }) {
   if (value === "yes") {
     return (
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-solution-accent/10 text-solution-accent font-semibold text-xs">
+      <span
+        className="inline-flex w-[22px] h-[22px] rounded-full items-center justify-center font-semibold text-xs"
+        style={{
+          background: "color-mix(in oklab, " + colors.solutionAccent + " 15%, transparent)",
+          color: colors.solutionAccent,
+        }}
+      >
         ✓
       </span>
     );
   }
   if (value === "no") {
     return (
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-problem-accent/10 text-problem-accent-strong font-semibold text-xs">
+      <span
+        className="inline-flex w-[22px] h-[22px] rounded-full items-center justify-center font-semibold text-xs"
+        style={{
+          background: "color-mix(in oklab, " + colors.problemAccent + " 15%, transparent)",
+          color: colors.problemAccentStrong,
+        }}
+      >
         ✗
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center justify-center w-10 h-5 rounded-full bg-border text-text-tertiary font-mono text-[10px]">
-      ✓ / ✗
+    <span
+      className="inline-flex px-2 py-0.5 rounded-[10px] font-mono text-[9px]"
+      style={{ background: colors.border, color: colors.textTertiary }}
+    >
+      ✓/✗
     </span>
   );
 }
 
+const PROP_COLUMN_KEYS: PropKey[] = ["cr", "ep", "decrypt", "ctxt"];
+
+const PROP_HEADER_LABELS: Record<PropKey, string> = {
+  cr: "Collision-free",
+  ep: "Epochless",
+  decrypt: "Decryption cost",
+  ctxt: "Ciphertext",
+};
+
 export default function ComparisonSection() {
   const { ref, isVisible } = useInView(0.1);
+  const [active, setActive] = useState<PropKey | null>(null);
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-surface-elevated border-y border-border">
+    <section
+      ref={ref}
+      className="py-24 px-6 bg-surface-elevated border-y border-border"
+    >
       <div
-        className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
+        className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
-        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
+        <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
           Every other BTE scheme trades off
         </h2>
-        <p className="text-lg text-text-secondary font-light max-w-3xl leading-relaxed mb-4">
-          The four properties below each matter for a usable encrypted
-          mempool. Every prior scheme drops at least one.
+        <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-7">
+          Four properties each matter for a usable encrypted mempool. Every
+          prior scheme drops at least one. Hover or focus a column to see why
+          it&apos;s needed.
         </p>
-        <PropertyKey />
 
         {/* Desktop table */}
-        <div className="mt-8 hidden md:block overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="hidden md:block overflow-x-auto rounded-2xl border border-border bg-surface-elevated">
+          <table className="w-full border-collapse min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-3 pr-4 font-mono text-[11px] text-text-tertiary uppercase tracking-wider font-normal">
+              <tr className="bg-surface border-b border-border">
+                <th className="text-left py-3.5 px-4 font-mono text-[10px] tracking-[0.08em] uppercase text-text-tertiary font-medium">
                   Scheme
                 </th>
-                <th className="text-center py-3 px-3 font-mono text-[11px] text-text-tertiary uppercase tracking-wider font-normal">
-                  Collision-free
-                </th>
-                <th className="text-center py-3 px-3 font-mono text-[11px] text-text-tertiary uppercase tracking-wider font-normal">
-                  Epochless
-                </th>
-                <th className="text-left py-3 px-3 font-mono text-[11px] text-text-tertiary uppercase tracking-wider font-normal">
-                  Decryption cost
-                </th>
-                <th className="text-left py-3 px-3 font-mono text-[11px] text-text-tertiary uppercase tracking-wider font-normal">
-                  Ciphertext
-                </th>
+                {PROP_COLUMN_KEYS.map((key) => {
+                  const align =
+                    key === "cr" || key === "ep" ? "text-center" : "text-left";
+                  const isActive = active === key;
+                  return (
+                    <th
+                      key={key}
+                      scope="col"
+                      className={`${align} py-3.5 px-3 font-mono text-[10px] tracking-[0.08em] uppercase text-text-tertiary font-medium cursor-help`}
+                      onMouseEnter={() => setActive(key)}
+                      onMouseLeave={() =>
+                        setActive((a) => (a === key ? null : a))
+                      }
+                    >
+                      <button
+                        type="button"
+                        onFocus={() => setActive(key)}
+                        onBlur={() =>
+                          setActive((a) => (a === key ? null : a))
+                        }
+                        className="font-mono text-[10px] tracking-[0.08em] uppercase text-text-tertiary font-medium w-full"
+                        style={{
+                          textAlign:
+                            key === "cr" || key === "ep" ? "center" : "left",
+                          background: "transparent",
+                          padding: 0,
+                          margin: 0,
+                          border: "none",
+                          color: "inherit",
+                          cursor: "help",
+                        }}
+                        aria-describedby="comparison-explainer"
+                        aria-pressed={isActive}
+                      >
+                        {PROP_HEADER_LABELS[key]}
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {SCHEMES.map((s) => (
-                <tr
+              {SCHEMES.map((s, i) => (
+                <SchemeRowView
                   key={s.name}
-                  className={
-                    s.highlight
-                      ? "bg-solution-bg border-t-2 border-b-2 border-solution-accent/30"
-                      : "border-b border-border/50"
-                  }
-                >
-                  <td className="py-3 pr-4">
-                    <span
-                      className={
-                        s.highlight
-                          ? "font-semibold text-solution-accent"
-                          : "text-text-primary"
-                      }
-                    >
-                      {s.name}
-                    </span>
-                    {s.ref && (
-                      <span className="font-mono text-[10px] text-text-tertiary ml-1.5">
-                        {s.ref}
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-center py-3 px-3">
-                    <Check value={s.cr} />
-                  </td>
-                  <td className="text-center py-3 px-3">
-                    <Check value={s.epochless} />
-                  </td>
-                  <td className="py-3 px-3 font-mono text-[12px] text-text-secondary">
-                    {s.decrypt}
-                  </td>
-                  <td className="py-3 px-3 font-mono text-[12px] text-text-secondary">
-                    {s.ctxt}
-                  </td>
-                </tr>
+                  scheme={s}
+                  index={i}
+                  active={active}
+                />
               ))}
             </tbody>
           </table>
         </div>
 
         {/* Mobile cards */}
-        <div className="mt-8 md:hidden space-y-3">
+        <div className="md:hidden space-y-3">
           {SCHEMES.map((s) => (
             <div
               key={s.name}
@@ -201,11 +161,11 @@ export default function ComparisonSection() {
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <Check value={s.cr} />
+                  <Mark value={s.cr} />
                   <span className="text-text-tertiary">Collision-free</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check value={s.epochless} />
+                  <Mark value={s.ep} />
                   <span className="text-text-tertiary">Epochless</span>
                 </div>
                 <div className="col-span-2 mt-2 pt-2 border-t border-border/50">
@@ -225,51 +185,110 @@ export default function ComparisonSection() {
           ))}
         </div>
 
-        <p className="font-mono text-[11px] text-text-tertiary mt-5 leading-relaxed">
-          B is the actual batch size, Bmax the maximum supported.
-          |G₁|, |G_T| refer to the group element sizes of the pairing-friendly
-          curve used (BLS12-381 in the implementation). Adapted from BTX,
-          Table 1.
+        <div
+          id="comparison-explainer"
+          role="status"
+          aria-live="polite"
+          className="mt-[18px] bg-surface-elevated border border-border rounded-[10px] px-[18px] py-3.5 min-h-[48px] transition-all"
+        >
+          {active ? (
+            <>
+              <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent mb-1">
+                {PROPERTY_EXPLAIN[active].label}
+              </p>
+              <p className="text-[13px] text-text-secondary leading-[1.55] m-0">
+                {PROPERTY_EXPLAIN[active].body}
+              </p>
+            </>
+          ) : (
+            <p className="font-mono text-[11px] text-text-tertiary m-0">
+              Hover a property to learn why it matters.
+            </p>
+          )}
+        </div>
+
+        <p className="font-mono text-[11px] text-text-tertiary mt-4 leading-[1.6]">
+          B = actual batch size, Bmax = maximum supported. |G₁|, |G_T| are
+          group element sizes (BLS12-381). Adapted from BTX, Table 1.
         </p>
       </div>
     </section>
   );
 }
 
-function PropertyKey() {
-  const items = [
-    {
-      label: "Collision-free",
-      body: "Two users can independently encrypt without coordinating on an index. No censorship via index collision.",
-    },
-    {
-      label: "Epochless",
-      body: "A ciphertext isn't bound to a specific block. If it isn't included in block N, it rolls over to N+1.",
-    },
-    {
-      label: "Decryption cost",
-      body: "How computation scales. O(B log B) means it tracks the real batch size. O(Bmax) pays for the max, always.",
-    },
-    {
-      label: "Ciphertext size",
-      body: "Bytes on the wire. Smaller ciphertexts mean less mempool bandwidth and faster propagation.",
-    },
-  ];
+function SchemeRowView({
+  scheme,
+  index,
+  active,
+}: {
+  scheme: SchemeRow;
+  index: number;
+  active: PropKey | null;
+}) {
+  const highlight = scheme.highlight;
+  const cellBg = (key: PropKey) =>
+    active === key
+      ? {
+          background:
+            "color-mix(in oklab, " +
+            colors.solutionAccent +
+            " 8%, transparent)",
+        }
+      : undefined;
   return (
-    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {items.map((it) => (
-        <div
-          key={it.label}
-          className="bg-surface rounded-lg border border-border p-4"
+    <tr
+      style={
+        highlight
+          ? {
+              background: colors.solutionBg,
+              borderTop: "2px solid " + colors.solutionAccent,
+              borderBottom: "2px solid " + colors.solutionAccent,
+            }
+          : index > 0
+            ? { borderTop: "1px solid " + colors.borderSoft }
+            : undefined
+      }
+    >
+      <td className="py-3 px-4">
+        <span
+          style={
+            highlight
+              ? { fontWeight: 600, color: colors.solutionAccent }
+              : { color: colors.textPrimary }
+          }
         >
-          <p className="font-mono text-[11px] text-text-primary font-semibold mb-1">
-            {it.label}
-          </p>
-          <p className="text-[13px] text-text-secondary leading-relaxed">
-            {it.body}
-          </p>
-        </div>
-      ))}
-    </div>
+          {scheme.name}
+        </span>
+        {scheme.ref && (
+          <span className="font-mono text-[10px] text-text-tertiary ml-1.5">
+            {scheme.ref}
+          </span>
+        )}
+      </td>
+      <td
+        className="text-center py-3 px-3 transition-colors duration-150"
+        style={cellBg("cr")}
+      >
+        <Mark value={scheme.cr} />
+      </td>
+      <td
+        className="text-center py-3 px-3 transition-colors duration-150"
+        style={cellBg("ep")}
+      >
+        <Mark value={scheme.ep} />
+      </td>
+      <td
+        className="py-3 px-3 font-mono text-[12px] text-text-secondary transition-colors duration-150"
+        style={cellBg("decrypt")}
+      >
+        {scheme.decrypt}
+      </td>
+      <td
+        className="py-3 px-4 font-mono text-[12px] text-text-secondary transition-colors duration-150"
+        style={cellBg("ctxt")}
+      >
+        {scheme.ctxt}
+      </td>
+    </tr>
   );
 }

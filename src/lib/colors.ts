@@ -13,6 +13,7 @@ export const colors = {
   surfaceElevated: "#ffffff",
   surfaceAlt: "#f0f7f5",
   border: "#e2ddd7",
+  borderSoft: "#ede8e1",
 
   // Text
   textPrimary: "#1a1714",
