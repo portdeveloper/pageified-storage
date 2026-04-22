@@ -4,7 +4,6 @@ import { useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { PROPERTY_EXPLAIN, SCHEMES, type SchemeRow } from "./shared";
-import { useExplainMode } from "./ExplainModeContext";
 import Hint from "./Hint";
 
 type PropKey = keyof typeof PROPERTY_EXPLAIN;
@@ -46,11 +45,12 @@ function Mark({ value }: { value: "yes" | "no" | "mixed" }) {
   );
 }
 
-const PROP_COLUMN_KEYS: PropKey[] = ["cr", "ep", "decrypt", "ctxt"];
+const PROP_COLUMN_KEYS: PropKey[] = ["cr", "ep", "setup", "decrypt", "ctxt"];
 
 const PROP_HEADER_LABELS: Record<PropKey, string> = {
   cr: "Collision-free",
   ep: "Epochless",
+  setup: "Setup",
   decrypt: "Decryption cost",
   ctxt: "Ciphertext",
 };
@@ -58,8 +58,6 @@ const PROP_HEADER_LABELS: Record<PropKey, string> = {
 export default function ComparisonSection() {
   const { ref, isVisible } = useInView(0.1);
   const [active, setActive] = useState<PropKey | null>(null);
-  const { mode } = useExplainMode();
-  const simple = mode === "simple";
 
   return (
     <section
@@ -70,28 +68,18 @@ export default function ComparisonSection() {
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          {simple ? "How BTX stacks up" : "Every other BTE scheme trades off"}
+          How BTX stacks up
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-7">
-          {simple ? (
-            <>
-              Four things matter for a usable encrypted mempool. Every earlier
-              scheme drops at least one of them. BTX is the first to get all
-              four. Hover a column to see what each one means.
-            </>
-          ) : (
-            <>
-              Four properties each matter for a usable{" "}
-              <Hint term="encrypted mempool">encrypted mempool</Hint>. Every
-              prior scheme drops at least one. Hover or focus a column to see
-              why it&apos;s needed.
-            </>
-          )}
+          Five properties matter for a usable{" "}
+          <Hint term="encrypted mempool">encrypted mempool</Hint>. Every
+          prior scheme drops at least one. Hover or focus a column to see why
+          it matters.
         </p>
 
         {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto rounded-2xl border border-border bg-surface-elevated">
-          <table className="w-full border-collapse min-w-[720px] text-sm">
+          <table className="w-full border-collapse min-w-[760px] text-sm">
             <thead>
               <tr className="bg-surface border-b border-border">
                 <th className="text-left py-3.5 px-4 font-mono text-[10px] tracking-[0.08em] uppercase text-text-tertiary font-medium">
@@ -168,11 +156,6 @@ export default function ComparisonSection() {
                 }`}
               >
                 {s.name}
-                {s.ref && (
-                  <span className="font-mono text-[10px] text-text-tertiary ml-1.5">
-                    {s.ref}
-                  </span>
-                )}
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-2">
@@ -184,6 +167,12 @@ export default function ComparisonSection() {
                   <span className="text-text-tertiary">Epochless</span>
                 </div>
                 <div className="col-span-2 mt-2 pt-2 border-t border-border/50">
+                  <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-0.5">
+                    Setup
+                  </p>
+                  <p className="font-mono text-[11px]">{s.setup}</p>
+                </div>
+                <div className="col-span-2">
                   <p className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider mb-0.5">
                     Decryption
                   </p>
@@ -204,7 +193,7 @@ export default function ComparisonSection() {
           id="comparison-explainer"
           role="status"
           aria-live="polite"
-          className="mt-[18px] bg-surface-elevated border border-border rounded-[10px] px-[18px] py-3.5 min-h-[48px] transition-all"
+          className="mt-[18px] bg-surface-elevated border border-border rounded-[10px] px-[18px] py-3.5 h-[96px] transition-all"
         >
           {active ? (
             <>
@@ -228,8 +217,8 @@ export default function ComparisonSection() {
           <br />
           <span className="text-text-tertiary/80">
             * Original PFE is O(B²); the BTX authors&apos; FFT-based
-            re-implementation reduces it to O(Bmax log Bmax), still ~2× slower
-            than BTX in practice.
+            re-implementation reduces it to O(Bmax log Bmax), still ~2×
+            slower than BTX in practice.
           </span>
         </p>
       </div>
@@ -279,11 +268,6 @@ function SchemeRowView({
         >
           {scheme.name}
         </span>
-        {scheme.ref && (
-          <span className="font-mono text-[10px] text-text-tertiary ml-1.5">
-            {scheme.ref}
-          </span>
-        )}
       </td>
       <td
         className="text-center py-3 px-3 transition-colors duration-150"
@@ -296,6 +280,12 @@ function SchemeRowView({
         style={cellBg("ep")}
       >
         <Mark value={scheme.ep} />
+      </td>
+      <td
+        className="py-3 px-3 font-mono text-[12px] text-text-secondary transition-colors duration-150"
+        style={cellBg("setup")}
+      >
+        {scheme.setup}
       </td>
       <td
         className="py-3 px-3 font-mono text-[12px] text-text-secondary transition-colors duration-150"

@@ -1,59 +1,60 @@
 export interface SchemeRow {
   name: string;
-  ref?: string;
   cr: "yes" | "no" | "mixed";
   ep: "yes" | "no";
+  setup: string;
   decrypt: string;
   ctxt: string;
   highlight?: boolean;
 }
 
+// Order matches the picker in EncryptedMempoolSection.
 export const SCHEMES: SchemeRow[] = [
   {
     name: "Batched IBE",
-    ref: "[2]",
     cr: "mixed",
     ep: "no",
+    setup: "per epoch",
     decrypt: "O(B log² B) / O(Bmax log Bmax)",
     ctxt: "3·|G₁| + |G_T|",
   },
   {
     name: "Fernando et al. (TrX)",
-    ref: "[15]",
     cr: "yes",
     ep: "yes",
+    setup: "grows with sessions",
     decrypt: "O(B log² B)",
     ctxt: "2·|G₁| + |G_T|",
   },
   {
     name: "BEAT-MEV",
-    ref: "[10]",
     cr: "no",
     ep: "yes",
+    setup: "one-time",
     decrypt: "O(B²)",
     ctxt: "3·|G₁| + |G_T|",
   },
   {
     name: "Gong et al.",
-    ref: "[19]",
     cr: "mixed",
     ep: "no",
+    setup: "per epoch",
     decrypt: "O(B log² B) / O(Bmax log Bmax)",
     ctxt: "2·|G₁| + |G_T|",
   },
   {
     name: "BEAT++ (Agarwal)",
-    ref: "[1]",
     cr: "no",
     ep: "yes",
+    setup: "one-time",
     decrypt: "O(Bmax log Bmax)",
     ctxt: "2·|G₁| + |G_T|",
   },
   {
     name: "PFE (Boneh et al.)",
-    ref: "[7]",
     cr: "yes",
     ep: "yes",
+    setup: "one-time",
     decrypt: "O(Bmax log Bmax)*",
     ctxt: "2·|G₁| + |G_T|",
   },
@@ -61,6 +62,7 @@ export const SCHEMES: SchemeRow[] = [
     name: "BTX",
     cr: "yes",
     ep: "yes",
+    setup: "one-time",
     decrypt: "O(B log B)",
     ctxt: "|G₁| + |G_T|",
     highlight: true,
@@ -75,6 +77,10 @@ export const PROPERTY_EXPLAIN = {
   ep: {
     label: "Epochless",
     body: "A ciphertext isn't bound to a specific block. If it isn't included in block N, it rolls over to N+1.",
+  },
+  setup: {
+    label: "Setup",
+    body: "How the reference string and keys scale over time. One-time setup lasts forever. Per-epoch and grows-with-sessions both make long-lived chains awkward.",
   },
   decrypt: {
     label: "Decryption cost",

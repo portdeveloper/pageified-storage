@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { PAPER_URL } from "./shared";
-import { useExplainMode } from "./ExplainModeContext";
 import Hint from "./Hint";
 
 const MP_COLS = 6;
@@ -41,8 +40,6 @@ interface Particle {
 }
 
 export default function BteHeroSection() {
-  const { mode, toggle } = useExplainMode();
-  const simple = mode === "simple";
   const [phase, setPhase] = useState<Phase>("encrypt");
   const [cellStates, setCellStates] = useState<number[]>(
     () => new Array(TOTAL_CELLS).fill(0),
@@ -249,46 +246,24 @@ export default function BteHeroSection() {
               </span>
             </h1>
             <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-5">
-              {simple ? (
-                <>
-                  BTX is a new scheme that keeps transactions scrambled until
-                  the builder picks a batch. Only that batch gets unscrambled.
-                  Everything else stays private, so bots can&apos;t front-run.
-                </>
-              ) : (
-                <>
-                  BTX is a new batched threshold encryption scheme: a{" "}
-                  <Hint term="committee">committee</Hint> decrypts any chosen
-                  subset of <Hint term="ciphertext">ciphertexts</Hint>{" "}
-                  while the rest stay private. It&apos;s the primitive behind{" "}
-                  <Hint term="encrypted mempool">encrypted mempools</Hint>{" "}
-                  that stop <Hint term="MEV">MEV</Hint>.
-                </>
-              )}
+              A <Hint term="committee">committee</Hint> of servers decrypts
+              any chosen subset of{" "}
+              <Hint term="ciphertext">ciphertexts</Hint> while the rest stay
+              private. It&apos;s the key primitive behind{" "}
+              <Hint term="encrypted mempool">encrypted mempools</Hint> that
+              stop <Hint term="MEV">MEV</Hint>.
             </p>
             <p className="font-mono text-[13px] text-solution-accent leading-[1.6] mb-7">
-              {simple ? (
-                <>
-                  Smaller than any existing scheme. No dropped transactions.
-                  <br />
-                  No setup ceremony. Fast enough for real blocks.
-                </>
-              ) : (
-                <>
-                  Shortest ciphertext. Collision-free. Epochless.
-                  <br />
-                  Fast enough for tight latency budgets.
-                </>
-              )}
+              Shortest ciphertext. Collision-free. Epochless.
+              <br />
+              Fast enough for tight latency budgets.
             </p>
             <div className="flex gap-3.5 items-center flex-wrap">
               <a
-                href={PAPER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#problem-root"
                 className="inline-flex items-center gap-2 bg-text-primary text-surface font-mono text-xs font-medium px-[18px] py-3 rounded-[10px] hover:bg-[#332b22] transition-colors min-h-11"
               >
-                Read the paper (PDF)
+                Read the explainer
                 <svg
                   viewBox="0 0 24 24"
                   className="w-3.5 h-3.5"
@@ -300,34 +275,20 @@ export default function BteHeroSection() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    d="M12 4v16m0 0l-7-7m7 7l7-7"
                   />
                 </svg>
               </a>
               <a
-                href="#problem-root"
+                href={PAPER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 font-mono text-xs text-text-secondary hover:text-text-primary transition-colors min-h-11 px-2"
               >
-                Or read the explainer <span aria-hidden="true">↓</span>
+                Or read the paper (PDF){" "}
+                <span aria-hidden="true">→</span>
               </a>
             </div>
-            <button
-              type="button"
-              onClick={toggle}
-              className="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-solution-accent transition-colors"
-            >
-              {simple ? (
-                <>
-                  Switch back to technical mode{" "}
-                  <span aria-hidden="true">→</span>
-                </>
-              ) : (
-                <>
-                  New to crypto? Read the ELI5 version{" "}
-                  <span aria-hidden="true">→</span>
-                </>
-              )}
-            </button>
           </div>
 
           <div

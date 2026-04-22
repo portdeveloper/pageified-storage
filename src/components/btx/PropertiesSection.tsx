@@ -1,59 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { usePrefersReducedMotion } from "./useReducedMotion";
-import { useExplainMode } from "./ExplainModeContext";
 import Hint from "./Hint";
 
 export default function PropertiesSection() {
   const { ref, isVisible } = useInView(0.1);
-  const { mode } = useExplainMode();
-  const simple = mode === "simple";
   return (
     <section ref={ref} className="py-24 px-6 bg-surface">
       <div
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          {simple ? "What BTX gets right" : "Four properties, all at once"}
+          Four properties, all at once
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
-          {simple ? (
-            <>
-              BTX is the first scheme to get all four of these right at the
-              same time. Users don&apos;t coordinate to encrypt. Setup happens
-              once. Opening a batch costs what the batch actually costs, not
-              the worst case.
-            </>
-          ) : (
-            <>
-              BTX is the first BTE scheme with all four. Encryption takes no
-              coordination, setup is one-time, and decryption cost scales
-              with the actual batch.
-            </>
-          )}
+          BTX is the first BTE scheme with all four. Users don&apos;t
+          coordinate to encrypt, setup happens once, and decryption cost
+          scales with the actual batch rather than the worst case.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PropertyCard
             title="Compact"
             body={
-              simple ? (
-                <>
-                  A scrambled transaction in BTX is about as short as a
-                  regular encrypted message. Every earlier scheme produced
-                  something bigger.
-                </>
-              ) : (
-                <>
-                  <Hint term="ciphertext">Ciphertext</Hint> is the same size
-                  as plain <Hint term="ElGamal">ElGamal</Hint>: one source
-                  element plus one target element. Every prior BTE scheme
-                  uses at least two source elements.
-                </>
-              )
+              <>
+                <Hint term="ciphertext">Ciphertext</Hint> is the same size
+                as plain <Hint term="ElGamal">ElGamal</Hint>: one source
+                element plus one target element. Every prior BTE scheme
+                uses at least two source elements.
+              </>
             }
             footer="With BLS12-381: |G₁| = 48B, |G_T| = 576B"
           >
@@ -63,18 +41,10 @@ export default function PropertiesSection() {
           <PropertyCard
             title="Collision-free"
             body={
-              simple ? (
-                <>
-                  You just encrypt your transaction. There&apos;s no slot to
-                  fight over, so no one can block you by claiming the same
-                  slot first.
-                </>
-              ) : (
-                <>
-                  A user just encrypts. Nothing to collide on → no censorship
-                  via index <Hint term="collision">collision</Hint>.
-                </>
-              )
+              <>
+                A user just encrypts. Nothing to collide on, so no
+                censorship via index <Hint term="collision">collision</Hint>.
+              </>
             }
           >
             <CollisionFreeViz />
@@ -83,41 +53,24 @@ export default function PropertiesSection() {
           <PropertyCard
             title="Epochless"
             body={
-              simple ? (
-                <>
-                  Your scrambled transaction isn&apos;t tied to a specific
-                  block. If it misses block N, it&apos;s still fine for N+1,
-                  N+2, and on. No reset days.
-                </>
-              ) : (
-                <>
-                  A ciphertext isn&apos;t bound to a block. If it isn&apos;t
-                  included in N, it stays valid for N+1 and beyond. No{" "}
-                  <Hint term="epoch">epochs</Hint>.
-                </>
-              )
+              <>
+                A ciphertext isn&apos;t bound to a block. If it isn&apos;t
+                included in N, it stays valid for N+1 and beyond. No{" "}
+                <Hint term="epoch">epochs</Hint>.
+              </>
             }
           >
             <EpochlessViz />
           </PropertyCard>
 
           <PropertyCard
-            title={simple ? "Fast · pay for what you use" : "Fast · dynamic batch sizing"}
+            title="Fast · dynamic batch sizing"
             body={
-              simple ? (
-                <>
-                  Opening a batch of 50 costs what 50 costs. Earlier schemes
-                  always charged you for the worst case — the biggest batch
-                  the system could handle, even when the real batch was
-                  tiny.
-                </>
-              ) : (
-                <>
-                  Decryption is <span className="font-mono">O(B log B)</span>{" "}
-                  where B is the <strong>actual</strong> batch. Prior schemes
-                  pay for the maximum Bmax, always.
-                </>
-              )
+              <>
+                Decryption is <span className="font-mono">O(B log B)</span>{" "}
+                where B is the <strong>actual</strong> batch. Prior schemes
+                pay for the maximum Bmax, always.
+              </>
             }
           >
             <FastViz />
@@ -156,6 +109,8 @@ function PropertyCard({
 }
 
 /* ---------- P1: Compact ---------- */
+// BLS12-381 sizes: |G₁| = 48B, |G_T| = 576B. Bars are sized proportionally
+// to actual bytes so the reader sees BTX is genuinely smaller than the others.
 function CompactViz() {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
@@ -175,134 +130,183 @@ function CompactViz() {
     return () => io.disconnect();
   }, []);
 
+  const G1 = 48;
+  const GT = 576;
   const schemes: {
     name: string;
-    parts: string[];
-    bytes: number;
+    g1Count: number;
     hl?: boolean;
   }[] = [
-    {
-      name: "BEAT-MEV / Batched IBE",
-      parts: ["G₁", "G₁", "G₁", "G_T"],
-      bytes: 3 * 48 + 576,
-    },
-    {
-      name: "TrX / BEAT++ / PFE",
-      parts: ["G₁", "G₁", "G_T"],
-      bytes: 2 * 48 + 576,
-    },
-    { name: "BTX", parts: ["G₁", "G_T"], bytes: 48 + 576, hl: true },
+    { name: "BEAT-MEV / Batched IBE", g1Count: 3 },
+    { name: "TrX / BEAT++ / PFE", g1Count: 2 },
+    { name: "BTX", g1Count: 1, hl: true },
   ];
+  const maxBytes = Math.max(...schemes.map((s) => s.g1Count * G1 + GT));
 
   let segIndex = 0;
   return (
     <div ref={ref} className="flex flex-col gap-3">
-      {schemes.map((s) => (
-        <div key={s.name}>
-          <div className="flex justify-between mb-1">
-            <span
-              className="font-mono text-[11px]"
-              style={{
-                color: s.hl ? colors.solutionAccent : colors.textTertiary,
-                fontWeight: s.hl ? 600 : 400,
-              }}
+      {schemes.map((s) => {
+        const bytes = s.g1Count * G1 + GT;
+        const rowPct = (bytes / maxBytes) * 100;
+        return (
+          <div key={s.name}>
+            <div className="flex justify-between mb-1">
+              <span
+                className="font-mono text-[11px]"
+                style={{
+                  color: s.hl ? colors.solutionAccent : colors.textTertiary,
+                  fontWeight: s.hl ? 600 : 400,
+                }}
+              >
+                {s.name}
+              </span>
+              <span
+                className="font-mono text-[10.5px]"
+                style={{ color: colors.textTertiary }}
+              >
+                {bytes}B
+              </span>
+            </div>
+            <div
+              className="flex gap-[3px]"
+              style={{ width: rowPct + "%" }}
             >
-              {s.name}
-            </span>
-            <span
-              className="font-mono text-[10.5px]"
-              style={{ color: colors.textTertiary }}
-            >
-              {s.bytes}B
-            </span>
+              {Array.from({ length: s.g1Count }).map((_, j) => {
+                const delay = segIndex * 60;
+                segIndex += 1;
+                return (
+                  <div
+                    key={`g1-${j}`}
+                    className="h-7 rounded-md flex items-center justify-center font-mono text-[11px]"
+                    style={{
+                      flex: G1,
+                      background: s.hl
+                        ? colors.solutionAccentLight
+                        : colors.border,
+                      color: s.hl
+                        ? colors.solutionAccent
+                        : colors.textSecondary,
+                      fontWeight: s.hl ? 600 : 500,
+                      transform: revealed ? "scaleX(1)" : "scaleX(0)",
+                      transformOrigin: "left",
+                      transition: `transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+                    }}
+                  >
+                    G₁
+                  </div>
+                );
+              })}
+              {(() => {
+                const delay = segIndex * 60;
+                segIndex += 1;
+                return (
+                  <div
+                    key="gt"
+                    className="h-7 rounded-md flex items-center justify-center font-mono text-[11px]"
+                    style={{
+                      flex: GT,
+                      background: s.hl
+                        ? colors.solutionAccent
+                        : colors.textTertiary,
+                      color: "white",
+                      fontWeight: 500,
+                      transform: revealed ? "scaleX(1)" : "scaleX(0)",
+                      transformOrigin: "left",
+                      transition: `transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+                    }}
+                  >
+                    G_T
+                  </div>
+                );
+              })()}
+            </div>
           </div>
-          <div className="flex gap-[3px]">
-            {s.parts.map((p) => {
-              const isT = p === "G_T";
-              const flex = isT ? 6 : 1;
-              const bg = s.hl
-                ? isT
-                  ? colors.solutionAccent
-                  : colors.solutionAccentLight
-                : isT
-                  ? colors.textTertiary
-                  : colors.border;
-              const fg = s.hl
-                ? isT
-                  ? "white"
-                  : colors.solutionAccent
-                : isT
-                  ? "white"
-                  : colors.textSecondary;
-              const delay = segIndex * 60;
-              segIndex += 1;
-              return (
-                <div
-                  key={segIndex}
-                  className="h-7 rounded-md flex items-center justify-center font-mono text-[11px]"
-                  style={{
-                    flex,
-                    background: bg,
-                    color: fg,
-                    fontWeight: s.hl && !isT ? 600 : 500,
-                    transform: revealed ? "scaleX(1)" : "scaleX(0)",
-                    transformOrigin: "left",
-                    transition: `transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-                  }}
-                >
-                  {p}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-/* ---------- P2: Collision-free (auto-tab) ---------- */
+/* ---------- P2: Collision-free (click-driven, plays once on scroll-in) ---------- */
 function CollisionFreeViz() {
   const reduced = usePrefersReducedMotion();
-  const [t, setT] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [stage, setStage] = useState<"indexed" | "btx">("indexed");
+  const [t, setT] = useState(80);
+  const [playing, setPlaying] = useState(false);
+
+  const play = useCallback(
+    (next: "indexed" | "btx") => {
+      setStage(next);
+      if (reduced) {
+        setT(80);
+        setPlaying(false);
+        return;
+      }
+      setT(0);
+      setPlaying(true);
+    },
+    [reduced],
+  );
+
   useEffect(() => {
     if (reduced) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setT(0);
+          setPlaying(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [reduced]);
+
+  useEffect(() => {
+    if (!playing) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
     const step = () => {
       if (stopped) return;
-      setT((prev) => (prev + 1) % 180);
-      timer = setTimeout(step, 60);
+      setT((prev) => {
+        if (prev >= 80) {
+          setPlaying(false);
+          return 80;
+        }
+        return prev + 1;
+      });
+      timer = setTimeout(step, 35);
     };
-    timer = setTimeout(step, 60);
+    timer = setTimeout(step, 35);
     return () => {
       stopped = true;
       clearTimeout(timer);
     };
-  }, [reduced]);
+  }, [playing]);
 
-  const effectiveT = reduced ? 40 : t;
-  const stage: "indexed" | "btx" = effectiveT < 90 ? "indexed" : "btx";
-  const local = effectiveT < 90 ? effectiveT : effectiveT - 90;
-  const alicePos = Math.min(100, local * 1.5);
-  const attackPos = Math.min(100, (local + 20) * 1.5);
-  const collided = stage === "indexed" && local > 55;
-  const bothOk = stage === "btx" && local > 55;
-
-  const setStage = (s: "indexed" | "btx") => setT(s === "indexed" ? 0 : 90);
+  const alicePos = Math.min(88, t * 1.5);
+  const attackPos = Math.min(88, (t + 20) * 1.5);
+  const collided = stage === "indexed" && t > 55;
+  const bothOk = stage === "btx" && t > 55;
 
   return (
-    <div>
+    <div ref={containerRef}>
       <div className="flex gap-2 mb-3">
         <Tab
           active={stage === "indexed"}
-          onClick={() => setStage("indexed")}
+          onClick={() => play("indexed")}
           tone="problem"
           label="Indexed BTE"
         />
         <Tab
           active={stage === "btx"}
-          onClick={() => setStage("btx")}
+          onClick={() => play("btx")}
           tone="solution"
           label="BTX"
         />
@@ -354,6 +358,9 @@ function CollisionFreeViz() {
             : "✓ No index · no collision surface"}
         </p>
       </div>
+      <p className="font-mono text-[10px] text-text-tertiary mt-2 text-center">
+        {playing ? "…" : "tap a tab to replay"}
+      </p>
     </div>
   );
 }

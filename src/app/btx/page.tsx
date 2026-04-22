@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { ExplainModeProvider } from "@/components/btx/ExplainModeContext";
-import ModeToggle from "@/components/btx/ModeToggle";
 import BteHeroSection from "@/components/btx/BteHeroSection";
 import WhatIsBteSection from "@/components/btx/WhatIsBteSection";
 import EncryptedMempoolSection from "@/components/btx/EncryptedMempoolSection";
@@ -23,18 +21,15 @@ export const metadata: Metadata = {
 
 export default function BtePage() {
   return (
-    <ExplainModeProvider>
-      <ModeToggle />
-      <main>
-        <BteHeroSection />
-        <WhatIsBteSection />
-        <EncryptedMempoolSection />
-        <ComparisonSection />
-        <PropertiesSection />
-        <ConstructionSection />
-        <BenchmarksSection />
-        <BteFooterSection />
-      </main>
-    </ExplainModeProvider>
+    <main>
+      <BteHeroSection />
+      <EncryptedMempoolSection />
+      <ComparisonSection />
+      <WhatIsBteSection />
+      <PropertiesSection />
+      <ConstructionSection />
+      <BenchmarksSection />
+      <BteFooterSection />
+    </main>
   );
 }

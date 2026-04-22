@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { usePrefersReducedMotion } from "./useReducedMotion";
-import { useExplainMode } from "./ExplainModeContext";
 import Hint from "./Hint";
 
 const COMMITTEE_N = 5;
@@ -12,8 +11,6 @@ const BATCH = 5;
 
 export default function ConstructionSection() {
   const { ref, isVisible } = useInView(0.1);
-  const { mode } = useExplainMode();
-  const simple = mode === "simple";
   return (
     <section
       ref={ref}
@@ -23,22 +20,13 @@ export default function ConstructionSection() {
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          {simple ? "How BTX works, in three steps" : "The construction, at a glance"}
+          The construction, at a glance
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
-          {simple ? (
-            <>
-              Here&apos;s the idea without the math. The sections below show
-              how users encrypt, how the servers open a batch, and the trick
-              that makes opening a big batch cheap.
-            </>
-          ) : (
-            <>
-              BTX builds on pairing-friendly elliptic curves (BLS12-381).
-              Everything below is a sketch — the paper has the full protocol,
-              proofs, and security reductions.
-            </>
-          )}
+          BTX builds on pairing-friendly elliptic curves (BLS12-381). What
+          follows is a sketch of how users encrypt, how the committee opens a
+          batch, and the trick that keeps opening a big batch cheap. The
+          paper has the full protocol, proofs, and security reductions.
         </p>
 
         {/* 1. Encryption */}
@@ -47,28 +35,14 @@ export default function ConstructionSection() {
         {/* 2. Committee */}
         <div className="mb-10">
           <h3 className="text-[1.15rem] font-semibold mb-2">
-            {simple
-              ? "Each server sends one small message, no matter how big the batch"
-              : "One G₁ element per server, regardless of batch size"}
+            One G₁ element per server, regardless of batch size
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] max-w-[46rem] mb-6">
-            {simple ? (
-              <>
-                The key is split into pieces using{" "}
-                <Hint term="Shamir shares">Shamir sharing</Hint>, one piece
-                per server. To open a batch, enough servers each send back a
-                single small value. The total traffic doesn&apos;t grow with
-                the batch.
-              </>
-            ) : (
-              <>
-                Powers of the secret key τ are{" "}
-                <Hint term="Shamir shares">Shamir-shared</Hint> across N
-                servers. Any t+1 collectively decrypt. Each server sends
-                exactly <strong>one group element</strong> to the combiner —
-                its message size is independent of batch size.
-              </>
-            )}
+            Powers of the secret key τ are{" "}
+            <Hint term="Shamir shares">Shamir-shared</Hint> across N servers,
+            one piece each. Any t+1 of them together decrypt a batch. Each
+            server sends exactly <strong>one group element</strong> to the
+            combiner, so its message size stays independent of batch size.
           </p>
           <CommitteeAnimation />
         </div>
@@ -85,36 +59,19 @@ export default function ConstructionSection() {
           }}
         >
           <h3 className="text-[1.15rem] font-semibold mb-2">
-            {simple
-              ? "How BTX stays fast as batches grow"
-              : "How BTX reaches O(B log B) inside the scheme"}
+            How BTX reaches O(B log B) inside the scheme
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] mb-3.5 max-w-[46rem]">
-            {simple ? (
-              <>
-                Written the obvious way, opening a batch of B transactions
-                inside BTX would cost work proportional to B×B — every
-                ciphertext chips in a little to every other. BTX notices
-                that work is structured like a polynomial multiplication, so
-                a classic math shortcut (<Hint term="FFT">FFT</Hint>) solves
-                it much faster: closer to B × log B.
-              </>
-            ) : (
-              <>
-                Inside BTX&apos;s decryption, the obvious implementation
-                costs <span className="font-mono">O(B²)</span>{" "}
-                <Hint term="pairing">pairings</Hint> — every ciphertext
-                contributes a cross-term to every other. BTX observes these
-                cross-terms form a{" "}
-                <em>contiguous window of a polynomial product</em>,
-                computable as a middle-product via{" "}
-                <Hint term="FFT">FFT</Hint>:{" "}
-                <span className="font-mono">O(B log B)</span> group
-                operations, <span className="font-mono">O(B)</span>{" "}
-                pairings. Same scheme, same output — just the internal
-                arithmetic.
-              </>
-            )}
+            Written the obvious way, BTX&apos;s decryption costs{" "}
+            <span className="font-mono">O(B²)</span>{" "}
+            <Hint term="pairing">pairings</Hint>: every ciphertext contributes
+            a cross-term to every other. BTX observes that those cross-terms
+            form a <em>contiguous window of a polynomial product</em>,
+            computable as a middle-product via{" "}
+            <Hint term="FFT">FFT</Hint>. That brings it down to{" "}
+            <span className="font-mono">O(B log B)</span> group operations
+            and <span className="font-mono">O(B)</span> pairings. Same
+            scheme, same output, just the internal arithmetic.
           </p>
           <FftComparison />
         </div>
@@ -127,8 +84,6 @@ export default function ConstructionSection() {
 function CiphertextFormula() {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
-  const { mode } = useExplainMode();
-  const simple = mode === "simple";
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -149,24 +104,13 @@ function CiphertextFormula() {
     <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,0.85fr)_minmax(0,1.15fr)] gap-7 mb-10 items-center">
       <div>
         <h3 className="text-[1.15rem] font-semibold mb-2">
-          {simple ? "A scrambled transaction is just two pieces" : "An ElGamal-shaped ciphertext"}
+          An ElGamal-shaped ciphertext
         </h3>
         <p className="text-[14px] text-text-secondary leading-[1.6]">
-          {simple ? (
-            <>
-              A user picks a random value r and sends two things to the
-              mempool: r itself, and their transaction hidden under a mask
-              built from r and the public key. That pair is the encrypted
-              transaction.
-            </>
-          ) : (
-            <>
-              A user encrypts their transaction m with random r. The
-              ciphertext is a pair: the randomness, and m masked by a pad
-              derived from the public encryption key. This is what sits in
-              the mempool until the committee opens it.
-            </>
-          )}
+          A user encrypts their transaction m by picking a random value r.
+          The ciphertext is a pair: the randomness in G₁, and the message
+          masked by a pad derived from r and the public encryption key in
+          G_T. That pair sits in the mempool until the committee opens it.
         </p>
       </div>
       <div
@@ -337,7 +281,6 @@ function CommitteeAnimation() {
       timersRef.current.push(t);
     };
 
-    // ciphertexts fade in
     let t0 = 0;
     for (let i = 0; i < BATCH; i++) {
       const idx = i;
@@ -352,7 +295,6 @@ function CommitteeAnimation() {
     }
     t0 += 200;
 
-    // ciphertexts arrow toward center
     schedule(t0, () => {
       cts.forEach((c) => {
         addDot(c.x, c.y, cx, cy, 500);
@@ -360,7 +302,6 @@ function CommitteeAnimation() {
     });
     t0 += 600;
 
-    // servers light up + emit dots to combiner
     for (let i = 0; i < COMMITTEE_N; i++) {
       const idx = i;
       const s = servers[i];
@@ -376,7 +317,6 @@ function CommitteeAnimation() {
     }
     t0 += 300;
 
-    // plaintexts appear
     for (let i = 0; i < BATCH; i++) {
       const idx = i;
       const p = pts[i];
@@ -444,7 +384,6 @@ function CommitteeAnimation() {
           </text>
         ))}
 
-        {/* ciphertexts */}
         {cts.map((c, i) => (
           <g
             key={i}
@@ -482,7 +421,6 @@ function CommitteeAnimation() {
           </g>
         ))}
 
-        {/* committee ring */}
         <circle
           cx={cx}
           cy={cy}
@@ -536,7 +474,6 @@ function CommitteeAnimation() {
           </g>
         ))}
 
-        {/* plaintexts */}
         {pts.map((p, i) => (
           <g
             key={i}
@@ -575,7 +512,6 @@ function CommitteeAnimation() {
           </g>
         ))}
 
-        {/* flying dots */}
         {dots.map((d) => (
           <FlyingDotEl key={d.id} dot={d} />
         ))}
@@ -620,7 +556,6 @@ function FftComparison() {
   const btxRefs = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // BTX active cells: anti-diagonal band where row+col ∈ {6,7,8} → 22 cells of 64
   const btxActiveOrder = useMemo(() => {
     const cells: number[] = [];
     for (let k = 6; k <= 8; k++) {
@@ -639,7 +574,6 @@ function FftComparison() {
 
   useEffect(() => {
     if (reduced) {
-      // Pre-fill fully in reduced-motion mode
       naiveRefs.current.forEach((el) => {
         if (el) {
           el.style.background = colors.problemAccent;

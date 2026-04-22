@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useExplainMode } from "./ExplainModeContext";
 
 interface HintProps {
   term: string;
@@ -28,8 +27,11 @@ const HINTS: Record<string, HintEntry> = {
     desc: "Encryption where a committee of servers jointly holds the decryption key, and a threshold of them must cooperate to decrypt.",
     href: "https://en.wikipedia.org/wiki/Threshold_cryptosystem",
   },
+  "batched threshold encryption": {
+    desc: "Threshold encryption designed so a committee can decrypt a chosen subset (a batch) of ciphertexts in one round, rather than one at a time.",
+  },
   ciphertext: {
-    desc: "The output of an encryption function: scrambled data plus any extra pieces needed to decrypt.",
+    desc: "The output of an encryption function: the encrypted message plus any extra pieces needed to decrypt.",
     href: "https://en.wikipedia.org/wiki/Ciphertext",
   },
   committee: {
@@ -72,18 +74,29 @@ const HINTS: Record<string, HintEntry> = {
   pfe: {
     desc: "Prior batched-threshold-encryption scheme by Boneh et al. The fastest previously known construction.",
   },
+  ibe: {
+    desc: "Identity-Based Encryption. Public keys are arbitrary strings (like block numbers). The authority that holds the master secret can derive any decryption key.",
+    href: "https://en.wikipedia.org/wiki/Identity-based_encryption",
+  },
+  mpc: {
+    desc: "Multi-Party Computation. Several parties jointly compute a function without any party learning the others' inputs.",
+  },
   builder: {
     desc: "The node that selects and orders transactions for the next block.",
   },
   batch: {
     desc: "The subset of pending transactions the builder picks to include in a block.",
   },
+  "front-running": {
+    desc: "A bot reads a pending transaction and places its own transaction ahead of it to profit from the price movement.",
+  },
+  sandwich: {
+    desc: "A bot places one transaction before the victim's to move the price, then another after to capture the difference.",
+  },
 };
 
 export default function Hint({ term, children }: HintProps) {
   const [open, setOpen] = useState(false);
-  const { mode } = useExplainMode();
-  if (mode !== "simple") return <>{children ?? term}</>;
   const entry = HINTS[term.toLowerCase()];
   if (!entry) return <>{children ?? term}</>;
 
