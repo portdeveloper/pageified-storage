@@ -707,8 +707,9 @@ function ExpensiveViz() {
   return (
     <div>
       <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
-        PFE is collision-free and epochless — but uses 3 group elements per
-        ciphertext and performs 4 pairings during open. Heavy concretely.
+        PFE is collision-free and epochless — but its ciphertext carries 2 G₁
+        elements (vs BTX&apos;s 1) and decryption runs 4 pairings per open.
+        Heavy concretely.
       </p>
       <div className="grid grid-cols-2 gap-4">
         <div
