@@ -86,7 +86,7 @@ export default function EncryptedMempoolSection() {
             })}
           </div>
 
-          <div className="bg-surface-elevated border border-border rounded-2xl p-[22px] min-h-[360px] relative overflow-hidden">
+          <div className="bg-surface-elevated border border-border rounded-2xl p-[22px] min-h-[400px] relative overflow-hidden">
             <SchemeCanvas scheme={active} />
           </div>
         </div>
