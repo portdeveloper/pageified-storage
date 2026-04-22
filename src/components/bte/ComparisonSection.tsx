@@ -15,7 +15,7 @@ interface Scheme {
 const SCHEMES: Scheme[] = [
   {
     name: "Batched IBE",
-    ref: "[1]",
+    ref: "[2]",
     cr: "mixed",
     epochless: "no",
     decrypt: "O(B log² B)  /  O(Bmax log Bmax)",

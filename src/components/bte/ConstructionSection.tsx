@@ -35,7 +35,7 @@ export default function ConstructionSection() {
               the public encryption key.
             </p>
             <p className="text-sm text-text-secondary leading-relaxed">
-              That&apos;s it. The ciphertext carries nothing else.
+              That&apos;s it. The core ciphertext is just those two components.
             </p>
           </div>
           <div className="md:col-span-3">
