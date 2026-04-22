@@ -32,10 +32,7 @@ export default function ConstructionSection() {
 
         {/* 2. Committee */}
         <div className="mb-10">
-          <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent">
-            2. Committee decryption
-          </p>
-          <h3 className="my-1.5 text-[1.15rem] font-semibold">
+          <h3 className="text-[1.15rem] font-semibold mb-2">
             One G₁ element per server, regardless of batch size
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] max-w-[46rem] mb-6">
@@ -58,10 +55,7 @@ export default function ConstructionSection() {
               " 22%, transparent)",
           }}
         >
-          <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent">
-            3. The speed trick
-          </p>
-          <h3 className="my-1.5 text-[1.15rem] font-semibold">
+          <h3 className="text-[1.15rem] font-semibold mb-2">
             Batch decryption as a polynomial product
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] mb-3.5 max-w-[46rem]">
@@ -104,10 +98,7 @@ function CiphertextFormula() {
   return (
     <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,0.85fr)_minmax(0,1.15fr)] gap-7 mb-10 items-center">
       <div>
-        <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent">
-          1. Encryption
-        </p>
-        <h3 className="my-1.5 text-[1.15rem] font-semibold">
+        <h3 className="text-[1.15rem] font-semibold mb-2">
           An ElGamal-shaped ciphertext
         </h3>
         <p className="text-[14px] text-text-secondary leading-[1.6]">
@@ -120,9 +111,6 @@ function CiphertextFormula() {
         className="bg-surface border border-border rounded-2xl p-[22px]"
         style={{ fontFamily: "var(--font-plex-mono), ui-monospace, monospace" }}
       >
-        <p className="text-[10px] text-text-tertiary tracking-[0.08em] uppercase mb-3.5">
-          Ciphertext
-        </p>
         <div className="flex items-center gap-2.5 flex-wrap text-[14px]">
           <span style={{ color: colors.textSecondary }}>ct =</span>
           <span

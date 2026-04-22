@@ -23,7 +23,6 @@ export default function PropertiesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PropertyCard
-            tag="Property 1"
             title="Compact"
             body="Ciphertext is the same size as plain ElGamal: one source element plus one target element. Every prior BTE scheme uses at least two source elements."
             footer="With BLS12-381: |G₁| = 48B, |G_T| = 576B"
@@ -32,7 +31,6 @@ export default function PropertiesSection() {
           </PropertyCard>
 
           <PropertyCard
-            tag="Property 2"
             title="Collision-free"
             body="A user just encrypts. Nothing to collide on → no censorship via index collision."
           >
@@ -40,7 +38,6 @@ export default function PropertiesSection() {
           </PropertyCard>
 
           <PropertyCard
-            tag="Property 3"
             title="Epochless"
             body="A ciphertext isn't bound to a block. If it isn't included in N, it stays valid for N+1 and beyond."
           >
@@ -48,7 +45,6 @@ export default function PropertiesSection() {
           </PropertyCard>
 
           <PropertyCard
-            tag="Property 4"
             title="Fast · dynamic batch sizing"
             body={
               <>
@@ -67,13 +63,11 @@ export default function PropertiesSection() {
 }
 
 function PropertyCard({
-  tag,
   title,
   body,
   footer,
   children,
 }: {
-  tag: string;
   title: string;
   body: React.ReactNode;
   footer?: string;
@@ -81,10 +75,7 @@ function PropertyCard({
 }) {
   return (
     <div className="bg-surface-elevated border border-border rounded-2xl p-[22px] h-full flex flex-col">
-      <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent">
-        {tag}
-      </p>
-      <h3 className="my-1.5 text-[1.15rem] font-semibold">{title}</h3>
+      <h3 className="text-[1.15rem] font-semibold mb-2">{title}</h3>
       <p className="text-[13.5px] text-text-secondary leading-[1.55] mb-4">
         {body}
       </p>

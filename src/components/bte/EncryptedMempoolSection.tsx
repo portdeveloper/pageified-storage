@@ -16,42 +16,16 @@ type SchemeKind =
 interface Scheme {
   id: string;
   name: string;
-  fail: string;
   kind: SchemeKind;
 }
 
 const SCHEMES: Scheme[] = [
-  {
-    id: "naive",
-    name: "Naïve threshold encryption",
-    fail: "O(N·B) comms",
-    kind: "comms",
-  },
-  {
-    id: "ibe",
-    name: "Threshold IBE",
-    fail: "all-or-nothing",
-    kind: "allornothing",
-  },
-  {
-    id: "early",
-    name: "Early BTE (per-block MPC)",
-    fail: "too slow",
-    kind: "slow",
-  },
-  {
-    id: "indexed",
-    name: "Indexed BTE (BEAT-MEV, BEAT++)",
-    fail: "index collision",
-    kind: "collision",
-  },
-  { id: "trx", name: "TrX (Fernando et al.)", fail: "CRS grows forever", kind: "crs" },
-  {
-    id: "pfe",
-    name: "PFE (Boneh et al.)",
-    fail: "expensive compute",
-    kind: "expensive",
-  },
+  { id: "naive", name: "Naïve threshold encryption", kind: "comms" },
+  { id: "ibe", name: "Threshold IBE", kind: "allornothing" },
+  { id: "early", name: "Early BTE (per-block MPC)", kind: "slow" },
+  { id: "indexed", name: "Indexed BTE (BEAT-MEV, BEAT++)", kind: "collision" },
+  { id: "trx", name: "TrX (Fernando et al.)", kind: "crs" },
+  { id: "pfe", name: "PFE (Boneh et al.)", kind: "expensive" },
 ];
 
 export default function EncryptedMempoolSection() {
@@ -87,7 +61,7 @@ export default function EncryptedMempoolSection() {
                   key={s.id}
                   type="button"
                   onClick={() => setActiveId(s.id)}
-                  className={`text-left border rounded-[10px] px-3.5 py-3 flex justify-between items-center gap-2.5 transition-all duration-150 ${
+                  className={`text-left border rounded-[10px] px-3.5 py-3 transition-all duration-150 ${
                     isActive
                       ? "border-solution-accent bg-solution-bg"
                       : "border-border bg-surface-elevated hover:border-text-tertiary"
@@ -106,16 +80,6 @@ export default function EncryptedMempoolSection() {
                 >
                   <span className="text-[13.5px] font-medium text-text-primary">
                     {s.name}
-                  </span>
-                  <span
-                    className="font-mono text-[10px] uppercase tracking-[0.06em]"
-                    style={{
-                      color: isActive
-                        ? colors.solutionAccent
-                        : colors.problemAccentStrong,
-                    }}
-                  >
-                    {s.fail}
                   </span>
                 </button>
               );
@@ -142,17 +106,13 @@ export default function EncryptedMempoolSection() {
           >
             ✓
           </div>
-          <div>
-            <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent mb-1">
-              BTX fills the gap
-            </p>
-            <p className="text-text-primary leading-[1.55]">
-              First BTE scheme that is{" "}
-              <strong>collision-free, epochless, compact</strong>{" "}
-              (ciphertext as small as plain ElGamal), and <strong>fast</strong>{" "}
-              (decryption scales with the actual batch, not the maximum).
-            </p>
-          </div>
+          <p className="text-text-primary leading-[1.55]">
+            <strong className="text-solution-accent">BTX fills the gap:</strong>{" "}
+            the first BTE scheme that is{" "}
+            <strong>collision-free, epochless, compact</strong>{" "}
+            (ciphertext as small as plain ElGamal), and <strong>fast</strong>{" "}
+            (decryption scales with the actual batch, not the maximum).
+          </p>
         </div>
       </div>
     </section>
@@ -162,15 +122,7 @@ export default function EncryptedMempoolSection() {
 function SchemeCanvas({ scheme }: { scheme: Scheme }) {
   return (
     <>
-      <div className="mb-4">
-        <p
-          className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold mb-1"
-          style={{ color: colors.problemAccentStrong }}
-        >
-          {scheme.fail}
-        </p>
-        <p className="text-[15px] font-semibold m-0">{scheme.name}</p>
-      </div>
+      <p className="text-[17px] font-semibold m-0 mb-4">{scheme.name}</p>
       {scheme.kind === "comms" && <CommsViz />}
       {scheme.kind === "allornothing" && <AllOrNothingViz />}
       {scheme.kind === "slow" && <SlowViz />}

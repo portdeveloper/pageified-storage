@@ -44,18 +44,16 @@ export default function BenchmarksSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <HeadlineCard
-            tag="Total decryption · B=512"
             headline="2.0×"
-            headlineSuffix="faster overall"
+            headlineSuffix="faster total decryption at B=512"
             bars={[
               { label: "PFE", value: "1197 ms", width: 100 },
               { label: "BTX", value: "598 ms", width: 50, highlight: true },
             ]}
           />
           <HeadlineCard
-            tag="Open phase · per ciphertext"
             headline="4.2×"
-            headlineSuffix="faster per ct · 1 pairing vs 4"
+            headlineSuffix="faster per ciphertext · 1 pairing vs 4"
             bars={[
               { label: "PFE", value: "0.723 ms/ct", width: 100 },
               {
@@ -70,14 +68,10 @@ export default function BenchmarksSection() {
 
         <div className="bg-surface-elevated border border-border rounded-2xl p-[22px]">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2.5">
-            <div>
-              <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-text-tertiary mb-1">
-                How decryption scales with batch size
-              </p>
-              <p className="text-[13px] text-text-secondary m-0">
-                Drag across the chart to inspect.
-              </p>
-            </div>
+            <p className="text-[14px] text-text-secondary m-0">
+              Decryption time vs batch size. Drag across the chart to
+              inspect.
+            </p>
             <div className="flex gap-3.5 font-mono text-[11px]">
               <LegendSwatch
                 color={colors.problemAccent}
@@ -117,12 +111,10 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
 }
 
 function HeadlineCard({
-  tag,
   headline,
   headlineSuffix,
   bars,
 }: {
-  tag: string;
   headline: string;
   headlineSuffix: string;
   bars: { label: string; value: string; width: number; highlight?: boolean }[];
@@ -152,17 +144,14 @@ function HeadlineCard({
         background: `linear-gradient(135deg, ${colors.solutionBg}, ${colors.surfaceElevated})`,
       }}
     >
-      <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold text-solution-accent">
-        {tag}
-      </p>
-      <div className="flex items-baseline gap-2.5 mt-2.5 mb-3">
+      <div className="flex items-baseline gap-2.5 mb-3">
         <span
           className="text-[44px] font-semibold text-solution-accent"
           style={{ letterSpacing: "-0.03em" }}
         >
           {headline}
         </span>
-        <span className="font-mono text-[12px] text-text-secondary">
+        <span className="text-[13px] text-text-secondary">
           {headlineSuffix}
         </span>
       </div>
