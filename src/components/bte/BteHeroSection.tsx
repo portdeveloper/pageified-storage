@@ -304,7 +304,7 @@ export default function BteHeroSection() {
             </div>
 
             <svg
-              viewBox="0 0 560 340"
+              viewBox="0 0 590 340"
               className="w-full h-auto block"
               aria-hidden="true"
             >
