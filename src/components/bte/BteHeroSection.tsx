@@ -41,7 +41,7 @@ interface Particle {
 }
 
 export default function BteHeroSection() {
-  const { mode } = useExplainMode();
+  const { mode, toggle } = useExplainMode();
   const simple = mode === "simple";
   const [phase, setPhase] = useState<Phase>("encrypt");
   const [cellStates, setCellStates] = useState<number[]>(
@@ -259,10 +259,10 @@ export default function BteHeroSection() {
                 <>
                   BTX is a new batched threshold encryption scheme: a{" "}
                   <Hint term="committee">committee</Hint> decrypts any chosen
-                  subset of <Hint term="ciphertext">ciphertexts</Hint> while
-                  the rest stay private. It&apos;s the primitive behind{" "}
-                  <Hint term="encrypted mempool">encrypted mempools</Hint> that
-                  stop <Hint term="MEV">MEV</Hint>.
+                  subset of <Hint term="ciphertext">ciphertexts</Hint>{" "}
+                  while the rest stay private. It&apos;s the primitive behind{" "}
+                  <Hint term="encrypted mempool">encrypted mempools</Hint>{" "}
+                  that stop <Hint term="MEV">MEV</Hint>.
                 </>
               )}
             </p>
@@ -311,6 +311,23 @@ export default function BteHeroSection() {
                 Or read the explainer <span aria-hidden="true">↓</span>
               </a>
             </div>
+            <button
+              type="button"
+              onClick={toggle}
+              className="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-solution-accent transition-colors"
+            >
+              {simple ? (
+                <>
+                  Switch back to technical mode{" "}
+                  <span aria-hidden="true">→</span>
+                </>
+              ) : (
+                <>
+                  New to crypto? Read the ELI5 version{" "}
+                  <span aria-hidden="true">→</span>
+                </>
+              )}
+            </button>
           </div>
 
           <div
