@@ -236,13 +236,6 @@ export default function BteHeroSection() {
       <RevealBlock className="max-w-[1120px] mx-auto w-full">
         <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,0.85fr)_minmax(0,1.15fr)] gap-10 md:gap-16 items-center py-10 md:py-16">
           <div>
-            <div className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] uppercase text-solution-accent bg-solution-accent-light/70 px-2.5 py-1.5 rounded-full font-semibold mb-5">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: colors.solutionAccent }}
-              />
-              Category Labs research
-            </div>
             <h1 className="mb-5 leading-[1.05] tracking-[-0.02em] text-[clamp(2.5rem,4.5vw,3.5rem)]">
               <span className="block font-light text-text-secondary mb-1.5">
                 BTX
@@ -297,10 +290,7 @@ export default function BteHeroSection() {
             className="bg-surface-elevated border border-border rounded-2xl p-[22px]"
             style={{ boxShadow: "0 30px 60px -40px rgba(26,23,20,0.18)" }}
           >
-            <div className="flex justify-between items-center mb-3.5">
-              <p className="font-mono text-[10px] text-text-tertiary tracking-[0.12em] uppercase m-0">
-                Encrypted mempool · end-to-end
-              </p>
+            <div className="flex justify-end items-center mb-3.5">
               <span
                 key={phase}
                 className="font-mono text-[10px] font-semibold px-2.5 py-[3px] rounded-full transition-all duration-300"
