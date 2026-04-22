@@ -251,16 +251,16 @@ export default function BteHeroSection() {
             <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-5">
               {simple ? (
                 <>
-                  A group of servers keeps transactions scrambled until the
-                  builder picks a batch. Only that batch gets unscrambled.
+                  BTX is a new scheme that keeps transactions scrambled until
+                  the builder picks a batch. Only that batch gets unscrambled.
                   Everything else stays private, so bots can&apos;t front-run.
                 </>
               ) : (
                 <>
-                  A <Hint term="committee">committee</Hint> of servers decrypts
-                  any chosen subset of{" "}
-                  <Hint term="ciphertext">ciphertexts</Hint> while the rest
-                  stay private — the key primitive for{" "}
+                  BTX is a new batched threshold encryption scheme: a{" "}
+                  <Hint term="committee">committee</Hint> decrypts any chosen
+                  subset of <Hint term="ciphertext">ciphertexts</Hint> while
+                  the rest stay private. It&apos;s the primitive behind{" "}
                   <Hint term="encrypted mempool">encrypted mempools</Hint> that
                   stop <Hint term="MEV">MEV</Hint>.
                 </>
