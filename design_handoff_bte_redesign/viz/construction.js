@@ -233,16 +233,84 @@
   }, { threshold: 0.3 });
   playIo.observe(committeeSvg);
 
-  // FFT compute grids
+  // FFT compute grids — animated
   const fftNaive = document.getElementById('fft-naive');
   const fftBtx = document.getElementById('fft-btx');
+  const naiveCells = [], btxCells = [];
   for (let i = 0; i < 64; i++) {
     const n = document.createElement('div');
-    n.style.cssText = 'background: var(--problem-accent); aspect-ratio: 1; border-radius: 1px; opacity: 0.85;';
+    n.style.cssText = 'background: var(--problem-accent-light); aspect-ratio: 1; border-radius: 1px; opacity: 0.35; transition: opacity 0.25s, background 0.25s, transform 0.2s;';
     fftNaive.appendChild(n);
+    naiveCells.push(n);
     const b = document.createElement('div');
-    const onDiag = i % 9 === 0 || (Math.log2(i + 1) % 1 === 0);
-    b.style.cssText = `background: ${onDiag ? 'var(--solution-accent)' : 'var(--solution-accent-light)'}; aspect-ratio: 1; border-radius: 1px; opacity: ${onDiag ? 0.95 : 0.25};`;
+    b.style.cssText = 'background: var(--solution-accent-light); aspect-ratio: 1; border-radius: 1px; opacity: 0.3; transition: opacity 0.25s, background 0.25s, transform 0.2s;';
     fftBtx.appendChild(b);
+    btxCells.push(b);
   }
+  // BTX active cells: the middle-product strip — a thin anti-diagonal band
+  const btxActive = new Set();
+  for (let i = 0; i < 64; i++) {
+    const row = Math.floor(i / 8), col = i % 8;
+    const k = row + col; // anti-diagonal index
+    if (k === 6 || k === 7 || k === 8) btxActive.add(i);
+  }
+
+  let fftStep = 0, fftTo = null, fftStopped = false;
+  const fftCountEl = document.createElement('div');
+  fftCountEl.style.cssText = 'display: flex; justify-content: space-between; max-width: 400px; margin: 14px auto 0; font-family: var(--mono); font-size: 11px;';
+  fftCountEl.innerHTML = `
+    <span style="color: var(--problem-accent-strong);">Naïve ops: <span id="naive-count" style="font-weight: 600; font-variant-numeric: tabular-nums;">0</span> / 64</span>
+    <span style="color: var(--solution-accent);">BTX ops: <span id="btx-count" style="font-weight: 600; font-variant-numeric: tabular-nums;">0</span> / ~24</span>
+  `;
+  document.getElementById('fft-viz').parentElement.appendChild(fftCountEl);
+  const naiveCountEl = fftCountEl.querySelector('#naive-count');
+  const btxCountEl = fftCountEl.querySelector('#btx-count');
+
+  function fftTick() {
+    if (fftStopped) return;
+    const speed = window.__bte.speed || 1;
+    // reset at 70
+    if (fftStep > 70) {
+      naiveCells.forEach(c => { c.style.opacity = '0.35'; c.style.background = 'var(--problem-accent-light)'; c.style.transform = ''; });
+      btxCells.forEach(c => { c.style.opacity = '0.3'; c.style.background = 'var(--solution-accent-light)'; c.style.transform = ''; });
+      naiveCountEl.textContent = '0';
+      btxCountEl.textContent = '0';
+      fftStep = 0;
+      fftTo = setTimeout(fftTick, 800 / speed);
+      return;
+    }
+
+    if (fftStep < 64) {
+      const n = naiveCells[fftStep];
+      n.style.background = 'var(--problem-accent)';
+      n.style.opacity = '0.95';
+      n.style.transform = 'scale(1.15)';
+      setTimeout(() => { n.style.transform = ''; }, 150);
+      naiveCountEl.textContent = fftStep + 1;
+    }
+
+    // BTX fills only its active band, much faster
+    if (fftStep < 48) {
+      const targets = [...btxActive];
+      if (fftStep < targets.length) {
+        const idx = targets[fftStep];
+        const b = btxCells[idx];
+        b.style.background = 'var(--solution-accent)';
+        b.style.opacity = '0.95';
+        b.style.transform = 'scale(1.15)';
+        setTimeout(() => { b.style.transform = ''; }, 150);
+        btxCountEl.textContent = fftStep + 1;
+      }
+    }
+
+    fftStep++;
+    fftTo = setTimeout(fftTick, 55 / speed);
+  }
+
+  const fftIo = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { fftTick(); fftIo.unobserve(e.target); }
+    });
+  }, { threshold: 0.3 });
+  fftIo.observe(fftNaive);
 })();

@@ -82,58 +82,141 @@
     comms(el) {
       el.innerHTML = `
         <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.55; margin-bottom: 16px;">Every validator sends a decryption share for every ciphertext. With N validators × B transactions per block, messages scale as O(N·B) — unmanageable at scale.</p>
-        <div id="comms-canvas" style="height: 200px; display: flex; align-items: center; justify-content: center;"></div>
-        <p style="font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">N = <span id="comms-N">5</span>, B = <span id="comms-B">16</span> → <span id="comms-total" style="color: var(--problem-accent-strong); font-weight: 600;">80</span> messages</p>
+        <div id="comms-canvas" style="height: 220px; display: flex; align-items: center; justify-content: center;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--text-tertiary);">
+          <span>N = <span id="comms-N">5</span>, B = <span id="comms-B">16</span></span>
+          <span>messages sent: <span id="comms-sent" style="color: var(--problem-accent-strong); font-weight: 600; font-variant-numeric: tabular-nums;">0</span> / <span id="comms-total" style="color: var(--problem-accent-strong); font-weight: 600;">80</span></span>
+        </div>
       `;
       const c = el.querySelector('#comms-canvas');
-      let raf, stopped = false;
-      function draw() {
-        if (stopped) return;
-        const N = Math.min(9, window.__bte.N);
-        const B = Math.min(32, window.__bte.B);
-        const messages = N * B;
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      let stopped = false;
+      let svg, validators = [], cts = [], edges = [], sentEl, totalEl, N = 0, B = 0;
+      let tickHandle = null;
+
+      function layout() {
+        N = Math.min(9, Math.max(2, window.__bte.N));
+        B = Math.min(32, Math.max(4, window.__bte.B));
         el.querySelector('#comms-N').textContent = N;
         el.querySelector('#comms-B').textContent = B;
-        el.querySelector('#comms-total').textContent = messages;
+        el.querySelector('#comms-total').textContent = N * B;
+        sentEl = el.querySelector('#comms-sent');
+        totalEl = el.querySelector('#comms-total');
+
         c.innerHTML = '';
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 400 200');
+        svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 400 220');
         svg.setAttribute('width', '100%');
-        // validators on left
+        c.appendChild(svg);
+
+        // labels
+        const labelStyle = { 'font-family': 'IBM Plex Mono', 'font-size': 9, fill: '#8a7d6f', 'letter-spacing': 0.6 };
+        [['VALIDATORS', 40], ['CIPHERTEXTS', 360]].forEach(([t, x]) => {
+          const tx = document.createElementNS(SVG_NS, 'text');
+          for (const k in labelStyle) tx.setAttribute(k, labelStyle[k]);
+          tx.setAttribute('x', x); tx.setAttribute('y', 14); tx.setAttribute('text-anchor', 'middle');
+          tx.textContent = t;
+          svg.appendChild(tx);
+        });
+
+        validators = [];
         for (let i = 0; i < N; i++) {
-          const y = 20 + (i / Math.max(1, N - 1)) * 160;
-          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circle.setAttribute('cx', 40); circle.setAttribute('cy', y); circle.setAttribute('r', 7);
-          circle.setAttribute('fill', '#c8e6df'); circle.setAttribute('stroke', '#2a7d6a');
-          svg.appendChild(circle);
+          const y = 30 + (i / Math.max(1, N - 1)) * 170;
+          const cEl = document.createElementNS(SVG_NS, 'circle');
+          cEl.setAttribute('cx', 40); cEl.setAttribute('cy', y); cEl.setAttribute('r', 8);
+          cEl.setAttribute('fill', '#c8e6df'); cEl.setAttribute('stroke', '#2a7d6a');
+          cEl.setAttribute('stroke-width', 1.2);
+          svg.appendChild(cEl);
+          validators.push({ x: 40, y, el: cEl });
         }
-        // ciphertexts on right
+
+        cts = [];
         for (let j = 0; j < B; j++) {
-          const y = 15 + (j / Math.max(1, B - 1)) * 170;
-          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          rect.setAttribute('x', 355); rect.setAttribute('y', y - 3);
-          rect.setAttribute('width', 12); rect.setAttribute('height', 6);
+          const y = 24 + (j / Math.max(1, B - 1)) * 182;
+          const rect = document.createElementNS(SVG_NS, 'rect');
+          rect.setAttribute('x', 354); rect.setAttribute('y', y - 3);
+          rect.setAttribute('width', 14); rect.setAttribute('height', 6);
           rect.setAttribute('fill', '#f0d9c8'); rect.setAttribute('rx', 1);
           svg.appendChild(rect);
+          cts.push({ x: 360, y, el: rect });
         }
-        // lines
+
+        // every edge is a faint line
+        edges = [];
         for (let i = 0; i < N; i++) {
           for (let j = 0; j < B; j++) {
-            const y1 = 20 + (i / Math.max(1, N - 1)) * 160;
-            const y2 = 15 + (j / Math.max(1, B - 1)) * 170;
-            const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            l.setAttribute('x1', 48); l.setAttribute('y1', y1);
-            l.setAttribute('x2', 353); l.setAttribute('y2', y2);
-            l.setAttribute('stroke', '#c4653a'); l.setAttribute('stroke-width', 0.4);
-            l.setAttribute('opacity', 0.35);
+            const l = document.createElementNS(SVG_NS, 'line');
+            l.setAttribute('x1', 48); l.setAttribute('y1', validators[i].y);
+            l.setAttribute('x2', 353); l.setAttribute('y2', cts[j].y);
+            l.setAttribute('stroke', '#c4653a'); l.setAttribute('stroke-width', 0.35);
+            l.setAttribute('opacity', 0.18);
             svg.appendChild(l);
+            edges.push({ i, j, el: l });
           }
         }
-        c.appendChild(svg);
       }
-      draw();
-      const unsub = window.__bte.subscribe(draw);
-      return () => { stopped = true; unsub(); };
+
+      function sendDot(i, j) {
+        const v = validators[i], t = cts[j];
+        const dot = document.createElementNS(SVG_NS, 'circle');
+        dot.setAttribute('r', 2.4);
+        dot.setAttribute('fill', '#c4653a');
+        dot.setAttribute('cx', v.x); dot.setAttribute('cy', v.y);
+        svg.appendChild(dot);
+        const dur = 700 + Math.random() * 300;
+        dot.animate(
+          [{ cx: v.x, cy: v.y, opacity: 1 }, { cx: t.x, cy: t.y, opacity: 0.9 }],
+          { duration: dur, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }
+        );
+        // validator pulses, edge briefly lights
+        v.el.animate([{ r: 8 }, { r: 10 }, { r: 8 }], { duration: 350 });
+        const edge = edges[i * B + j];
+        if (edge) {
+          edge.el.animate(
+            [{ opacity: 0.18, strokeWidth: 0.35 }, { opacity: 0.85, strokeWidth: 1.2 }, { opacity: 0.18, strokeWidth: 0.35 }],
+            { duration: dur }
+          );
+        }
+        setTimeout(() => {
+          dot.remove();
+          t.el.animate([{ fill: '#f0d9c8' }, { fill: '#c4653a' }, { fill: '#f0d9c8' }], { duration: 500 });
+        }, dur);
+      }
+
+      let sent = 0;
+      function tick() {
+        if (stopped) return;
+        const speed = window.__bte.speed || 1;
+        const perTick = Math.max(1, Math.round((N * B) / 40));
+        for (let k = 0; k < perTick; k++) {
+          const idx = sent % (N * B);
+          const i = Math.floor(idx / B);
+          const j = idx % B;
+          sendDot(i, j);
+          sent++;
+        }
+        sentEl.textContent = ((sent - 1) % (N * B) + 1);
+        if (sent % (N * B) === 0) {
+          // round complete — brief pause then reset visual counter
+          tickHandle = setTimeout(() => {
+            sentEl.textContent = '0';
+            tickHandle = setTimeout(tick, 900 / speed);
+          }, 1200 / speed);
+          return;
+        }
+        tickHandle = setTimeout(tick, (N * B > 100 ? 110 : 180) / speed);
+      }
+
+      layout();
+      tickHandle = setTimeout(tick, 400);
+
+      const unsub = window.__bte.subscribe(() => {
+        if (tickHandle) clearTimeout(tickHandle);
+        sent = 0;
+        layout();
+        tickHandle = setTimeout(tick, 300);
+      });
+      return () => { stopped = true; if (tickHandle) clearTimeout(tickHandle); unsub(); };
     },
 
     allornothing(el) {
@@ -261,26 +344,84 @@
       el.innerHTML = `
         <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.55; margin-bottom: 16px;">PFE is collision-free and epochless — but uses 3 group elements per ciphertext and performs 4 pairings during open. Heavy concretely.</p>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div style="background: var(--problem-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--problem-accent-light);">
-            <p class="tag" style="color: var(--problem-accent-strong); margin-bottom: 10px;">PFE ciphertext</p>
-            <div style="display: flex; gap: 4px;">
-              <div style="flex: 1; height: 26px; border-radius: 4px; background: var(--problem-accent-light); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; color: var(--problem-accent-strong);">G₁</div>
-              <div style="flex: 1; height: 26px; border-radius: 4px; background: var(--problem-accent-light); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; color: var(--problem-accent-strong);">G₁</div>
-              <div style="flex: 2; height: 26px; border-radius: 4px; background: var(--problem-accent); color: white; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px;">G_T</div>
+          <div id="pfe-card" style="background: var(--problem-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--problem-accent-light);">
+            <p class="tag" style="color: var(--problem-accent-strong); margin-bottom: 10px;">PFE open</p>
+            <div style="display: flex; gap: 4px; margin-bottom: 10px;">
+              <div class="pfe-seg" data-n="1" style="flex: 1; height: 26px; border-radius: 4px; background: var(--problem-accent-light); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; color: var(--problem-accent-strong); position: relative; overflow: hidden;">G₁</div>
+              <div class="pfe-seg" data-n="2" style="flex: 1; height: 26px; border-radius: 4px; background: var(--problem-accent-light); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; color: var(--problem-accent-strong); position: relative; overflow: hidden;">G₁</div>
+              <div class="pfe-seg" data-n="3 4" style="flex: 2; height: 26px; border-radius: 4px; background: var(--problem-accent); color: white; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; position: relative; overflow: hidden;">G_T</div>
             </div>
-            <p style="font-family: var(--mono); font-size: 10px; color: var(--problem-accent-strong); margin-top: 10px;">4 pairings per open · 0.723 ms/ct</p>
+            <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+              ${[1,2,3,4].map(i => `<div class="pfe-pair" data-i="${i}" style="flex:1; height: 14px; border-radius: 3px; background: color-mix(in oklab, var(--problem-accent) 22%, transparent); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 9px; color: var(--problem-accent-strong); transition: all 0.2s;">e${i}</div>`).join('')}
+            </div>
+            <p style="font-family: var(--mono); font-size: 10px; color: var(--problem-accent-strong); margin-top: 10px;">4 pairings per open · <span id="pfe-ms">0.723</span> ms/ct</p>
           </div>
-          <div style="background: var(--solution-bg); padding: 14px; border-radius: 10px; border: 1px solid color-mix(in oklab, var(--solution-accent) 30%, transparent);">
-            <p class="tag" style="margin-bottom: 10px;">BTX ciphertext</p>
-            <div style="display: flex; gap: 4px;">
-              <div style="flex: 1; height: 26px; border-radius: 4px; background: var(--solution-accent-light); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; color: var(--solution-accent);">G₁</div>
-              <div style="flex: 2; height: 26px; border-radius: 4px; background: var(--solution-accent); color: white; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px;">G_T</div>
+          <div id="btx-card" style="background: var(--solution-bg); padding: 14px; border-radius: 10px; border: 1px solid color-mix(in oklab, var(--solution-accent) 30%, transparent);">
+            <p class="tag" style="margin-bottom: 10px;">BTX open</p>
+            <div style="display: flex; gap: 4px; margin-bottom: 10px;">
+              <div class="btx-seg" data-n="1" style="flex: 1; height: 26px; border-radius: 4px; background: var(--solution-accent-light); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; color: var(--solution-accent); position: relative; overflow: hidden;">G₁</div>
+              <div class="btx-seg" data-n="" style="flex: 2; height: 26px; border-radius: 4px; background: var(--solution-accent); color: white; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 10px; position: relative; overflow: hidden;">G_T</div>
             </div>
-            <p style="font-family: var(--mono); font-size: 10px; color: var(--solution-accent); margin-top: 10px;">1 pairing per open · 0.171 ms/ct</p>
+            <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+              <div class="btx-pair" data-i="1" style="flex:1; height: 14px; border-radius: 3px; background: color-mix(in oklab, var(--solution-accent) 22%, transparent); display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 9px; color: var(--solution-accent); transition: all 0.2s;">e1</div>
+              <div style="flex:3;"></div>
+            </div>
+            <p style="font-family: var(--mono); font-size: 10px; color: var(--solution-accent); margin-top: 10px;">1 pairing per open · <span id="btx-ms">0.171</span> ms/ct</p>
           </div>
         </div>
+        <p id="pfe-caption" style="font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); margin-top: 14px; text-align: center; min-height: 16px;"></p>
       `;
-      return () => {};
+      let step = 0, stopped = false, to;
+      const pfePairs = el.querySelectorAll('.pfe-pair');
+      const btxPairs = el.querySelectorAll('.btx-pair');
+      const pfeSegs = el.querySelectorAll('.pfe-seg');
+      const btxSegs = el.querySelectorAll('.btx-seg');
+      const caption = el.querySelector('#pfe-caption');
+
+      function reset() {
+        pfePairs.forEach(p => { p.style.background = 'color-mix(in oklab, var(--problem-accent) 22%, transparent)'; p.style.transform = ''; });
+        btxPairs.forEach(p => { p.style.background = 'color-mix(in oklab, var(--solution-accent) 22%, transparent)'; p.style.transform = ''; });
+        pfeSegs.forEach(s => s.style.boxShadow = '');
+        btxSegs.forEach(s => s.style.boxShadow = '');
+      }
+
+      function tick() {
+        if (stopped) return;
+        const speed = window.__bte.speed || 1;
+        step = (step + 1) % 6;
+        reset();
+
+        if (step >= 1 && step <= 4) {
+          const p = pfePairs[step - 1];
+          p.style.background = 'var(--problem-accent)';
+          p.style.color = 'white';
+          p.style.transform = 'scale(1.08)';
+          pfeSegs.forEach(s => {
+            if (s.dataset.n.split(' ').includes(String(step))) {
+              s.style.boxShadow = '0 0 0 2px var(--problem-accent)';
+            }
+          });
+          caption.innerHTML = `<span style="color: var(--problem-accent-strong);">PFE pairing ${step}/4</span>`;
+        }
+
+        if (step === 1) {
+          // BTX fires its single pairing once, at the start
+          const p = btxPairs[0];
+          p.style.background = 'var(--solution-accent)';
+          p.style.color = 'white';
+          p.style.transform = 'scale(1.08)';
+          btxSegs[0].style.boxShadow = '0 0 0 2px var(--solution-accent)';
+          btxSegs[1].style.boxShadow = '0 0 0 2px var(--solution-accent)';
+        }
+
+        if (step === 5) {
+          caption.innerHTML = `<span style="color: var(--solution-accent); font-weight: 600;">BTX finished at step 1 · 4.2× faster per ct</span>`;
+        }
+
+        to = setTimeout(tick, 700 / speed);
+      }
+      tick();
+      return () => { stopped = true; if (to) clearTimeout(to); };
     },
   };
 

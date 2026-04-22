@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { usePrefersReducedMotion } from "./useReducedMotion";
@@ -137,17 +137,115 @@ function SchemeCanvas({ scheme }: { scheme: Scheme }) {
 function CommsViz() {
   const N = 5;
   const B = 16;
-  const lines = useMemo(() => {
-    const out: { y1: number; y2: number }[] = [];
-    for (let i = 0; i < N; i++) {
-      for (let j = 0; j < B; j++) {
-        const y1 = 20 + (i / Math.max(1, N - 1)) * 160;
-        const y2 = 15 + (j / Math.max(1, B - 1)) * 170;
-        out.push({ y1, y2 });
+  const TOTAL = N * B;
+  const reduced = usePrefersReducedMotion();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const validatorRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const ctRefs = useRef<(SVGRectElement | null)[]>([]);
+  const edgeRefs = useRef<(SVGLineElement | null)[]>([]);
+  const [sent, setSent] = useState(0);
+
+  const validators = useMemo(
+    () =>
+      Array.from({ length: N }).map((_, i) => ({
+        x: 40,
+        y: 30 + (i / Math.max(1, N - 1)) * 170,
+      })),
+    [N],
+  );
+  const cts = useMemo(
+    () =>
+      Array.from({ length: B }).map((_, j) => ({
+        x: 360,
+        y: 24 + (j / Math.max(1, B - 1)) * 182,
+      })),
+    [B],
+  );
+
+  useEffect(() => {
+    if (reduced) return;
+    let stopped = false;
+    let idx = 0;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const sendDot = (i: number, j: number) => {
+      const svg = svgRef.current;
+      const vEl = validatorRefs.current[i];
+      const tEl = ctRefs.current[j];
+      const edge = edgeRefs.current[i * B + j];
+      if (!svg || !vEl || !tEl) return;
+      const v = validators[i];
+      const t = cts[j];
+      const dot = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle",
+      );
+      dot.setAttribute("r", "2.4");
+      dot.setAttribute("fill", colors.problemAccent);
+      dot.setAttribute("cx", String(v.x));
+      dot.setAttribute("cy", String(v.y));
+      svg.appendChild(dot);
+      const dur = 700 + Math.random() * 300;
+      dot.animate(
+        [
+          { cx: v.x, cy: v.y, opacity: 1 },
+          { cx: t.x, cy: t.y, opacity: 0.9 },
+        ] as Keyframe[] & { cx: number; cy: number; opacity: number }[],
+        { duration: dur, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" },
+      );
+      vEl.animate([{ r: 8 }, { r: 10 }, { r: 8 }], { duration: 350 });
+      if (edge) {
+        edge.animate(
+          [
+            { opacity: 0.18, strokeWidth: 0.35 },
+            { opacity: 0.85, strokeWidth: 1.2 },
+            { opacity: 0.18, strokeWidth: 0.35 },
+          ],
+          { duration: dur },
+        );
       }
-    }
-    return out;
-  }, [N, B]);
+      setTimeout(() => {
+        if (stopped) return;
+        dot.remove();
+        tEl.animate(
+          [
+            { fill: colors.problemAccentLight },
+            { fill: colors.problemAccent },
+            { fill: colors.problemAccentLight },
+          ],
+          { duration: 500 },
+        );
+      }, dur);
+    };
+
+    const tick = () => {
+      if (stopped) return;
+      const perTick = Math.max(1, Math.round(TOTAL / 40));
+      for (let k = 0; k < perTick; k++) {
+        const i = Math.floor(idx / B);
+        const j = idx % B;
+        sendDot(i, j);
+        idx = (idx + 1) % TOTAL;
+      }
+      const displayed = idx === 0 ? TOTAL : idx;
+      setSent(displayed);
+      if (idx === 0) {
+        timer = setTimeout(() => {
+          if (stopped) return;
+          setSent(0);
+          timer = setTimeout(tick, 900);
+        }, 1200);
+        return;
+      }
+      timer = setTimeout(tick, TOTAL > 100 ? 110 : 180);
+    };
+
+    timer = setTimeout(tick, 400);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [B, TOTAL, cts, reduced, validators]);
 
   return (
     <div>
@@ -156,59 +254,89 @@ function CommsViz() {
         validators × B transactions per block, messages scale as O(N·B) —
         unmanageable at scale.
       </p>
-      <div className="h-[200px] flex items-center justify-center">
-        <svg viewBox="0 0 400 200" className="w-full h-full">
-          {lines.map((l, k) => (
-            <line
-              key={k}
-              x1={48}
-              y1={l.y1}
-              x2={353}
-              y2={l.y2}
-              stroke={colors.problemAccent}
-              strokeWidth={0.4}
-              opacity={0.35}
+      <div className="h-[220px] flex items-center justify-center">
+        <svg ref={svgRef} viewBox="0 0 400 220" className="w-full h-full">
+          <g
+            fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+            fontSize={9}
+            fill={colors.textTertiary}
+            letterSpacing={0.6}
+          >
+            <text x={40} y={14} textAnchor="middle">
+              VALIDATORS
+            </text>
+            <text x={360} y={14} textAnchor="middle">
+              CIPHERTEXTS
+            </text>
+          </g>
+          {validators.map((v, i) =>
+            cts.map((t, j) => (
+              <line
+                key={`${i}-${j}`}
+                ref={(el) => {
+                  edgeRefs.current[i * B + j] = el;
+                }}
+                x1={48}
+                y1={v.y}
+                x2={353}
+                y2={t.y}
+                stroke={colors.problemAccent}
+                strokeWidth={0.35}
+                opacity={0.18}
+              />
+            )),
+          )}
+          {validators.map((v, i) => (
+            <circle
+              key={i}
+              ref={(el) => {
+                validatorRefs.current[i] = el;
+              }}
+              cx={v.x}
+              cy={v.y}
+              r={8}
+              fill={colors.solutionAccentLight}
+              stroke={colors.solutionAccent}
+              strokeWidth={1.2}
             />
           ))}
-          {Array.from({ length: N }).map((_, i) => {
-            const y = 20 + (i / Math.max(1, N - 1)) * 160;
-            return (
-              <circle
-                key={i}
-                cx={40}
-                cy={y}
-                r={7}
-                fill={colors.solutionAccentLight}
-                stroke={colors.solutionAccent}
-              />
-            );
-          })}
-          {Array.from({ length: B }).map((_, j) => {
-            const y = 15 + (j / Math.max(1, B - 1)) * 170;
-            return (
-              <rect
-                key={j}
-                x={355}
-                y={y - 3}
-                width={12}
-                height={6}
-                rx={1}
-                fill={colors.problemAccentLight}
-              />
-            );
-          })}
+          {cts.map((t, j) => (
+            <rect
+              key={j}
+              ref={(el) => {
+                ctRefs.current[j] = el;
+              }}
+              x={354}
+              y={t.y - 3}
+              width={14}
+              height={6}
+              rx={1}
+              fill={colors.problemAccentLight}
+            />
+          ))}
         </svg>
       </div>
-      <p className="font-mono text-[11px] text-text-tertiary mt-2">
-        N = {N}, B = {B} →{" "}
-        <span
-          className="font-semibold"
-          style={{ color: colors.problemAccentStrong }}
-        >
-          {N * B}
-        </span>{" "}
-        messages
-      </p>
+      <div className="flex justify-between items-center mt-2 font-mono text-[11px] text-text-tertiary">
+        <span>
+          N = {N}, B = {B}
+        </span>
+        <span>
+          messages sent:{" "}
+          <span
+            className="font-semibold tabular-nums"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            {sent}
+          </span>{" "}
+          /{" "}
+          <span
+            className="font-semibold"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            {TOTAL}
+          </span>
+        </span>
+      </div>
     </div>
   );
 }
@@ -511,6 +639,32 @@ function CrsViz() {
 
 /* ---------- 6. PFE: expensive compute ---------- */
 function ExpensiveViz() {
+  const reduced = usePrefersReducedMotion();
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (reduced) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (stopped) return;
+      setStep((prev) => (prev + 1) % 6);
+      timer = setTimeout(tick, 700);
+    };
+    timer = setTimeout(tick, 700);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [reduced]);
+
+  const effectiveStep = reduced ? 5 : step;
+  const pfePairing =
+    effectiveStep >= 1 && effectiveStep <= 4 ? effectiveStep : null;
+  // PFE G₁ segments are targeted by pairings 1 and 2; G_T by 3 and 4.
+  const pfeSegHighlight = (n: string) =>
+    pfePairing !== null && n.split(" ").includes(String(pfePairing));
+  const btxActive = effectiveStep === 1; // BTX fires its single pairing at step 1
+
   return (
     <div>
       <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
@@ -529,12 +683,40 @@ function ExpensiveViz() {
             className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold mb-2.5"
             style={{ color: colors.problemAccentStrong }}
           >
-            PFE ciphertext
+            PFE open
           </p>
-          <div className="flex gap-1">
-            <Seg color={colors.problemAccentLight} fg={colors.problemAccentStrong} label="G₁" flex={1} />
-            <Seg color={colors.problemAccentLight} fg={colors.problemAccentStrong} label="G₁" flex={1} />
-            <Seg color={colors.problemAccent} fg="white" label="G_T" flex={2} />
+          <div className="flex gap-1 mb-2.5">
+            <Seg
+              color={colors.problemAccentLight}
+              fg={colors.problemAccentStrong}
+              label="G₁"
+              flex={1}
+              highlight={pfeSegHighlight("1") ? colors.problemAccent : undefined}
+            />
+            <Seg
+              color={colors.problemAccentLight}
+              fg={colors.problemAccentStrong}
+              label="G₁"
+              flex={1}
+              highlight={pfeSegHighlight("2") ? colors.problemAccent : undefined}
+            />
+            <Seg
+              color={colors.problemAccent}
+              fg="white"
+              label="G_T"
+              flex={2}
+              highlight={pfeSegHighlight("3 4") ? colors.problemAccent : undefined}
+            />
+          </div>
+          <div className="flex gap-1 mb-1.5">
+            {[1, 2, 3, 4].map((i) => (
+              <PairingPill
+                key={i}
+                label={`e${i}`}
+                active={pfePairing === i}
+                tone="problem"
+              />
+            ))}
           </div>
           <p
             className="font-mono text-[10px] mt-2.5"
@@ -552,17 +734,50 @@ function ExpensiveViz() {
           }}
         >
           <p className="font-mono text-[10.5px] tracking-[0.08em] uppercase font-semibold mb-2.5 text-solution-accent">
-            BTX ciphertext
+            BTX open
           </p>
-          <div className="flex gap-1">
-            <Seg color={colors.solutionAccentLight} fg={colors.solutionAccent} label="G₁" flex={1} />
-            <Seg color={colors.solutionAccent} fg="white" label="G_T" flex={2} />
+          <div className="flex gap-1 mb-2.5">
+            <Seg
+              color={colors.solutionAccentLight}
+              fg={colors.solutionAccent}
+              label="G₁"
+              flex={1}
+              highlight={btxActive ? colors.solutionAccent : undefined}
+            />
+            <Seg
+              color={colors.solutionAccent}
+              fg="white"
+              label="G_T"
+              flex={2}
+              highlight={btxActive ? colors.solutionAccent : undefined}
+            />
+          </div>
+          <div className="flex gap-1 mb-1.5">
+            <PairingPill label="e1" active={btxActive} tone="solution" />
+            <div style={{ flex: 3 }} />
           </div>
           <p className="font-mono text-[10px] mt-2.5 text-solution-accent">
             1 pairing per open · 0.171 ms/ct
           </p>
         </div>
       </div>
+      <p
+        className="font-mono text-[11px] text-center mt-3.5"
+        style={{ minHeight: 16 }}
+      >
+        {pfePairing !== null ? (
+          <span style={{ color: colors.problemAccentStrong }}>
+            PFE pairing {pfePairing}/4
+          </span>
+        ) : effectiveStep === 5 ? (
+          <span
+            className="font-semibold"
+            style={{ color: colors.solutionAccent }}
+          >
+            BTX finished at step 1 · 4.2× faster per ct
+          </span>
+        ) : null}
+      </p>
     </div>
   );
 }
@@ -572,16 +787,52 @@ function Seg({
   fg,
   label,
   flex,
+  highlight,
 }: {
   color: string;
   fg: string;
   label: string;
   flex: number;
+  highlight?: string;
 }) {
   return (
     <div
-      className="h-[26px] rounded flex items-center justify-center font-mono text-[10px]"
-      style={{ background: color, color: fg, flex }}
+      className="h-[26px] rounded flex items-center justify-center font-mono text-[10px] transition-[box-shadow] duration-200"
+      style={{
+        background: color,
+        color: fg,
+        flex,
+        boxShadow: highlight ? `0 0 0 2px ${highlight}` : "none",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
+function PairingPill({
+  label,
+  active,
+  tone,
+}: {
+  label: string;
+  active: boolean;
+  tone: "problem" | "solution";
+}) {
+  const accent =
+    tone === "problem" ? colors.problemAccent : colors.solutionAccent;
+  const fg = tone === "problem" ? colors.problemAccentStrong : colors.solutionAccent;
+  return (
+    <div
+      className="h-[14px] rounded-[3px] flex items-center justify-center font-mono text-[9px] transition-all duration-200"
+      style={{
+        flex: 1,
+        background: active
+          ? accent
+          : `color-mix(in oklab, ${accent} 22%, transparent)`,
+        color: active ? "white" : fg,
+        transform: active ? "scale(1.08)" : "scale(1)",
+      }}
     >
       {label}
     </div>

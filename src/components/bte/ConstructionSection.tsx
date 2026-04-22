@@ -550,65 +550,211 @@ function FlyingDotEl({ dot }: { dot: FlyingDot }) {
   );
 }
 
-/* ---------- 3. FFT grid comparison ---------- */
+/* ---------- 3. FFT grid comparison (animated) ---------- */
 function FftComparison() {
+  const reduced = usePrefersReducedMotion();
+  const naiveRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const btxRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // BTX active cells: anti-diagonal band where row+col ∈ {6,7,8} → 22 cells of 64
+  const btxActiveOrder = useMemo(() => {
+    const cells: number[] = [];
+    for (let k = 6; k <= 8; k++) {
+      for (let row = 0; row < 8; row++) {
+        const col = k - row;
+        if (col >= 0 && col < 8) cells.push(row * 8 + col);
+      }
+    }
+    return cells;
+  }, []);
+
+  const [naiveCount, setNaiveCount] = useState(reduced ? 64 : 0);
+  const [btxCount, setBtxCount] = useState(
+    reduced ? btxActiveOrder.length : 0,
+  );
+
+  useEffect(() => {
+    if (reduced) {
+      // Pre-fill fully in reduced-motion mode
+      naiveRefs.current.forEach((el) => {
+        if (el) {
+          el.style.background = colors.problemAccent;
+          el.style.opacity = "0.95";
+        }
+      });
+      btxActiveOrder.forEach((idx) => {
+        const el = btxRefs.current[idx];
+        if (el) {
+          el.style.background = colors.solutionAccent;
+          el.style.opacity = "0.95";
+        }
+      });
+      return;
+    }
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let rafId = 0;
+
+    const resetAll = () => {
+      naiveRefs.current.forEach((c) => {
+        if (!c) return;
+        c.style.background = colors.problemAccentLight;
+        c.style.opacity = "0.35";
+        c.style.transform = "";
+      });
+      btxRefs.current.forEach((c) => {
+        if (!c) return;
+        c.style.background = colors.solutionAccentLight;
+        c.style.opacity = "0.3";
+        c.style.transform = "";
+      });
+      setNaiveCount(0);
+      setBtxCount(0);
+    };
+
+    const runLoop = () => {
+      let step = 0;
+      const tick = () => {
+        if (stopped) return;
+        if (step > 70) {
+          resetAll();
+          step = 0;
+          timer = setTimeout(tick, 800);
+          return;
+        }
+        if (step < 64) {
+          const n = naiveRefs.current[step];
+          if (n) {
+            n.style.background = colors.problemAccent;
+            n.style.opacity = "0.95";
+            n.style.transform = "scale(1.15)";
+            const reset = setTimeout(() => {
+              if (!stopped && n) n.style.transform = "";
+            }, 150);
+            timer = reset;
+          }
+          setNaiveCount(step + 1);
+        }
+        if (step < btxActiveOrder.length) {
+          const idx = btxActiveOrder[step];
+          const b = btxRefs.current[idx];
+          if (b) {
+            b.style.background = colors.solutionAccent;
+            b.style.opacity = "0.95";
+            b.style.transform = "scale(1.15)";
+            setTimeout(() => {
+              if (!stopped && b) b.style.transform = "";
+            }, 150);
+          }
+          setBtxCount(step + 1);
+        }
+        step++;
+        timer = setTimeout(tick, 55);
+      };
+      tick();
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          rafId = requestAnimationFrame(runLoop);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(el);
+
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+      io.disconnect();
+    };
+  }, [btxActiveOrder, reduced]);
+
   return (
-    <div className="mt-5 grid [grid-template-columns:1fr_auto_1fr] gap-[18px] items-center">
-      <div>
-        <p
-          className="font-mono text-[10.5px] font-semibold mb-2 text-center"
-          style={{ color: colors.problemAccentStrong }}
-        >
-          Naïve: O(B²)
-        </p>
+    <div ref={containerRef} className="mt-5">
+      <div className="grid [grid-template-columns:1fr_auto_1fr] gap-[18px] items-center">
+        <div>
+          <p
+            className="font-mono text-[10.5px] font-semibold mb-2 text-center"
+            style={{ color: colors.problemAccentStrong }}
+          >
+            Naïve: O(B²)
+          </p>
+          <div
+            className="grid grid-cols-8 gap-[2px] max-w-[160px] mx-auto"
+            style={{ aspectRatio: "1 / 1" }}
+          >
+            {Array.from({ length: 64 }).map((_, i) => (
+              <div
+                key={i}
+                ref={(el) => {
+                  naiveRefs.current[i] = el;
+                }}
+                style={{
+                  background: colors.problemAccentLight,
+                  aspectRatio: "1 / 1",
+                  borderRadius: 1,
+                  opacity: 0.35,
+                  transition:
+                    "opacity 0.25s, background 0.25s, transform 0.2s",
+                }}
+              />
+            ))}
+          </div>
+        </div>
         <div
-          className="grid grid-cols-8 gap-[2px] max-w-[160px] mx-auto"
-          style={{ aspectRatio: "1 / 1" }}
+          className="font-mono text-[22px]"
+          style={{ color: colors.textTertiary }}
         >
-          {Array.from({ length: 64 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                background: colors.problemAccent,
-                aspectRatio: "1 / 1",
-                borderRadius: 1,
-                opacity: 0.85,
-              }}
-            />
-          ))}
+          →
+        </div>
+        <div>
+          <p className="font-mono text-[10.5px] font-semibold mb-2 text-center text-solution-accent">
+            BTX FFT: O(B log B)
+          </p>
+          <div
+            className="grid grid-cols-8 gap-[2px] max-w-[160px] mx-auto"
+            style={{ aspectRatio: "1 / 1" }}
+          >
+            {Array.from({ length: 64 }).map((_, i) => (
+              <div
+                key={i}
+                ref={(el) => {
+                  btxRefs.current[i] = el;
+                }}
+                style={{
+                  background: colors.solutionAccentLight,
+                  aspectRatio: "1 / 1",
+                  borderRadius: 1,
+                  opacity: 0.3,
+                  transition:
+                    "opacity 0.25s, background 0.25s, transform 0.2s",
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
       <div
-        className="font-mono text-[22px]"
-        style={{ color: colors.textTertiary }}
+        className="flex justify-between max-w-[400px] mx-auto mt-3.5 font-mono text-[11px]"
       >
-        →
-      </div>
-      <div>
-        <p className="font-mono text-[10.5px] font-semibold mb-2 text-center text-solution-accent">
-          BTX FFT: O(B log B)
-        </p>
-        <div
-          className="grid grid-cols-8 gap-[2px] max-w-[160px] mx-auto"
-          style={{ aspectRatio: "1 / 1" }}
-        >
-          {Array.from({ length: 64 }).map((_, i) => {
-            const onDiag = i % 9 === 0 || Math.log2(i + 1) % 1 === 0;
-            return (
-              <div
-                key={i}
-                style={{
-                  background: onDiag
-                    ? colors.solutionAccent
-                    : colors.solutionAccentLight,
-                  aspectRatio: "1 / 1",
-                  borderRadius: 1,
-                  opacity: onDiag ? 0.95 : 0.25,
-                }}
-              />
-            );
-          })}
-        </div>
+        <span style={{ color: colors.problemAccentStrong }}>
+          Naïve ops:{" "}
+          <span className="font-semibold tabular-nums">{naiveCount}</span> / 64
+        </span>
+        <span className="text-solution-accent">
+          BTX ops:{" "}
+          <span className="font-semibold tabular-nums">{btxCount}</span> / ~
+          {btxActiveOrder.length}
+        </span>
       </div>
     </div>
   );
