@@ -391,9 +391,12 @@ function AllOrNothingViz() {
   return (
     <div>
       <p className="text-text-secondary text-[14px] leading-[1.55] mb-4">
-        Releasing the epoch key decrypts <em>every</em> ciphertext in the
-        epoch — including ones that weren&apos;t in any block. No selective
-        privacy.
+        Releasing the epoch key decrypts <em>every</em>{" "}
+        pending transaction in the window, not just the ones the builder
+        included in the block.
+        Transactions that didn&apos;t make it in still leak, so they
+        can&apos;t safely roll over to the next block. Practically useless
+        for an encrypted mempool.
       </p>
       <div className="flex gap-1.5 p-3 bg-surface rounded-lg flex-wrap">
         {Array.from({ length: 48 }).map((_, i) => {

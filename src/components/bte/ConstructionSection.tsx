@@ -151,15 +151,17 @@ function CiphertextFormula() {
         <p className="text-[14px] text-text-secondary leading-[1.6]">
           {simple ? (
             <>
-              Pick a random value r. Send two things: r itself, and your
-              transaction hidden under a mask built from r and the public
-              key. That&apos;s the whole scrambled message.
+              A user picks a random value r and sends two things to the
+              mempool: r itself, and their transaction hidden under a mask
+              built from r and the public key. That pair is the encrypted
+              transaction.
             </>
           ) : (
             <>
-              To encrypt m, pick random r. Output a pair: the randomness,
-              and m masked by a pad derived from the encryption key.
-              That&apos;s it.
+              A user encrypts their transaction m with random r. The
+              ciphertext is a pair: the randomness, and m masked by a pad
+              derived from the public encryption key. This is what sits in
+              the mempool until the committee opens it.
             </>
           )}
         </p>
