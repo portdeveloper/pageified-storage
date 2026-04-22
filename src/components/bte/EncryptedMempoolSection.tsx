@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { usePrefersReducedMotion } from "./useReducedMotion";
+import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 type SchemeKind =
   | "comms"
@@ -32,6 +34,8 @@ export default function EncryptedMempoolSection() {
   const { ref, isVisible } = useInView(0.1);
   const [activeId, setActiveId] = useState(SCHEMES[0].id);
   const active = SCHEMES.find((s) => s.id === activeId) ?? SCHEMES[0];
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
 
   return (
     <section
@@ -43,13 +47,27 @@ export default function EncryptedMempoolSection() {
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          Why encrypted mempools are hard
+          {simple
+            ? "Why this is hard to build"
+            : "Why encrypted mempools are hard"}
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
-          Transactions sit in the mempool where anyone can read and
-          front-run them. The fix: encrypt until block inclusion. Every prior
-          scheme gives up something critical — pick an approach to see what
-          breaks.
+          {simple ? (
+            <>
+              Scrambling transactions is the easy part. Unscrambling only the
+              ones the builder picked, fast, without dropping any, without a
+              big setup file — that&apos;s the hard part. Every earlier
+              scheme gives up something. Pick one to see what.
+            </>
+          ) : (
+            <>
+              Transactions sit in the{" "}
+              <Hint term="mempool">mempool</Hint> where anyone can read and
+              front-run them. The fix: encrypt until block inclusion. Every
+              prior scheme gives up something critical — pick an approach to
+              see what breaks.
+            </>
+          )}
         </p>
 
         <div className="grid gap-6 md:[grid-template-columns:minmax(260px,340px)_1fr]">
@@ -107,11 +125,32 @@ export default function EncryptedMempoolSection() {
             ✓
           </div>
           <p className="text-text-primary leading-[1.55]">
-            <strong className="text-solution-accent">BTX fills the gap:</strong>{" "}
-            the first BTE scheme that is{" "}
-            <strong>collision-free, epochless, compact</strong>{" "}
-            (ciphertext as small as plain ElGamal), and <strong>fast</strong>{" "}
-            (decryption scales with the actual batch, not the maximum).
+            {simple ? (
+              <>
+                <strong className="text-solution-accent">
+                  BTX fills the gap:
+                </strong>{" "}
+                no dropped transactions, no recurring setup, scrambled
+                transactions nearly as short as regular encryption, and
+                opening only costs what the actual batch costs.
+              </>
+            ) : (
+              <>
+                <strong className="text-solution-accent">
+                  BTX fills the gap:
+                </strong>{" "}
+                the first BTE scheme that is{" "}
+                <strong>
+                  <Hint term="collision-free">collision-free</Hint>,{" "}
+                  <Hint term="epochless">epochless</Hint>, compact
+                </strong>{" "}
+                ({" "}
+                <Hint term="ciphertext">ciphertext</Hint> as small as plain{" "}
+                <Hint term="ElGamal">ElGamal</Hint>), and{" "}
+                <strong>fast</strong> (decryption scales with the actual
+                batch, not the maximum).
+              </>
+            )}
           </p>
         </div>
       </div>

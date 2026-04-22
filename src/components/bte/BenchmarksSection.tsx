@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { BENCHMARKS } from "./shared";
+import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 const W = 640;
 const H = 280;
@@ -26,6 +28,8 @@ function yOf(v: number) {
 
 export default function BenchmarksSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
 
   return (
     <section ref={ref} className="py-24 px-6 bg-surface">
@@ -33,19 +37,36 @@ export default function BenchmarksSection() {
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          Faster than the best prior schemes
+          {simple ? "How fast is it?" : "Faster than the best prior schemes"}
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
-          The authors reimplemented PFE and BEAT++ in the same
-          aggressively-optimized C++ codebase as BTX — AVX-512, FFT backends,
-          optimized MSM and pairing paths. A comparison against tuned
-          baselines, not reference code.
+          {simple ? (
+            <>
+              The team rebuilt the previous best schemes on top of the same
+              fast foundation BTX uses, so the comparison is apples to
+              apples. The chart below shows how long it takes to open a
+              batch as the batch grows.
+            </>
+          ) : (
+            <>
+              The authors reimplemented{" "}
+              <Hint term="PFE">PFE</Hint> and BEAT++ in the same
+              aggressively-optimized C++ codebase as BTX — AVX-512, FFT
+              backends, optimized MSM and{" "}
+              <Hint term="pairing">pairing</Hint> paths. A comparison against
+              tuned baselines, not reference code.
+            </>
+          )}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <HeadlineCard
             headline="2.0×"
-            headlineSuffix="faster total decryption at B=512"
+            headlineSuffix={
+              simple
+                ? "faster to open a batch of 512"
+                : "faster total decryption at B=512"
+            }
             bars={[
               { label: "PFE", value: "1197 ms", width: 100 },
               { label: "BTX", value: "598 ms", width: 50, highlight: true },
@@ -53,7 +74,11 @@ export default function BenchmarksSection() {
           />
           <HeadlineCard
             headline="4.2×"
-            headlineSuffix="faster per ciphertext · 1 pairing vs 4"
+            headlineSuffix={
+              simple
+                ? "faster per transaction · one slow step instead of four"
+                : "faster per ciphertext · 1 pairing vs 4"
+            }
             bars={[
               { label: "PFE", value: "0.723 ms/ct", width: 100 },
               {

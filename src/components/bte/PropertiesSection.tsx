@@ -4,27 +4,57 @@ import { useEffect, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { usePrefersReducedMotion } from "./useReducedMotion";
+import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 export default function PropertiesSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
   return (
     <section ref={ref} className="py-24 px-6 bg-surface">
       <div
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          Four properties, all at once
+          {simple ? "What BTX gets right" : "Four properties, all at once"}
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
-          BTX is the first BTE scheme with all four. Encryption takes no
-          coordination, setup is one-time, and decryption cost scales with
-          the actual batch.
+          {simple ? (
+            <>
+              BTX is the first scheme to get all four of these right at the
+              same time. Users don&apos;t coordinate to encrypt. Setup happens
+              once. Opening a batch costs what the batch actually costs, not
+              the worst case.
+            </>
+          ) : (
+            <>
+              BTX is the first BTE scheme with all four. Encryption takes no
+              coordination, setup is one-time, and decryption cost scales
+              with the actual batch.
+            </>
+          )}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PropertyCard
             title="Compact"
-            body="Ciphertext is the same size as plain ElGamal: one source element plus one target element. Every prior BTE scheme uses at least two source elements."
+            body={
+              simple ? (
+                <>
+                  A scrambled transaction in BTX is about as short as a
+                  regular encrypted message. Every earlier scheme produced
+                  something bigger.
+                </>
+              ) : (
+                <>
+                  <Hint term="ciphertext">Ciphertext</Hint> is the same size
+                  as plain <Hint term="ElGamal">ElGamal</Hint>: one source
+                  element plus one target element. Every prior BTE scheme
+                  uses at least two source elements.
+                </>
+              )
+            }
             footer="With BLS12-381: |G₁| = 48B, |G_T| = 576B"
           >
             <CompactViz />
@@ -32,26 +62,62 @@ export default function PropertiesSection() {
 
           <PropertyCard
             title="Collision-free"
-            body="A user just encrypts. Nothing to collide on → no censorship via index collision."
+            body={
+              simple ? (
+                <>
+                  You just encrypt your transaction. There&apos;s no slot to
+                  fight over, so no one can block you by claiming the same
+                  slot first.
+                </>
+              ) : (
+                <>
+                  A user just encrypts. Nothing to collide on → no censorship
+                  via index <Hint term="collision">collision</Hint>.
+                </>
+              )
+            }
           >
             <CollisionFreeViz />
           </PropertyCard>
 
           <PropertyCard
             title="Epochless"
-            body="A ciphertext isn't bound to a block. If it isn't included in N, it stays valid for N+1 and beyond."
+            body={
+              simple ? (
+                <>
+                  Your scrambled transaction isn&apos;t tied to a specific
+                  block. If it misses block N, it&apos;s still fine for N+1,
+                  N+2, and on. No reset days.
+                </>
+              ) : (
+                <>
+                  A ciphertext isn&apos;t bound to a block. If it isn&apos;t
+                  included in N, it stays valid for N+1 and beyond. No{" "}
+                  <Hint term="epoch">epochs</Hint>.
+                </>
+              )
+            }
           >
             <EpochlessViz />
           </PropertyCard>
 
           <PropertyCard
-            title="Fast · dynamic batch sizing"
+            title={simple ? "Fast · pay for what you use" : "Fast · dynamic batch sizing"}
             body={
-              <>
-                Decryption is <span className="font-mono">O(B log B)</span>{" "}
-                where B is the <strong>actual</strong> batch. Prior schemes
-                pay for the maximum Bmax, always.
-              </>
+              simple ? (
+                <>
+                  Opening a batch of 50 costs what 50 costs. Earlier schemes
+                  always charged you for the worst case — the biggest batch
+                  the system could handle, even when the real batch was
+                  tiny.
+                </>
+              ) : (
+                <>
+                  Decryption is <span className="font-mono">O(B log B)</span>{" "}
+                  where B is the <strong>actual</strong> batch. Prior schemes
+                  pay for the maximum Bmax, always.
+                </>
+              )
             }
           >
             <FastViz />

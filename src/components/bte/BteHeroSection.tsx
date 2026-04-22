@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { PAPER_URL } from "./shared";
+import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 const MP_COLS = 6;
 const MP_ROWS = 8;
@@ -39,6 +41,8 @@ interface Particle {
 }
 
 export default function BteHeroSection() {
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
   const [phase, setPhase] = useState<Phase>("encrypt");
   const [cellStates, setCellStates] = useState<number[]>(
     () => new Array(TOTAL_CELLS).fill(0),
@@ -245,14 +249,37 @@ export default function BteHeroSection() {
               </span>
             </h1>
             <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-5">
-              A committee of servers decrypts any chosen subset of ciphertexts
-              while the rest stay private — the key primitive for encrypted
-              mempools that stop MEV.
+              {simple ? (
+                <>
+                  A group of servers keeps transactions scrambled until the
+                  builder picks a batch. Only that batch gets unscrambled.
+                  Everything else stays private, so bots can&apos;t front-run.
+                </>
+              ) : (
+                <>
+                  A <Hint term="committee">committee</Hint> of servers decrypts
+                  any chosen subset of{" "}
+                  <Hint term="ciphertext">ciphertexts</Hint> while the rest
+                  stay private — the key primitive for{" "}
+                  <Hint term="encrypted mempool">encrypted mempools</Hint> that
+                  stop <Hint term="MEV">MEV</Hint>.
+                </>
+              )}
             </p>
             <p className="font-mono text-[13px] text-solution-accent leading-[1.6] mb-7">
-              Shortest ciphertext. Collision-free. Epochless.
-              <br />
-              Fast enough for tight latency budgets.
+              {simple ? (
+                <>
+                  Smaller than any existing scheme. No dropped transactions.
+                  <br />
+                  No setup ceremony. Fast enough for real blocks.
+                </>
+              ) : (
+                <>
+                  Shortest ciphertext. Collision-free. Epochless.
+                  <br />
+                  Fast enough for tight latency budgets.
+                </>
+              )}
             </p>
             <div className="flex gap-3.5 items-center flex-wrap">
               <a

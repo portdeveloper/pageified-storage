@@ -4,6 +4,8 @@ import { useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { PROPERTY_EXPLAIN, SCHEMES, type SchemeRow } from "./shared";
+import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 type PropKey = keyof typeof PROPERTY_EXPLAIN;
 
@@ -56,6 +58,8 @@ const PROP_HEADER_LABELS: Record<PropKey, string> = {
 export default function ComparisonSection() {
   const { ref, isVisible } = useInView(0.1);
   const [active, setActive] = useState<PropKey | null>(null);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
 
   return (
     <section
@@ -66,12 +70,23 @@ export default function ComparisonSection() {
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          Every other BTE scheme trades off
+          {simple ? "How BTX stacks up" : "Every other BTE scheme trades off"}
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-7">
-          Four properties each matter for a usable encrypted mempool. Every
-          prior scheme drops at least one. Hover or focus a column to see why
-          it&apos;s needed.
+          {simple ? (
+            <>
+              Four things matter for a usable encrypted mempool. Every earlier
+              scheme drops at least one of them. BTX is the first to get all
+              four. Hover a column to see what each one means.
+            </>
+          ) : (
+            <>
+              Four properties each matter for a usable{" "}
+              <Hint term="encrypted mempool">encrypted mempool</Hint>. Every
+              prior scheme drops at least one. Hover or focus a column to see
+              why it&apos;s needed.
+            </>
+          )}
         </p>
 
         {/* Desktop table */}
@@ -248,7 +263,6 @@ function SchemeRowView({
           ? {
               background: colors.solutionBg,
               borderTop: "2px solid " + colors.solutionAccent,
-              borderBottom: "2px solid " + colors.solutionAccent,
             }
           : index > 0
             ? { borderTop: "1px solid " + colors.borderSoft }

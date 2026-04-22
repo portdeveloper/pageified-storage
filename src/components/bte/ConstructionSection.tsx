@@ -4,12 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { colors } from "@/lib/colors";
 import { useInView } from "../useInView";
 import { usePrefersReducedMotion } from "./useReducedMotion";
+import { useExplainMode } from "./ExplainModeContext";
+import Hint from "./Hint";
 
 const COMMITTEE_N = 5;
 const BATCH = 5;
 
 export default function ConstructionSection() {
   const { ref, isVisible } = useInView(0.1);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
   return (
     <section
       ref={ref}
@@ -19,12 +23,22 @@ export default function ConstructionSection() {
         className={`max-w-[1120px] mx-auto section-reveal ${isVisible ? "visible" : ""}`}
       >
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
-          The construction, at a glance
+          {simple ? "How BTX works, in three steps" : "The construction, at a glance"}
         </h2>
         <p className="text-[1.075rem] text-text-secondary font-light leading-[1.6] max-w-[46rem] mb-8">
-          BTX builds on pairing-friendly elliptic curves (BLS12-381).
-          Everything below is a sketch — the paper has the full protocol,
-          proofs, and security reductions.
+          {simple ? (
+            <>
+              Here&apos;s the idea without the math. The sections below show
+              how users encrypt, how the servers open a batch, and the trick
+              that makes opening a big batch cheap.
+            </>
+          ) : (
+            <>
+              BTX builds on pairing-friendly elliptic curves (BLS12-381).
+              Everything below is a sketch — the paper has the full protocol,
+              proofs, and security reductions.
+            </>
+          )}
         </p>
 
         {/* 1. Encryption */}
@@ -33,13 +47,28 @@ export default function ConstructionSection() {
         {/* 2. Committee */}
         <div className="mb-10">
           <h3 className="text-[1.15rem] font-semibold mb-2">
-            One G₁ element per server, regardless of batch size
+            {simple
+              ? "Each server sends one small message, no matter how big the batch"
+              : "One G₁ element per server, regardless of batch size"}
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] max-w-[46rem] mb-6">
-            Powers of the secret key τ are Shamir-shared across N servers.
-            Any t+1 collectively decrypt. Each server sends exactly{" "}
-            <strong>one group element</strong> to the combiner — its message
-            size is independent of batch size.
+            {simple ? (
+              <>
+                The key is split into pieces using{" "}
+                <Hint term="Shamir shares">Shamir sharing</Hint>, one piece
+                per server. To open a batch, enough servers each send back a
+                single small value. The total traffic doesn&apos;t grow with
+                the batch.
+              </>
+            ) : (
+              <>
+                Powers of the secret key τ are{" "}
+                <Hint term="Shamir shares">Shamir-shared</Hint> across N
+                servers. Any t+1 collectively decrypt. Each server sends
+                exactly <strong>one group element</strong> to the combiner —
+                its message size is independent of batch size.
+              </>
+            )}
           </p>
           <CommitteeAnimation />
         </div>
@@ -56,17 +85,33 @@ export default function ConstructionSection() {
           }}
         >
           <h3 className="text-[1.15rem] font-semibold mb-2">
-            Batch decryption as a polynomial product
+            {simple
+              ? "Opening a batch is cheap because the math lines up"
+              : "Batch decryption as a polynomial product"}
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] mb-3.5 max-w-[46rem]">
-            Naïve batch decryption costs{" "}
-            <span className="font-mono">O(B²)</span> pairings — every
-            ciphertext contributes a cross-term to every other. BTX observes
-            these cross-terms form a{" "}
-            <em>contiguous window of a polynomial product</em>, computable as
-            a middle-product via FFT:{" "}
-            <span className="font-mono">O(B log B)</span> group operations,{" "}
-            <span className="font-mono">O(B)</span> pairings.
+            {simple ? (
+              <>
+                Naïvely, opening a batch of B transactions costs work
+                proportional to B×B. BTX notices the work is structured like
+                a polynomial multiplication, which a classic math shortcut (
+                <Hint term="FFT">FFT</Hint>) can do much faster — closer to
+                B × log B.
+              </>
+            ) : (
+              <>
+                Naïve batch decryption costs{" "}
+                <span className="font-mono">O(B²)</span>{" "}
+                <Hint term="pairing">pairings</Hint> — every ciphertext
+                contributes a cross-term to every other. BTX observes these
+                cross-terms form a{" "}
+                <em>contiguous window of a polynomial product</em>,
+                computable as a middle-product via{" "}
+                <Hint term="FFT">FFT</Hint>:{" "}
+                <span className="font-mono">O(B log B)</span> group
+                operations, <span className="font-mono">O(B)</span> pairings.
+              </>
+            )}
           </p>
           <FftComparison />
         </div>
@@ -79,6 +124,8 @@ export default function ConstructionSection() {
 function CiphertextFormula() {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
+  const { mode } = useExplainMode();
+  const simple = mode === "simple";
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -99,11 +146,22 @@ function CiphertextFormula() {
     <div className="grid grid-cols-1 md:[grid-template-columns:minmax(0,0.85fr)_minmax(0,1.15fr)] gap-7 mb-10 items-center">
       <div>
         <h3 className="text-[1.15rem] font-semibold mb-2">
-          An ElGamal-shaped ciphertext
+          {simple ? "A scrambled transaction is just two pieces" : "An ElGamal-shaped ciphertext"}
         </h3>
         <p className="text-[14px] text-text-secondary leading-[1.6]">
-          To encrypt m, pick random r. Output a pair: the randomness, and m
-          masked by a pad derived from the encryption key. That&apos;s it.
+          {simple ? (
+            <>
+              Pick a random value r. Send two things: r itself, and your
+              transaction hidden under a mask built from r and the public
+              key. That&apos;s the whole scrambled message.
+            </>
+          ) : (
+            <>
+              To encrypt m, pick random r. Output a pair: the randomness,
+              and m masked by a pad derived from the encryption key.
+              That&apos;s it.
+            </>
+          )}
         </p>
       </div>
       <div
