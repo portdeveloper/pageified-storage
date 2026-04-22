@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { ExplainModeProvider } from "@/components/bte/ExplainModeContext";
-import ModeToggle from "@/components/bte/ModeToggle";
-import BteHeroSection from "@/components/bte/BteHeroSection";
-import WhatIsBteSection from "@/components/bte/WhatIsBteSection";
-import EncryptedMempoolSection from "@/components/bte/EncryptedMempoolSection";
-import ComparisonSection from "@/components/bte/ComparisonSection";
-import PropertiesSection from "@/components/bte/PropertiesSection";
-import ConstructionSection from "@/components/bte/ConstructionSection";
-import BenchmarksSection from "@/components/bte/BenchmarksSection";
-import BteFooterSection from "@/components/bte/BteFooterSection";
+import { ExplainModeProvider } from "@/components/btx/ExplainModeContext";
+import ModeToggle from "@/components/btx/ModeToggle";
+import BteHeroSection from "@/components/btx/BteHeroSection";
+import WhatIsBteSection from "@/components/btx/WhatIsBteSection";
+import EncryptedMempoolSection from "@/components/btx/EncryptedMempoolSection";
+import ComparisonSection from "@/components/btx/ComparisonSection";
+import PropertiesSection from "@/components/btx/PropertiesSection";
+import ConstructionSection from "@/components/btx/ConstructionSection";
+import BenchmarksSection from "@/components/btx/BenchmarksSection";
+import BteFooterSection from "@/components/btx/BteFooterSection";
 
 export const metadata: Metadata = {
   title: "BTX: Batched Threshold Encryption",

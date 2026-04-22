@@ -677,7 +677,7 @@ export default function HomeContent() {
           }}
         >
           <Link
-            href="/bte"
+            href="/btx"
             aria-label="Explore BTX: Batched Threshold Encryption"
             className="group block bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden"
           >
