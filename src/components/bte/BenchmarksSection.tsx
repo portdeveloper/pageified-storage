@@ -107,7 +107,7 @@ export default function BenchmarksSection() {
                 label="BTX precompute"
               />
               <LegendSwatch
-                color={colors.textTertiary}
+                color={colors.textPrimary}
                 label="BEAT++ precompute"
                 dashed
               />
@@ -440,11 +440,11 @@ function BenchmarkChart() {
         <path
           d={beatPath}
           fill="none"
-          stroke={colors.textTertiary}
-          strokeWidth={1.5}
-          strokeDasharray="4 3"
+          stroke={colors.textPrimary}
+          strokeWidth={2.25}
+          strokeDasharray="6 5"
           strokeLinecap="round"
-          opacity={0.7}
+          opacity={0.9}
         />
 
         {/* dots */}
