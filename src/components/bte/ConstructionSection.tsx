@@ -86,22 +86,23 @@ export default function ConstructionSection() {
         >
           <h3 className="text-[1.15rem] font-semibold mb-2">
             {simple
-              ? "Opening a batch is cheap because the math lines up"
-              : "Batch decryption as a polynomial product"}
+              ? "How BTX stays fast as batches grow"
+              : "How BTX reaches O(B log B) inside the scheme"}
           </h3>
           <p className="text-[14px] text-text-secondary leading-[1.6] mb-3.5 max-w-[46rem]">
             {simple ? (
               <>
-                Naïvely, opening a batch of B transactions costs work
-                proportional to B×B. BTX notices the work is structured like
-                a polynomial multiplication, which a classic math shortcut (
-                <Hint term="FFT">FFT</Hint>) can do much faster — closer to
-                B × log B.
+                Written the obvious way, opening a batch of B transactions
+                inside BTX would cost work proportional to B×B — every
+                ciphertext chips in a little to every other. BTX notices
+                that work is structured like a polynomial multiplication, so
+                a classic math shortcut (<Hint term="FFT">FFT</Hint>) solves
+                it much faster: closer to B × log B.
               </>
             ) : (
               <>
-                Naïve batch decryption costs{" "}
-                <span className="font-mono">O(B²)</span>{" "}
+                Inside BTX&apos;s decryption, the obvious implementation
+                costs <span className="font-mono">O(B²)</span>{" "}
                 <Hint term="pairing">pairings</Hint> — every ciphertext
                 contributes a cross-term to every other. BTX observes these
                 cross-terms form a{" "}
@@ -109,7 +110,9 @@ export default function ConstructionSection() {
                 computable as a middle-product via{" "}
                 <Hint term="FFT">FFT</Hint>:{" "}
                 <span className="font-mono">O(B log B)</span> group
-                operations, <span className="font-mono">O(B)</span> pairings.
+                operations, <span className="font-mono">O(B)</span>{" "}
+                pairings. Same scheme, same output — just the internal
+                arithmetic.
               </>
             )}
           </p>
@@ -746,7 +749,7 @@ function FftComparison() {
             className="font-mono text-[10.5px] font-semibold mb-2 text-center"
             style={{ color: colors.problemAccentStrong }}
           >
-            Naïve: O(B²)
+            Without FFT: O(B²)
           </p>
           <div
             className="grid grid-cols-8 gap-[2px] max-w-[160px] mx-auto"
@@ -778,7 +781,7 @@ function FftComparison() {
         </div>
         <div>
           <p className="font-mono text-[10.5px] font-semibold mb-2 text-center text-solution-accent">
-            BTX FFT: O(B log B)
+            With FFT: O(B log B)
           </p>
           <div
             className="grid grid-cols-8 gap-[2px] max-w-[160px] mx-auto"
@@ -807,11 +810,11 @@ function FftComparison() {
         className="flex justify-between max-w-[400px] mx-auto mt-3.5 font-mono text-[11px]"
       >
         <span style={{ color: colors.problemAccentStrong }}>
-          Naïve ops:{" "}
+          Without FFT:{" "}
           <span className="font-semibold tabular-nums">{naiveCount}</span> / 64
         </span>
         <span className="text-solution-accent">
-          BTX ops:{" "}
+          With FFT:{" "}
           <span className="font-semibold tabular-nums">{btxCount}</span> / ~
           {btxActiveOrder.length}
         </span>
