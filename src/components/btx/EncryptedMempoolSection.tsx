@@ -37,7 +37,6 @@ export default function EncryptedMempoolSection() {
 
   return (
     <section
-      id="problem-root"
       ref={ref}
       className="py-24 px-6 scroll-mt-16"
     >

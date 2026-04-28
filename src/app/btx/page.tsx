@@ -23,9 +23,9 @@ export default function BtePage() {
   return (
     <main>
       <BteHeroSection />
+      <WhatIsBteSection />
       <EncryptedMempoolSection />
       <ComparisonSection />
-      <WhatIsBteSection />
       <PropertiesSection />
       <ConstructionSection />
       <BenchmarksSection />

@@ -7,7 +7,10 @@ import Hint from "./Hint";
 
 export default function WhatIsBteSection() {
   return (
-    <section className="py-24 px-6 bg-surface relative">
+    <section
+      id="problem-root"
+      className="py-24 px-6 bg-surface relative scroll-mt-16"
+    >
       <div className="max-w-[1120px] mx-auto">
         <h2 className="mb-4 text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.015em]">
           What MEV looks like
