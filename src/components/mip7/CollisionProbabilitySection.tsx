@@ -67,6 +67,17 @@ function fmtPct(p: number) {
   return pctVal.toFixed(decimals) + "%";
 }
 
+// Confidence values can crowd up against 100% — show enough decimals to keep
+// adjacent slider positions distinguishable.
+function fmtPctConfidence(p: number) {
+  if (p >= 1) return "100%";
+  if (p <= 0) return "0%";
+  const distPct = 100 - p * 100;
+  if (distPct >= 1) return fmtPct(p);
+  const decimals = Math.min(10, -Math.floor(Math.log10(distPct)) + 2);
+  return (p * 100).toFixed(decimals) + "%";
+}
+
 function fmtOneIn(p: number) {
   if (p <= 0) return "—";
   const n = 1 / p;
@@ -75,27 +86,36 @@ function fmtOneIn(p: number) {
   return Math.round(n).toLocaleString();
 }
 
-const STAGES = [
-  { key: "a", multiplier: 0.1, done: true },
-  { key: "b", multiplier: 0.01, done: true },
-  { key: "c", multiplier: 0.001, done: false },
-  { key: "d", multiplier: 0.0001, done: false },
-  { key: "e", multiplier: 0, done: false },
+const STAGES: { key: "a" | "b" | "c" | "e"; done: boolean }[] = [
+  { key: "a", done: true },
+  { key: "b", done: true },
+  { key: "c", done: false },
+  { key: "e", done: false },
 ];
 
 const CURRENT_STAGE_IDX = 1;
+
+// Maps slider 0..100 (strength of commitment) to P(EIP-8163 not upheld).
+// 0 → 1 (no commitment, no protection). 100 → 0 (certain). Log-spaced in between.
+const MAX_DECADES = 6;
+function strengthToFailProb(strength: number): number {
+  if (strength <= 0) return 1;
+  if (strength >= 100) return 0;
+  return Math.pow(10, -(strength / 100) * MAX_DECADES);
+}
 
 export default function CollisionProbabilitySection() {
   const { t } = useLanguage();
   const { ref, isVisible } = useInView(0.1);
   const [mode, setMode] = useState<"without" | "with">("without");
   const [n, setN] = useState<1 | 8 | 16>(8);
-  const [stageIdx, setStageIdx] = useState(CURRENT_STAGE_IDX);
+  const [strength, setStrength] = useState(50);
 
   const baseN = mode === "without" ? n : 1;
   const pBase = pYearly(baseN);
-  const stageMult = mode === "with" ? STAGES[stageIdx].multiplier : 1;
-  const pFinal = pBase * stageMult;
+  const pUpholdFail = strengthToFailProb(strength);
+  const upholdMult = mode === "with" ? pUpholdFail : 1;
+  const pFinal = pBase * upholdMult;
   const p10 = pCumulative(pFinal, 10);
 
   const isProblem = mode === "without";
@@ -236,16 +256,10 @@ export default function CollisionProbabilitySection() {
             <div className="space-y-1.5">
               {STAGES.map((s, i) => {
                 const isCurrent = i === CURRENT_STAGE_IDX;
-                const isSelected = i === stageIdx;
                 return (
-                  <button
+                  <div
                     key={s.key}
-                    onClick={() => setStageIdx(i)}
-                    className={`w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                      isSelected
-                        ? "border-solution-accent bg-solution-bg"
-                        : "border-border bg-surface hover:border-text-secondary"
-                    }`}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border bg-surface"
                   >
                     <div
                       className={`flex items-center justify-center w-5 h-5 rounded-sm border-2 shrink-0 ${
@@ -255,12 +269,7 @@ export default function CollisionProbabilitySection() {
                       }`}
                     >
                       {s.done && (
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                        >
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                           <path
                             d="M2.5 6l2.5 2.5L9.5 3.5"
                             stroke="white"
@@ -271,32 +280,45 @@ export default function CollisionProbabilitySection() {
                         </svg>
                       )}
                     </div>
-                    <p
-                      className={`font-mono text-xs flex-1 ${
-                        isSelected
-                          ? "text-solution-accent font-semibold"
-                          : "text-text-secondary"
-                      }`}
-                    >
+                    <p className="font-mono text-xs flex-1 text-text-secondary">
                       {t(`mip7.collisionProb.stage_${s.key}`)}
                     </p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {isCurrent && (
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-solution-muted bg-solution-cell px-1.5 py-0.5 rounded">
-                          {t("mip7.collisionProb.currentStage")}
-                        </span>
-                      )}
-                      <span className="font-mono text-[10px] text-text-tertiary tabular-nums w-16 text-right">
-                        {s.multiplier === 0 ? "× 0" : `≈ × ${s.multiplier}`}
+                    {isCurrent && (
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-solution-muted bg-solution-cell px-1.5 py-0.5 rounded shrink-0">
+                        {t("mip7.collisionProb.currentStage")}
                       </span>
-                    </div>
-                  </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
-            <p className="font-mono text-[10px] text-text-tertiary mt-3">
-              {t("mip7.collisionProb.stagesNote")}
-            </p>
+
+            {/* Slider for user belief */}
+            <div className="mt-6 pt-5 border-t border-border">
+              <p className="font-mono text-xs text-text-secondary leading-snug mb-3">
+                {t("mip7.collisionProb.sliderPrompt")}
+              </p>
+              <p className="font-mono text-3xl font-semibold text-solution-accent tabular-nums mb-3">
+                {fmtPctConfidence(1 - pUpholdFail)}
+              </p>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={0.1}
+                value={strength}
+                onChange={(e) => setStrength(Number(e.target.value))}
+                aria-label={t("mip7.collisionProb.sliderPrompt")}
+                className="w-full accent-solution-accent cursor-pointer"
+              />
+              <div className="flex justify-between mt-2 font-mono text-[10px] text-text-tertiary">
+                <span>{t("mip7.collisionProb.sliderWeak")}</span>
+                <span>{t("mip7.collisionProb.sliderStrong")}</span>
+              </div>
+              <p className="font-mono text-[10px] text-text-tertiary mt-3">
+                {t("mip7.collisionProb.sliderNote")}
+              </p>
+            </div>
           </div>
         )}
 
@@ -349,18 +371,16 @@ export default function CollisionProbabilitySection() {
                   </span>
                 </p>
                 <p>
-                  P<sub>uphold-fail</sub> ={" "}
+                  P<sub>upheld</sub> ={" "}
                   <span className="text-text-primary tabular-nums">
-                    {STAGES[stageIdx].multiplier === 0
-                      ? "0"
-                      : fmtPct(STAGES[stageIdx].multiplier)}
+                    {fmtPct(1 - pUpholdFail)}
                   </span>{" "}
                   <span className="text-text-tertiary">
-                    ({t("mip7.collisionProb.stageShort")} {STAGES[stageIdx].key})
+                    ({t("mip7.collisionProb.fromSlider")})
                   </span>
                 </p>
                 <p>
-                  P = P<sub>base</sub> × P<sub>uphold-fail</sub> ={" "}
+                  P = P<sub>base</sub> × (1 − P<sub>upheld</sub>) ={" "}
                   <span className="text-solution-accent font-semibold tabular-nums">
                     {fmtPct(pFinal)}
                   </span>
@@ -377,7 +397,7 @@ export default function CollisionProbabilitySection() {
               </p>
               <AnimatePresence mode="wait">
                 <motion.p
-                  key={`y-${mode}-${baseN}-${stageIdx}`}
+                  key={`y-${mode}-${baseN}-${strength}`}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
@@ -405,7 +425,7 @@ export default function CollisionProbabilitySection() {
               </p>
               <AnimatePresence mode="wait">
                 <motion.p
-                  key={`c-${mode}-${baseN}-${stageIdx}`}
+                  key={`c-${mode}-${baseN}-${strength}`}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
@@ -438,9 +458,8 @@ export default function CollisionProbabilitySection() {
               {Array.from({ length: 10 }, (_, i) => {
                 const year = 2026 + i;
                 const cumByEnd = pCumulative(pFinal, i + 1);
-                const fillPct = Math.min(
-                  100,
-                  Math.max(0.5, cumByEnd * 100)
+                const fillPct = Number(
+                  Math.min(100, Math.max(0.5, cumByEnd * 100)).toFixed(2)
                 );
                 return (
                   <div
