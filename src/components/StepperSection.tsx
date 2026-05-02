@@ -542,7 +542,7 @@ export default function StepperSection() {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <button
             onClick={handlePrev}
             disabled={currentStep <= 0}
@@ -576,7 +576,7 @@ export default function StepperSection() {
           <p className="hidden sm:block font-mono text-xs text-text-tertiary/50">
             {t("mip8.stepper.keys")}
           </p>
-          <div className="ml-auto flex items-center gap-4">
+          <div className="w-full sm:w-auto sm:ml-auto flex items-center justify-start sm:justify-end gap-4">
             <AnimatePresence mode="wait">
               {currentStep >= 0 && (
                 <motion.div

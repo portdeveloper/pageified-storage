@@ -366,7 +366,7 @@ export default function JumpdestSection() {
           </AnimatePresence>
 
           {/* Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={started && !isPlaying ? handleReset : undefined}
               disabled={!started || isPlaying}
@@ -400,7 +400,7 @@ export default function JumpdestSection() {
             >
               {isPlaying ? t("mip7.jumpdest.scanning") : t("mip7.jumpdest.autoScan")}
             </button>
-            <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
+            <p className="w-full sm:w-auto sm:ml-auto font-mono text-xs text-text-tertiary tabular-nums">
               {Math.max(0, scanStep + 1)} / {totalBytes} {t("mip7.jumpdest.bytes")}
             </p>
           </div>
