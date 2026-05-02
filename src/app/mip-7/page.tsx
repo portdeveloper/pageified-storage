@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Mip7HeroSection from "@/components/mip7/Mip7HeroSection";
 import CollisionSection from "@/components/mip7/CollisionSection";
+import CollisionProbabilitySection from "@/components/mip7/CollisionProbabilitySection";
 import NamespaceSection from "@/components/mip7/NamespaceSection";
 import JumpdestSection from "@/components/mip7/JumpdestSection";
 import EncodingSection from "@/components/mip7/EncodingSection";
@@ -24,6 +25,7 @@ export default function Mip7Page() {
     <main>
       <Mip7HeroSection />
       <CollisionSection />
+      <CollisionProbabilitySection />
       <NamespaceSection />
       <JumpdestSection />
       <EncodingSection />
