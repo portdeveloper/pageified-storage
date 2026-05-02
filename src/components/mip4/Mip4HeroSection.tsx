@@ -80,7 +80,7 @@ export default function Mip4HeroSection() {
                   className="absolute left-0 right-0 border-t-2 border-dashed border-problem-accent z-10"
                   style={{ bottom: `${reserveLinePos}%` }}
                 >
-                  <span className="absolute right-0 -top-5 font-mono text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                  <span className="absolute left-2 sm:left-auto sm:right-0 -top-5 font-mono text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                     {t("mip4.hero.reserve")}
                   </span>
                 </div>

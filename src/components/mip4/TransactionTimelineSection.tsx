@@ -279,8 +279,8 @@ export default function TransactionTimelineSection() {
                   : "bg-solution-bg border-solution-accent-light"
               }`}
             >
-              <p className="font-mono text-sm">
-                <span className="text-text-tertiary">
+              <p className="font-mono text-sm break-words">
+                <span className="text-text-tertiary break-all">
                   IReserveBalance(0x1001).dippedIntoReserve() →{" "}
                 </span>
                 <span
@@ -301,7 +301,7 @@ export default function TransactionTimelineSection() {
         </AnimatePresence>
 
         {/* Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handlePrev}
             disabled={stepIdx <= 0}
@@ -346,7 +346,7 @@ export default function TransactionTimelineSection() {
           <p className="hidden sm:block font-mono text-xs text-text-tertiary/50">
             {t("mip4.timeline.keys")}
           </p>
-          <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
+          <p className="w-full sm:w-auto sm:ml-auto font-mono text-xs text-text-tertiary tabular-nums">
             {t("mip4.timeline.step")} {Math.max(0, stepIdx + 1)} / {STEPS.length}
           </p>
         </div>

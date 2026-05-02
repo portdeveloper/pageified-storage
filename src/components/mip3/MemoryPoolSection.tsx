@@ -245,7 +245,7 @@ export default function MemoryPoolSection() {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handlePrev}
             disabled={stepIdx <= 0 || isPlaying}
@@ -279,7 +279,7 @@ export default function MemoryPoolSection() {
           >
             {isPlaying ? t("mip3.memoryPool.playing") : t("mip3.memoryPool.autoPlay")}
           </button>
-          <p className="ml-auto font-mono text-xs text-text-tertiary tabular-nums">
+          <p className="w-full sm:w-auto sm:ml-auto font-mono text-xs text-text-tertiary tabular-nums">
             {t("mip3.memoryPool.step")} {stepIdx + 1} / {demoSteps.length}
           </p>
         </div>
