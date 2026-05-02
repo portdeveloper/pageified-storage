@@ -21,6 +21,12 @@ export default function GlobalFooter() {
             >
               Interactive Infra Playground
             </Link>
+            <Link
+              href="/btx"
+              className="inline-flex items-center text-surface/40 hover:text-surface transition-colors px-3 py-2.5 rounded min-h-11"
+            >
+              Batched Threshold Encryption
+            </Link>
           </div>
           <p className="font-mono text-[11px] text-surface/25">
             made by{" "}
