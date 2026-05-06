@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const TABS = [
-  { name: "101", href: "/monad-101", ready: true, beta: false },
   { name: "MIP-8", href: "/mip-8", ready: true, beta: false },
   { name: "MIP-3", href: "/mip-3", ready: true, beta: true },
   { name: "MIP-4", href: "/mip-4", ready: true, beta: true },

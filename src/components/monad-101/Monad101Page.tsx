@@ -12,62 +12,29 @@ const METRICS = [
     label: "Throughput",
     ethereum: "~10 tx/s",
     monad: "10,000 tx/s",
-    note: "Transfer and contract-call capacity.",
+    note: "More onchain interactions fit inside one product flow.",
     width: 92,
   },
   {
     label: "Block frequency",
     ethereum: "12 sec",
     monad: "400 ms",
-    note: "Fast enough to shape UI feedback.",
+    note: "Fast enough for subsecond feedback instead of loading screens.",
     width: 78,
   },
   {
     label: "Finality",
     ethereum: "12-18 min",
     monad: "800 ms",
-    note: "Settlement-grade commitment.",
+    note: "Irreversible product decisions can settle quickly.",
     width: 86,
   },
   {
     label: "Gas throughput",
     ethereum: "2.5M gas/s",
     monad: "500M gas/s",
-    note: "Contract execution budget.",
+    note: "More contract work can happen without hiding chain latency.",
     width: 82,
-  },
-];
-
-const ARCHITECTURE = [
-  {
-    title: "MonadBFT",
-    label: "consensus",
-    body: "Agree on ordered blocks.",
-    accent: colors.userAccent,
-  },
-  {
-    title: "RaptorCast",
-    label: "block delivery",
-    body: "Move block chunks quickly.",
-    accent: colors.textTertiary,
-  },
-  {
-    title: "Deferred execution",
-    label: "pipeline",
-    body: "Order, execute beside, verify.",
-    accent: colors.problemAccentStrong,
-  },
-  {
-    title: "Parallel execution",
-    label: "compute",
-    body: "Work ahead, commit in order.",
-    accent: colors.solutionAccent,
-  },
-  {
-    title: "MonadDb",
-    label: "state",
-    body: "Fast Ethereum-state reads.",
-    accent: colors.problemMuted,
   },
 ];
 
@@ -77,24 +44,12 @@ export default function Monad101Page() {
       <Hero />
 
       <VisualSection
-        kicker="starting model"
-        title="Many requests become one shared log"
+        title="Same EVM surface, new engine underneath"
         copy={
           <p>
-            Transactions enter. Blocks order. Nodes replay.
-          </p>
-        }
-      >
-        <SharedLogVisual />
-      </VisualSection>
-
-      <VisualSection
-        kicker="placement"
-        title="Monad is an Ethereum-compatible Layer 1"
-        copy={
-          <p>
-            Own validators and state. Ethereum bytecode, accounts, wallets,
-            RPCs, and Solidity tools.
+            Contracts, wallets, accounts, and RPC integrations stay familiar.
+            Underneath, Monad is its own Layer 1 with its own validators, state,
+            and ordered blocks.
           </p>
         }
       >
@@ -102,12 +57,12 @@ export default function Monad101Page() {
       </VisualSection>
 
       <VisualSection
-        kicker="bottleneck"
-        title="The usual design makes execution fight consensus for time"
+        title="The old path makes execution fight consensus for time"
         copy={
           <p>
-            Monad orders first, executes beside later consensus work, then
-            checks delayed state roots.
+            If execution sits on the consensus hot path, every block must leave
+            room for compute, propagation, and voting. Monad separates those
+            jobs into a pipeline.
           </p>
         }
       >
@@ -115,37 +70,12 @@ export default function Monad101Page() {
       </VisualSection>
 
       <VisualSection
-        kicker="block states"
-        title="A transaction moves through stronger commitments"
+        title="Parallel work still commits to one serial answer"
         copy={
           <p>
-            Early states suit feedback. Stronger states suit settlement and
-            accounting.
-          </p>
-        }
-      >
-        <BlockStatesDiagram />
-      </VisualSection>
-
-      <VisualSection
-        kicker="architecture"
-        title="Throughput comes from interlocking parts"
-        copy={
-          <p>
-            Consensus, block delivery, execution, compilation, and storage each
-            remove the next bottleneck.
-          </p>
-        }
-      >
-        <ArchitectureMap />
-      </VisualSection>
-
-      <VisualSection
-        kicker="parallel execution"
-        title="Parallel execution still commits to one serial answer"
-        copy={
-          <p>
-            Work in parallel. Commit serially. Re-run conflicts.
+            Execution can fan out across many workers, but results merge in the
+            original transaction order. Conflicts re-run; contract semantics
+            stay serial.
           </p>
         }
       >
@@ -153,11 +83,24 @@ export default function Monad101Page() {
       </VisualSection>
 
       <VisualSection
-        kicker="numbers"
-        title="Read the numbers as interface constraints"
+        title="Use block states as product confidence levels"
         copy={
           <p>
-            Latency and capacity boundaries for product design.
+            Monad gives applications earlier signals for feedback and stronger
+            signals for settlement, accounting, and delayed state-root
+            assurance.
+          </p>
+        }
+      >
+        <BlockStatesDiagram />
+      </VisualSection>
+
+      <VisualSection
+        title="Read the numbers as UX constraints"
+        copy={
+          <p>
+            The headline metrics matter because they change what product teams
+            can show immediately, settle quickly, and keep onchain.
           </p>
         }
       >
@@ -165,26 +108,18 @@ export default function Monad101Page() {
       </VisualSection>
 
       <VisualSection
-        kicker="compatibility"
-        title="EVM compatibility means the surface carries over, with edges"
+        title="The surface carries over; assumptions need a pass"
         copy={
           <p>
-            Code carries. Timing, gas, indexing, mempools, and verification
-            need a new pass.
+            Start from normal EVM code, then re-check timing, gas, indexing,
+            mempool, and block-state assumptions before shipping.
           </p>
         }
       >
         <CompatibilityGrid />
       </VisualSection>
 
-      <CompactCardsSection
-        kicker="rough edges"
-        title="What is still young"
-        intro="Mainnet is live. The surrounding ecosystem is still younger than Ethereum's."
-      />
-
       <NextSteps />
-      <Sources />
     </main>
   );
 }
@@ -203,7 +138,7 @@ function Hero() {
           <span className="font-semibold italic">rebuilt around throughput.</span>
         </h1>
         <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          EVM-compatible surface. Pipelined consensus, parallel execution,
+          EVM compatible surface. Pipelined consensus, parallel execution,
           fast state.
         </p>
       </motion.div>
@@ -221,12 +156,10 @@ function Hero() {
 }
 
 function VisualSection({
-  kicker,
   title,
   copy,
   children,
 }: {
-  kicker: string;
   title: string;
   copy: ReactNode;
   children: ReactNode;
@@ -242,9 +175,6 @@ function VisualSection({
         }`}
       >
         <div>
-          <p className="font-mono text-xs text-text-tertiary uppercase mb-3">
-            {kicker}
-          </p>
           <h2 className="text-3xl sm:text-4xl font-semibold mb-4">{title}</h2>
           <div className="text-base text-text-secondary font-light leading-relaxed">
             {copy}
@@ -256,98 +186,30 @@ function VisualSection({
   );
 }
 
-function SharedLogVisual() {
-  const steps = [
-    {
-      label: "requests",
-      title: "Apps submit txs",
-      items: ["transfer", "mint", "swap", "update"],
-      accent: colors.userAccent,
-    },
-    {
-      label: "ordering",
-      title: "Block fixes order",
-      items: ["1", "2", "3", "4"],
-      accent: colors.problemAccentStrong,
-    },
-    {
-      label: "replication",
-      title: "Nodes replay",
-      items: ["node A", "node B", "node C", "node D"],
-      accent: colors.solutionAccent,
-    },
-  ];
-
-  return (
-    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {steps.map((step, index) => (
-          <div key={step.label} className="relative rounded-xl border border-border bg-surface p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: step.accent }}
-              />
-              <p className="font-mono text-[10px] text-text-tertiary uppercase">
-                {step.label}
-              </p>
-            </div>
-            <h3 className="text-lg font-semibold mb-4">{step.title}</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {step.items.map((item, itemIndex) => (
-                <motion.div
-                  key={item}
-                  initial={{ opacity: 0, y: 8 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.5 }}
-                  transition={{ delay: index * 0.12 + itemIndex * 0.04 }}
-                  className="rounded-md border border-border bg-surface-elevated px-2 py-2 text-center"
-                >
-                  <span className="font-mono text-[10px] text-text-primary">
-                    {item}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-            {index < steps.length - 1 && (
-              <div className="hidden md:block absolute -right-3 top-1/2 h-px w-6 bg-border" />
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="mt-4 rounded-xl border border-solution-accent-light bg-solution-bg p-4">
-        <p className="font-mono text-xs text-solution-accent">
-          Same order. Same state.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function BlockStatesDiagram() {
   const states = [
     {
       label: "Proposed",
-      time: "T",
-      body: "Receipt can appear",
+      time: "latest",
+      body: "Fast UI feedback",
       color: colors.userAccent,
     },
     {
       label: "Voted",
-      time: "T+1",
-      body: "Speculative finality",
+      time: "safe",
+      body: "Stronger confidence",
       color: colors.problemAccentStrong,
     },
     {
       label: "Finalized",
-      time: "T+2",
-      body: "No normal reorg",
+      time: "finalized",
+      body: "Settlement decisions",
       color: colors.solutionAccent,
     },
     {
-      label: "Verified",
-      time: "T+5",
-      body: "State root agreed",
+      label: "Verified root",
+      time: "N-D",
+      body: "Delayed root assurance",
       color: colors.textPrimary,
     },
   ];
@@ -515,9 +377,8 @@ function PipelineHeroVisual() {
           fontSize="11"
           fontFamily="monospace"
           fill={colors.textTertiary}
-          letterSpacing="1.5"
         >
-          EVM INPUT
+          EVM input
         </text>
         <text
           x={214}
@@ -525,9 +386,8 @@ function PipelineHeroVisual() {
           fontSize="11"
           fontFamily="monospace"
           fill={colors.userAccent}
-          letterSpacing="1.5"
         >
-          CONSENSUS
+          Consensus
         </text>
         <text
           x={214}
@@ -535,9 +395,8 @@ function PipelineHeroVisual() {
           fontSize="11"
           fontFamily="monospace"
           fill={colors.solutionAccent}
-          letterSpacing="1.5"
         >
-          EXECUTION
+          Execution
         </text>
         <text
           x={488}
@@ -545,9 +404,8 @@ function PipelineHeroVisual() {
           fontSize="11"
           fontFamily="monospace"
           fill={colors.textTertiary}
-          letterSpacing="1.5"
         >
-          COMMIT
+          Commit
         </text>
 
         {HERO_INPUT_TXS.map((tx, index) => (
@@ -871,7 +729,7 @@ function PipelineHeroVisual() {
               <p className="font-mono text-xs sm:text-sm font-semibold text-text-primary tabular-nums leading-none">
                 {value}
               </p>
-              <p className="mt-1 font-mono text-[9px] text-text-tertiary uppercase truncate">
+              <p className="mt-1 font-mono text-[9px] text-text-tertiary truncate">
                 {label}
               </p>
             </div>
@@ -881,39 +739,38 @@ function PipelineHeroVisual() {
     </div>
   );
 }
+
 function LayerMap() {
   return (
     <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
       <div className="grid grid-cols-1 gap-3">
         <LayerRow
-          title="Layer 2"
-          subtitle="uses another base network for settlement or data"
+          title="EVM surface"
+          subtitle="Solidity bytecode, ECDSA accounts, wallets, and RPC shape"
           muted
         />
         <LayerRow
-          title="Monad"
-          subtitle="own validators and state, Ethereum-compatible developer surface"
+          title="Monad L1 engine"
+          subtitle="own validators, own state, fast ordered blocks"
           active
         />
         <LayerRow
-          title="Different-runtime L1"
-          subtitle="own validators and state, different application model"
+          title="Canonical block result"
+          subtitle="parallel work still lands as one serial EVM answer"
           muted
         />
       </div>
       <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {["EVM bytecode", "Ethereum RPC", "ECDSA addresses", "Solidity tools"].map(
-          (item) => (
-            <div
-              key={item}
-              className="rounded-lg border border-solution-accent-light bg-solution-bg p-3"
-            >
-              <p className="font-mono text-[10px] text-solution-accent leading-snug">
-                {item}
-              </p>
-            </div>
-          )
-        )}
+        {["EVM bytecode", "RPC shape", "ECDSA accounts", "Solidity tools"].map((item) => (
+          <div
+            key={item}
+            className="rounded-lg border border-solution-accent-light bg-solution-bg p-3"
+          >
+            <p className="font-mono text-[10px] text-solution-accent leading-snug">
+              {item}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1016,7 +873,7 @@ function PipelineComparison() {
             <p className="font-mono text-lg text-text-primary tabular-nums">
               {index + 1}
             </p>
-            <p className="font-mono text-[10px] text-text-tertiary uppercase">
+            <p className="font-mono text-[10px] text-text-tertiary">
               {step}
             </p>
           </div>
@@ -1038,7 +895,7 @@ function TimelineCard({
   return (
     <div className="rounded-xl bg-surface border border-border p-4">
       <p className="font-mono text-xs text-text-primary mb-1">{title}</p>
-      <p className="font-mono text-[10px] text-text-tertiary uppercase mb-4">
+      <p className="font-mono text-[10px] text-text-tertiary mb-4">
         {subtitle}
       </p>
       {children}
@@ -1069,41 +926,6 @@ function SegmentedBar({
           </span>
         </motion.div>
       ))}
-    </div>
-  );
-}
-
-function ArchitectureMap() {
-  return (
-    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {ARCHITECTURE.map((part, index) => (
-          <motion.div
-            key={part.title}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.5, delay: index * 0.06 }}
-            className={`rounded-xl border border-border bg-surface p-4 ${
-              index === ARCHITECTURE.length - 1 ? "sm:col-span-2" : ""
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: part.accent }}
-              />
-              <p className="font-mono text-[10px] text-text-tertiary uppercase">
-                {part.label}
-              </p>
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{part.title}</h3>
-            <p className="text-sm text-text-secondary font-light leading-relaxed">
-              {part.body}
-            </p>
-          </motion.div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -1159,7 +981,7 @@ function ParallelExecutionDiagram() {
         ))}
       </div>
       <div className="mt-5 rounded-xl bg-surface border border-border p-4">
-        <p className="font-mono text-[10px] text-text-tertiary uppercase mb-2">
+        <p className="font-mono text-[10px] text-text-tertiary mb-2">
           commit order
         </p>
         <div className="flex flex-wrap items-center gap-2">
@@ -1231,38 +1053,36 @@ function CompatibilityGrid() {
     <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-xl bg-solution-bg border border-solution-accent-light p-5">
-          <p className="font-mono text-xs text-solution-accent uppercase mb-4">
-            carries over
-          </p>
+          <h3 className="text-lg font-semibold text-solution-accent mb-4">
+            Carries over
+          </h3>
           <List
             items={[
               "Solidity and EVM bytecode model",
-              "Ethereum accounts and wallets",
+              "ECDSA accounts and existing wallets",
               "JSON-RPC integration shape",
-              "Familiar deployment flow",
+              "Linear block transaction order",
             ]}
           />
         </div>
         <div className="rounded-xl bg-problem-bg border border-problem-cell-hover p-5">
-          <p className="font-mono text-xs text-problem-accent-strong uppercase mb-4">
-            re-check
-          </p>
+          <h3 className="text-lg font-semibold text-problem-accent-strong mb-4">
+            Re-check
+          </h3>
           <List
             items={[
               "Gas is charged by gas limit",
-              "Opcode and precompile pricing",
-              "Local mempool behavior",
-              "Verified roots for accounting",
+              "Block tags map to Monad states",
+              "Local mempool and propagation",
+              "Indexer and historical-data assumptions",
+              "Newly funded account timing",
             ]}
           />
         </div>
       </div>
       <div className="mt-4 rounded-xl bg-surface border border-border p-4">
-        <p className="font-mono text-[10px] text-text-tertiary uppercase mb-2">
-          practical read
-        </p>
         <p className="text-sm text-text-secondary font-light leading-relaxed">
-          Start with known EVM code. Test with Monad-specific tooling.
+          Port the EVM app. Re-audit the timing model before treating it as production-ready.
         </p>
       </div>
     </div>
@@ -1282,70 +1102,11 @@ function List({ items }: { items: string[] }) {
   );
 }
 
-function FrictionCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-xl bg-surface-elevated border border-border p-5">
-      <h3 className="text-lg font-semibold mb-3">{title}</h3>
-      <p className="text-sm text-text-secondary font-light leading-relaxed">
-        {body}
-      </p>
-    </div>
-  );
-}
-
-function CompactCardsSection({
-  kicker,
-  title,
-  intro,
-}: {
-  kicker: string;
-  title: string;
-  intro: string;
-}) {
-  const { ref, isVisible } = useInView(0.12);
-
-  return (
-    <section className="px-6 py-16">
-      <div
-        ref={ref}
-        className={`max-w-5xl mx-auto section-reveal ${isVisible ? "visible" : ""}`}
-      >
-        <div className="max-w-2xl mb-8">
-          <p className="font-mono text-xs text-text-tertiary uppercase mb-3">
-            {kicker}
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-semibold mb-4">{title}</h2>
-          <p className="text-base text-text-secondary font-light leading-relaxed">
-            {intro}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FrictionCard
-            title="Tooling has versions"
-            body="Use Monad Foundry for local truth."
-          />
-          <FrictionCard
-            title="Indexing is real work"
-            body="Data pipelines become infrastructure."
-          />
-          <FrictionCard
-            title="Assumptions leak"
-            body="Global pending streams map poorly to local mempools."
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function NextSteps() {
   return (
     <section className="px-6 py-16">
       <div className="max-w-5xl mx-auto">
         <div className="max-w-3xl mb-8">
-          <p className="font-mono text-xs text-text-tertiary uppercase mb-3">
-            next step
-          </p>
           <h2 className="text-3xl sm:text-4xl font-semibold mb-5">
             Where next
           </h2>
@@ -1412,59 +1173,5 @@ function NextCard({
     <Link href={href} className={className}>
       {content}
     </Link>
-  );
-}
-
-function Sources() {
-  return (
-    <section className="px-6 pb-24">
-      <div className="max-w-5xl mx-auto border-t border-border pt-6">
-        <p className="font-mono text-[10px] text-text-tertiary uppercase mb-3">
-          source notes
-        </p>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 font-mono text-[11px] text-text-tertiary">
-          <a
-            href="https://docs.monad.xyz/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            Monad docs: introduction
-          </a>
-          <a
-            href="https://docs.monad.xyz/developer-essentials/summary"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            deployment summary
-          </a>
-          <a
-            href="https://docs.monad.xyz/monad-arch/execution/parallel-execution"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            parallel execution
-          </a>
-          <a
-            href="https://docs.monad.xyz/monad-arch/consensus/asynchronous-execution"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            async execution
-          </a>
-          <a
-            href="https://docs.monad.xyz/monad-arch/execution/monaddb"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            MonadDb
-          </a>
-        </div>
-      </div>
-    </section>
   );
 }
