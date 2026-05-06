@@ -10,6 +10,7 @@ Interactive explainers for Monad Improvement Proposals and blockchain research. 
 - **MIP-3** - Linear Memory: replacing quadratic memory costs
 - **MIP-4** - Reserve Balance Introspection: detecting reserve violations mid-execution
 - **MIP-7** - Extension Opcodes: safe opcode expansion via 0xAE namespace
+- **Asynchronous Execution** - visualizing Monad's consensus/execution pipeline
 - **Spam MEV** - Interactive equilibrium model from Category Labs' [Blockspace Under Pressure](https://arxiv.org/abs/2604.00234)
 
 ## Stack

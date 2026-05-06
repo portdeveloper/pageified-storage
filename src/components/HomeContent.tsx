@@ -457,6 +457,60 @@ function MiniBteGrid() {
   );
 }
 
+/* ─── Mini-visualization: async consensus/execution lanes ───────────── */
+function MiniAsyncPipeline() {
+  const blocks = ["N", "N+1", "N+2", "N+3"];
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setStep((s) => (s + 1) % blocks.length), 1800);
+    return () => clearInterval(timer);
+  }, [blocks.length]);
+
+  return (
+    <div className="space-y-3">
+      {[
+        { label: "consensus", accent: "#3b7dd8", offset: 0 },
+        { label: "execution", accent: "#2a7d6a", offset: -1 },
+      ].map((lane) => (
+        <div key={lane.label}>
+          <p className="font-mono text-[9px] text-text-tertiary mb-1">
+            {lane.label}
+          </p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {blocks.map((block, i) => {
+              const active = i === Math.max(0, step + lane.offset);
+              const done = i < Math.max(0, step + lane.offset);
+              return (
+                <motion.div
+                  key={`${lane.label}-${block}`}
+                  animate={{
+                    backgroundColor: active
+                      ? lane.accent
+                      : done
+                      ? "#d4e8e2"
+                      : "#e2ddd7",
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="relative h-7 rounded-[3px] flex items-center justify-center overflow-hidden"
+                >
+                  <span
+                    className={`relative font-mono text-[9px] ${
+                      active ? "text-white" : "text-text-tertiary"
+                    }`}
+                  >
+                    {lane.offset === 0 ? block : i === 0 ? "N-1" : blocks[i - 1]}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Main page ──────────────────────────────────────────────────────── */
 
 export default function HomeContent() {
@@ -478,6 +532,66 @@ export default function HomeContent() {
           <br className="hidden sm:block" />
           {t("home.subtitleBreak")}
         </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.7,
+          delay: 0.25,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="w-full max-w-4xl mt-12 mb-16"
+      >
+        <Link
+          href="/monad-101"
+          aria-label="Read Monad 101"
+          className="group block bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            <div className="p-8 flex flex-col justify-center">
+              <MiniAsyncPipeline />
+              <p className="font-mono text-[10px] text-text-tertiary mt-3">
+                The prerequisite model for the rest of MIP Land
+              </p>
+            </div>
+            <div className="p-8 flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="font-mono text-[11px] text-text-tertiary">
+                  Start here
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-semibold mb-2 group-hover:text-solution-accent transition-colors duration-300">
+                Monad 101
+              </h2>
+              <p className="font-mono text-[11px] text-text-tertiary mb-3">
+                What Monad is, before the proposals
+              </p>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                A visual primer on shared state, Ethereum compatibility, and
+                why Monad&apos;s architecture is a pipeline rather than a feature
+                list.
+              </p>
+              <span className="inline-flex items-center gap-1 mt-5 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
+                Read
+                <svg
+                  className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-300"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </Link>
       </motion.div>
 
       {/* Section label */}
@@ -593,6 +707,82 @@ export default function HomeContent() {
             index={2}
           />
         </div>
+      </div>
+
+      {/* Architecture section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.78 }}
+        className="w-full max-w-4xl mb-5 mt-2"
+      >
+        <p className="font-mono text-[11px] text-text-tertiary uppercase">
+          Architecture
+        </p>
+      </motion.div>
+
+      <div className="w-full max-w-4xl mb-28">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.7,
+            delay: 0.83,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        >
+          <Link
+            href="/async-execution"
+            aria-label="Explore Asynchronous Execution"
+            className="group block bg-surface-elevated rounded-2xl border border-border hover:border-text-tertiary/40 transition-all duration-300 hover:shadow-md overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+              <div className="p-8 flex flex-col justify-center">
+                <MiniAsyncPipeline />
+                <p className="font-mono text-[10px] text-text-tertiary mt-3">
+                  Consensus orders blocks while execution catches up beside it
+                </p>
+              </div>
+              <div className="p-8 flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-mono text-[11px] text-text-tertiary">
+                    Monad architecture
+                  </span>
+                  <span className="font-mono text-[10px] text-text-tertiary bg-surface px-1.5 py-0.5 rounded-full">
+                    beta
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-semibold mb-2 group-hover:text-solution-accent transition-colors duration-300">
+                  Asynchronous Execution
+                </h2>
+                <p className="font-mono text-[11px] text-text-tertiary mb-3">
+                  Decoupling consensus from execution
+                </p>
+                <p className="text-sm text-text-secondary leading-relaxed">
+                  See how Monad gives execution a full block-time budget by
+                  letting consensus agree on transaction order first, then
+                  verifying state through delayed Merkle roots.
+                </p>
+                <span className="inline-flex items-center gap-1 mt-5 font-mono text-xs text-text-tertiary group-hover:text-text-secondary transition-colors duration-300">
+                  Explore
+                  <svg
+                    className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
       </div>
 
       {/* Research section */}
