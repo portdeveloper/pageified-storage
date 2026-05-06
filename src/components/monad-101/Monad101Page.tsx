@@ -207,8 +207,8 @@ function BlockStatesDiagram() {
       color: colors.solutionAccent,
     },
     {
-      label: "Verified root",
-      time: "N-D",
+      label: "Verified",
+      time: "finalized - D",
       body: "Delayed root assurance",
       color: colors.textPrimary,
     },
@@ -250,33 +250,27 @@ function BlockStatesDiagram() {
 }
 
 // Tick-driven hero animation. The loop tells one story:
-// familiar Ethereum-shaped txs enter, consensus orders a block, execution fans
+// familiar EVM-shaped txs enter, consensus orders a block, execution fans
 // out beside the next consensus slot, then results merge into one EVM state.
 const HERO_TICK_MS = 1150;
 const HERO_TICKS = 6;
-const HERO_BAR_START = 216;
-const HERO_BAR_W = 220;
+const HERO_BAR_START = 250;
+const HERO_BAR_W = 198;
+const HERO_COMMIT_Y = 344;
 const HERO_EASE = [0.16, 1, 0.3, 1] as const;
 
 const HERO_INPUT_TXS = [
-  { id: "swap", y: 112, tone: colors.userAccent },
-  { id: "mint", y: 142, tone: colors.solutionAccent },
-  { id: "send", y: 172, tone: colors.problemAccentStrong },
-  { id: "call", y: 202, tone: colors.textTertiary },
+  { id: "swap", y: 88, tone: colors.userAccent },
+  { id: "mint", y: 116, tone: colors.solutionAccent },
+  { id: "send", y: 144, tone: colors.problemAccentStrong },
+  { id: "call", y: 172, tone: colors.textTertiary },
 ];
 
 const HERO_EXEC_TXS = [
-  { id: "swap", y: 204, width: 196, commitX: 472, retry: true },
-  { id: "mint", y: 234, width: 176, commitX: 520 },
-  { id: "send", y: 264, width: 210, commitX: 568 },
-  { id: "call", y: 294, width: 158, commitX: 616 },
-];
-
-const HERO_METRICS = [
-  ["10,000", "tx/s"],
-  ["400ms", "blocks"],
-  ["800ms", "finality"],
-  ["EVM", "compatible"],
+  { id: "swap", y: 240, width: 176, commitX: 476, retry: true },
+  { id: "mint", y: 266, width: 164, commitX: 522 },
+  { id: "send", y: 292, width: 190, commitX: 568 },
+  { id: "call", y: 318, width: 154, commitX: 614 },
 ];
 
 function PipelineHeroVisual() {
@@ -301,21 +295,25 @@ function PipelineHeroVisual() {
     : { duration: 0.58, ease: HERO_EASE };
 
   const statusByTick = [
-    "Ethereum-shaped txs enter",
-    "consensus seals Block N",
-    "Block N executes beside Block N+1",
-    "parallel results merge in order",
-    "one canonical EVM state",
-    "next block enters the pipeline",
+    { label: "EVM-shaped txs enter", color: colors.problemAccentStrong },
+    { label: "consensus orders Block N", color: colors.userAccent },
+    { label: "Block N executes beside Block N+1", color: colors.solutionAccent },
+    { label: "parallel results merge in order", color: colors.solutionAccent },
+    { label: "one canonical EVM state", color: colors.solutionAccent },
+    { label: "the next block keeps moving", color: colors.userAccent },
   ];
 
   return (
     <div className="bg-surface-elevated rounded-xl p-5 sm:p-6 shadow-sm border border-border">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="w-2 h-2 rounded-full bg-problem-accent shrink-0" />
+          <motion.span
+            className="w-2 h-2 rounded-full shrink-0"
+            animate={{ backgroundColor: statusByTick[tick].color }}
+            transition={transition}
+          />
           <p className="font-mono text-[11px] text-text-tertiary truncate">
-            {statusByTick[tick]}
+            {statusByTick[tick].label}
           </p>
         </div>
         <div className="flex items-center gap-3 font-mono text-[10px] text-text-tertiary shrink-0">
@@ -333,7 +331,7 @@ function PipelineHeroVisual() {
       <svg
         key={cycle}
         role="img"
-        aria-label="A pipeline diagram showing familiar Ethereum transactions entering Monad, consensus ordering Block N, execution running in parallel beside consensus for Block N plus one, results merging serially, and one canonical EVM state being produced."
+        aria-label="A pipeline diagram showing familiar EVM transactions entering Monad, consensus ordering Block N, execution running in parallel beside consensus for Block N plus one, results merging serially, and one canonical EVM state being produced."
         viewBox="0 0 680 380"
         className="relative aspect-[1.79] w-full"
       >
@@ -352,28 +350,51 @@ function PipelineHeroVisual() {
         </defs>
 
         <rect
-          x={18}
-          y={42}
-          width={644}
-          height={292}
+          x={8}
+          y={8}
+          width={664}
+          height={360}
           rx={10}
           fill={colors.surface}
           stroke={colors.borderSoft}
         />
 
+        <motion.rect
+          x={20}
+          y={36}
+          width={640}
+          height={148}
+          rx={8}
+          fill={colors.userBg}
+          initial={{ opacity: 0.12 }}
+          animate={{ opacity: tick >= 1 && tick <= 2 ? 0.52 : 0.16 }}
+          transition={transition}
+        />
+        <motion.rect
+          x={20}
+          y={202}
+          width={640}
+          height={158}
+          rx={8}
+          fill={colors.solutionBg}
+          initial={{ opacity: 0.12 }}
+          animate={{ opacity: tick >= 2 && tick <= 4 ? 0.52 : 0.16 }}
+          transition={transition}
+        />
+
         <line
-          x1={42}
-          x2={638}
-          y1={164}
-          y2={164}
+          x1={32}
+          x2={648}
+          y1={190}
+          y2={190}
           stroke={colors.borderSoft}
           strokeWidth="1"
           strokeDasharray="3 4"
         />
 
         <text
-          x={42}
-          y={76}
+          x={32}
+          y={62}
           fontSize="11"
           fontFamily="monospace"
           fill={colors.textTertiary}
@@ -381,8 +402,8 @@ function PipelineHeroVisual() {
           EVM input
         </text>
         <text
-          x={214}
-          y={76}
+          x={226}
+          y={62}
           fontSize="11"
           fontFamily="monospace"
           fill={colors.userAccent}
@@ -390,8 +411,8 @@ function PipelineHeroVisual() {
           Consensus
         </text>
         <text
-          x={214}
-          y={174}
+          x={226}
+          y={222}
           fontSize="11"
           fontFamily="monospace"
           fill={colors.solutionAccent}
@@ -399,8 +420,8 @@ function PipelineHeroVisual() {
           Execution
         </text>
         <text
-          x={488}
-          y={174}
+          x={500}
+          y={222}
           fontSize="11"
           fontFamily="monospace"
           fill={colors.textTertiary}
@@ -419,17 +440,17 @@ function PipelineHeroVisual() {
             transition={{ ...transition, delay: shouldReduceMotion ? 0 : index * 0.04 }}
           >
             <rect
-              x={42}
-              y={tx.y - 13}
-              width={96}
-              height={26}
+              x={32}
+              y={tx.y - 11}
+              width={104}
+              height={22}
               rx={5}
               fill={colors.surfaceElevated}
               stroke={tx.tone}
             />
-            <circle cx={58} cy={tx.y} r={4} fill={tx.tone} />
+            <circle cx={48} cy={tx.y} r={4} fill={tx.tone} />
             <text
-              x={70}
+              x={60}
               y={tx.y + 4}
               fontSize="10"
               fontFamily="monospace"
@@ -441,10 +462,10 @@ function PipelineHeroVisual() {
         ))}
 
         <motion.line
-          x1={150}
-          x2={204}
-          y1={176}
-          y2={176}
+          x1={146}
+          x2={208}
+          y1={144}
+          y2={108}
           stroke={colors.textTertiary}
           strokeWidth="1.5"
           strokeDasharray="4 5"
@@ -455,22 +476,25 @@ function PipelineHeroVisual() {
         />
 
         <motion.g
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: tick >= 1 ? 1 : 0, y: tick >= 1 ? 0 : 8 }}
+          initial={{ opacity: 0.42, y: 0 }}
+          animate={{
+            opacity: tick >= 1 ? 1 : 0.42,
+            y: tick >= 1 ? 0 : 2,
+          }}
           transition={transition}
         >
           <rect
-            x={204}
-            y={104}
-            width={156}
-            height={46}
+            x={220}
+            y={78}
+            width={152}
+            height={58}
             rx={7}
             fill={colors.userBg}
             stroke={colors.userAccent}
           />
           <text
-            x={282}
-            y={124}
+            x={296}
+            y={101}
             fontSize="12"
             fontFamily="monospace"
             fill={colors.userAccent}
@@ -479,8 +503,8 @@ function PipelineHeroVisual() {
             Block N
           </text>
           <text
-            x={282}
-            y={140}
+            x={296}
+            y={119}
             fontSize="9"
             fontFamily="monospace"
             fill={colors.textTertiary}
@@ -491,32 +515,35 @@ function PipelineHeroVisual() {
         </motion.g>
 
         <motion.g
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: tick >= 2 ? 1 : 0, y: tick >= 2 ? 0 : 8 }}
+          initial={{ opacity: 0.36, y: 0 }}
+          animate={{
+            opacity: tick >= 2 ? 1 : 0.36,
+            y: tick >= 2 ? 0 : 2,
+          }}
           transition={transition}
         >
           <rect
-            x={398}
-            y={104}
-            width={156}
-            height={46}
+            x={414}
+            y={78}
+            width={152}
+            height={58}
             rx={7}
-            fill={colors.surfaceElevated}
-            stroke={colors.border}
+            fill={tick >= 2 ? colors.userBg : colors.surfaceElevated}
+            stroke={tick >= 2 ? colors.userAccent : colors.border}
           />
           <text
-            x={476}
-            y={124}
+            x={490}
+            y={101}
             fontSize="12"
             fontFamily="monospace"
-            fill={colors.textPrimary}
+            fill={tick >= 2 ? colors.userAccent : colors.textPrimary}
             textAnchor="middle"
           >
             Block N+1
           </text>
           <text
-            x={476}
-            y={140}
+            x={490}
+            y={119}
             fontSize="9"
             fontFamily="monospace"
             fill={colors.textTertiary}
@@ -527,10 +554,10 @@ function PipelineHeroVisual() {
         </motion.g>
 
         <motion.line
-          x1={360}
-          x2={398}
-          y1={127}
-          y2={127}
+          x1={372}
+          x2={414}
+          y1={108}
+          y2={108}
           stroke={colors.border}
           strokeWidth="1.5"
           markerEnd="url(#hero-arrow)"
@@ -539,10 +566,22 @@ function PipelineHeroVisual() {
           transition={transition}
         />
 
+        <motion.path
+          d="M296 136 C306 174 324 210 350 232"
+          fill="none"
+          stroke={colors.solutionAccent}
+          strokeWidth="1.5"
+          strokeDasharray="4 5"
+          markerEnd="url(#hero-arrow)"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: tick >= 2 ? 0.7 : 0 }}
+          transition={transition}
+        />
+
         {HERO_EXEC_TXS.map((tx, index) => (
           <g key={tx.id}>
             <text
-              x={198}
+              x={224}
               y={tx.y + 4}
               fontSize="10"
               fontFamily="monospace"
@@ -603,10 +642,10 @@ function PipelineHeroVisual() {
               </motion.g>
             )}
             <motion.line
-              x1={HERO_BAR_START + tx.width + 8}
+              x1={HERO_BAR_START + tx.width + 5}
               x2={tx.commitX}
               y1={tx.y}
-              y2={320}
+              y2={HERO_COMMIT_Y}
               stroke={colors.textTertiary}
               strokeWidth="1"
               strokeDasharray="3 5"
@@ -623,10 +662,10 @@ function PipelineHeroVisual() {
           transition={transition}
         >
           <line
-            x1={462}
-            x2={616}
-            y1={320}
-            y2={320}
+            x1={476}
+            x2={614}
+            y1={HERO_COMMIT_Y}
+            y2={HERO_COMMIT_Y}
             stroke={colors.textPrimary}
             strokeWidth="1.5"
             strokeLinecap="round"
@@ -635,7 +674,7 @@ function PipelineHeroVisual() {
             <g key={`${tx.id}-commit`}>
               <circle
                 cx={tx.commitX}
-                cy={320}
+                cy={HERO_COMMIT_Y}
                 r={12}
                 fill={colors.surfaceElevated}
                 stroke={colors.textPrimary}
@@ -643,7 +682,7 @@ function PipelineHeroVisual() {
               />
               <text
                 x={tx.commitX}
-                y={324}
+                y={HERO_COMMIT_Y + 4}
                 fontSize="10"
                 fontFamily="monospace"
                 fill={colors.textPrimary}
@@ -664,17 +703,17 @@ function PipelineHeroVisual() {
           transition={transition}
         >
           <rect
-            x={482}
-            y={218}
-            width={142}
-            height={58}
+            x={496}
+            y={232}
+            width={144}
+            height={62}
             rx={8}
             fill={colors.solutionBg}
             stroke={colors.solutionAccent}
           />
           <text
-            x={553}
-            y={242}
+            x={568}
+            y={258}
             fontSize="12"
             fontFamily="monospace"
             fill={colors.solutionAccent}
@@ -683,8 +722,8 @@ function PipelineHeroVisual() {
             canonical state
           </text>
           <text
-            x={553}
-            y={258}
+            x={568}
+            y={276}
             fontSize="9"
             fontFamily="monospace"
             fill={colors.textTertiary}
@@ -695,10 +734,10 @@ function PipelineHeroVisual() {
         </motion.g>
 
         <motion.line
-          x1={554}
-          x2={554}
-          y1={286}
-          y2={304}
+          x1={568}
+          x2={568}
+          y1={302}
+          y2={328}
           stroke={colors.solutionAccent}
           strokeWidth="1.5"
           markerEnd="url(#hero-arrow)"
@@ -707,35 +746,7 @@ function PipelineHeroVisual() {
           transition={transition}
         />
 
-        <motion.text
-          x={340}
-          y={360}
-          fontSize="10"
-          fontFamily="monospace"
-          fill={colors.textTertiary}
-          textAnchor="middle"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 5 ? 1 : 0 }}
-          transition={transition}
-        >
-          fresh blocks keep sliding through the same pipeline
-        </motion.text>
       </svg>
-
-      <div className="mt-4 pt-4 border-t border-border">
-        <div className="grid grid-cols-4 gap-2">
-          {HERO_METRICS.map(([value, label]) => (
-            <div key={value} className="min-w-0">
-              <p className="font-mono text-xs sm:text-sm font-semibold text-text-primary tabular-nums leading-none">
-                {value}
-              </p>
-              <p className="mt-1 font-mono text-[9px] text-text-tertiary truncate">
-                {label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -849,7 +860,7 @@ function PipelineComparison() {
             {[
               ["consensus orders block N", colors.userAccent, 0],
               ["execution processes block N-1", colors.solutionAccent, 0.12],
-              ["state root verifies earlier block", colors.problemAccentStrong, 0.24],
+              ["finalized block verifies N-D root", colors.problemAccentStrong, 0.24],
             ].map(([label, color, delay]) => (
               <motion.div
                 key={label}
