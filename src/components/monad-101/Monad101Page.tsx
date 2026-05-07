@@ -147,7 +147,7 @@ function Hero() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-12 mb-16 relative z-10 w-full max-w-2xl"
+        className="mt-12 mb-16 relative z-10 w-full max-w-5xl"
       >
         <PipelineHeroVisual />
       </motion.div>
@@ -249,29 +249,23 @@ function BlockStatesDiagram() {
   );
 }
 
-// Tick-driven hero animation. The loop tells one story:
-// familiar EVM-shaped txs enter, consensus orders a block, execution fans
-// out beside the next consensus slot, then results merge into one EVM state.
-const HERO_TICK_MS = 1150;
-const HERO_TICKS = 6;
-const HERO_BAR_START = 250;
-const HERO_BAR_W = 198;
-const HERO_COMMIT_Y = 344;
+// Horizontal movement means sequence; vertical pairing means overlap.
+const HERO_TICK_MS = 1250;
 const HERO_EASE = [0.16, 1, 0.3, 1] as const;
-
-const HERO_INPUT_TXS = [
-  { id: "swap", y: 88, tone: colors.userAccent },
-  { id: "mint", y: 116, tone: colors.solutionAccent },
-  { id: "send", y: 144, tone: colors.problemAccentStrong },
-  { id: "call", y: 172, tone: colors.textTertiary },
+const HERO_CARD_W = 164;
+const HERO_CARD_H = 62;
+const HERO_COLUMNS = [
+  { x: 72, consensusOffset: 0 },
+  { x: 286, consensusOffset: 1 },
+  { x: 500, consensusOffset: 2 },
+  { x: 714, consensusOffset: 3 },
 ];
 
-const HERO_EXEC_TXS = [
-  { id: "swap", y: 240, width: 176, commitX: 476, retry: true },
-  { id: "mint", y: 266, width: 164, commitX: 522 },
-  { id: "send", y: 292, width: 190, commitX: 568 },
-  { id: "call", y: 318, width: 154, commitX: 614 },
-];
+function blockLabel(offset: number) {
+  if (offset === 0) return "N";
+  if (offset > 0) return `N+${offset}`;
+  return `N${offset}`;
+}
 
 function PipelineHeroVisual() {
   const shouldReduceMotion = !!useReducedMotion();
@@ -279,7 +273,7 @@ function PipelineHeroVisual() {
 
   useEffect(() => {
     if (shouldReduceMotion) {
-      const id = setTimeout(() => setFrame(4), 0);
+      const id = setTimeout(() => setFrame(1), 0);
       return () => clearTimeout(id);
     }
     const id = setInterval(() => {
@@ -288,52 +282,24 @@ function PipelineHeroVisual() {
     return () => clearInterval(id);
   }, [shouldReduceMotion]);
 
-  const tick = frame % HERO_TICKS;
-  const cycle = Math.floor(frame / HERO_TICKS);
+  const activeIndex = shouldReduceMotion
+    ? 1
+    : (frame % (HERO_COLUMNS.length - 1)) + 1;
+  const activeColumn = HERO_COLUMNS[activeIndex];
   const transition = shouldReduceMotion
     ? { duration: 0 }
-    : { duration: 0.58, ease: HERO_EASE };
-
-  const statusByTick = [
-    { label: "EVM-shaped txs enter", color: colors.problemAccentStrong },
-    { label: "consensus orders Block N", color: colors.userAccent },
-    { label: "Block N executes beside Block N+1", color: colors.solutionAccent },
-    { label: "parallel results merge in order", color: colors.solutionAccent },
-    { label: "one canonical EVM state", color: colors.solutionAccent },
-    { label: "the next block keeps moving", color: colors.userAccent },
-  ];
+    : { duration: 0.62, ease: HERO_EASE };
+  const flowTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 1.1, ease: "linear", repeat: Infinity };
 
   return (
     <div className="bg-surface-elevated rounded-xl p-5 sm:p-6 shadow-sm border border-border">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <motion.span
-            className="w-2 h-2 rounded-full shrink-0"
-            animate={{ backgroundColor: statusByTick[tick].color }}
-            transition={transition}
-          />
-          <p className="font-mono text-[11px] text-text-tertiary truncate">
-            {statusByTick[tick].label}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 font-mono text-[10px] text-text-tertiary shrink-0">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block bg-user-accent" />
-            consensus
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block bg-solution-accent" />
-            execution
-          </span>
-        </div>
-      </div>
-
       <svg
-        key={cycle}
         role="img"
-        aria-label="A pipeline diagram showing familiar EVM transactions entering Monad, consensus ordering Block N, execution running in parallel beside consensus for Block N plus one, results merging serially, and one canonical EVM state being produced."
-        viewBox="0 0 680 380"
-        className="relative aspect-[1.79] w-full"
+        aria-label="A two-lane pipeline showing consensus ordering the next block above execution of the current block at the same moment."
+        viewBox="0 0 950 360"
+        className="relative aspect-[2.64] w-full"
       >
         <defs>
           <marker
@@ -352,400 +318,247 @@ function PipelineHeroVisual() {
         <rect
           x={8}
           y={8}
-          width={664}
-          height={360}
+          width={934}
+          height={344}
           rx={10}
           fill={colors.surface}
           stroke={colors.borderSoft}
         />
 
-        <motion.rect
-          x={20}
-          y={36}
-          width={640}
-          height={148}
+        <rect
+          x={44}
+          y={64}
+          width={862}
+          height={96}
           rx={8}
           fill={colors.userBg}
-          initial={{ opacity: 0.12 }}
-          animate={{ opacity: tick >= 1 && tick <= 2 ? 0.52 : 0.16 }}
-          transition={transition}
+          opacity={0.5}
         />
-        <motion.rect
-          x={20}
-          y={202}
-          width={640}
-          height={158}
+        <rect
+          x={44}
+          y={198}
+          width={862}
+          height={96}
           rx={8}
           fill={colors.solutionBg}
-          initial={{ opacity: 0.12 }}
-          animate={{ opacity: tick >= 2 && tick <= 4 ? 0.52 : 0.16 }}
-          transition={transition}
-        />
-
-        <line
-          x1={32}
-          x2={648}
-          y1={190}
-          y2={190}
-          stroke={colors.borderSoft}
-          strokeWidth="1"
-          strokeDasharray="3 4"
+          opacity={0.5}
         />
 
         <text
-          x={32}
-          y={62}
-          fontSize="11"
-          fontFamily="monospace"
-          fill={colors.textTertiary}
-        >
-          EVM input
-        </text>
-        <text
-          x={226}
-          y={62}
+          x={64}
+          y={52}
           fontSize="11"
           fontFamily="monospace"
           fill={colors.userAccent}
         >
-          Consensus
+          consensus
         </text>
         <text
-          x={226}
-          y={222}
+          x={64}
+          y={186}
           fontSize="11"
           fontFamily="monospace"
           fill={colors.solutionAccent}
         >
-          Execution
-        </text>
-        <text
-          x={500}
-          y={222}
-          fontSize="11"
-          fontFamily="monospace"
-          fill={colors.textTertiary}
-        >
-          Commit
+          execution
         </text>
 
-        {HERO_INPUT_TXS.map((tx, index) => (
-          <motion.g
-            key={tx.id}
-            initial={{ opacity: 0, x: -18 }}
-            animate={{
-              opacity: tick <= 2 ? 1 : 0.16,
-              x: tick >= 1 ? 10 : 0,
-            }}
-            transition={{ ...transition, delay: shouldReduceMotion ? 0 : index * 0.04 }}
-          >
-            <rect
-              x={32}
-              y={tx.y - 11}
-              width={104}
-              height={22}
-              rx={5}
-              fill={colors.surfaceElevated}
-              stroke={tx.tone}
-            />
-            <circle cx={48} cy={tx.y} r={4} fill={tx.tone} />
-            <text
-              x={60}
-              y={tx.y + 4}
-              fontSize="10"
-              fontFamily="monospace"
-              fill={colors.textPrimary}
-            >
-              {tx.id}
-            </text>
-          </motion.g>
-        ))}
-
-        <motion.line
-          x1={146}
-          x2={208}
-          y1={144}
-          y2={108}
-          stroke={colors.textTertiary}
-          strokeWidth="1.5"
-          strokeDasharray="4 5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 1 ? 0.65 : 0 }}
-          transition={transition}
-        />
-
-        <motion.g
-          initial={{ opacity: 0.42, y: 0 }}
-          animate={{
-            opacity: tick >= 1 ? 1 : 0.42,
-            y: tick >= 1 ? 0 : 2,
-          }}
-          transition={transition}
-        >
-          <rect
-            x={220}
-            y={78}
-            width={152}
-            height={58}
-            rx={7}
-            fill={colors.userBg}
-            stroke={colors.userAccent}
-          />
-          <text
-            x={296}
-            y={101}
-            fontSize="12"
-            fontFamily="monospace"
-            fill={colors.userAccent}
-            textAnchor="middle"
-          >
-            Block N
-          </text>
-          <text
-            x={296}
-            y={119}
-            fontSize="9"
-            fontFamily="monospace"
-            fill={colors.textTertiary}
-            textAnchor="middle"
-          >
-            ordered in consensus
-          </text>
-        </motion.g>
-
-        <motion.g
-          initial={{ opacity: 0.36, y: 0 }}
-          animate={{
-            opacity: tick >= 2 ? 1 : 0.36,
-            y: tick >= 2 ? 0 : 2,
-          }}
-          transition={transition}
-        >
-          <rect
-            x={414}
-            y={78}
-            width={152}
-            height={58}
-            rx={7}
-            fill={tick >= 2 ? colors.userBg : colors.surfaceElevated}
-            stroke={tick >= 2 ? colors.userAccent : colors.border}
-          />
-          <text
-            x={490}
-            y={101}
-            fontSize="12"
-            fontFamily="monospace"
-            fill={tick >= 2 ? colors.userAccent : colors.textPrimary}
-            textAnchor="middle"
-          >
-            Block N+1
-          </text>
-          <text
-            x={490}
-            y={119}
-            fontSize="9"
-            fontFamily="monospace"
-            fill={colors.textTertiary}
-            textAnchor="middle"
-          >
-            ordering starts
-          </text>
-        </motion.g>
-
-        <motion.line
-          x1={372}
-          x2={414}
-          y1={108}
-          y2={108}
+        <motion.rect
+          x={activeColumn.x - 14}
+          y={48}
+          width={HERO_CARD_W + 28}
+          height={262}
+          rx={8}
+          fill={colors.surfaceElevated}
+          opacity={0.7}
           stroke={colors.border}
-          strokeWidth="1.5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 2 ? 0.9 : 0 }}
+          initial={false}
+          animate={{ x: activeColumn.x - 14 }}
           transition={transition}
         />
 
-        <motion.path
-          d="M296 136 C306 174 324 210 350 232"
-          fill="none"
+        <motion.line
+          x1={activeColumn.x + HERO_CARD_W / 2}
+          x2={activeColumn.x + HERO_CARD_W / 2}
+          y1={138}
+          y2={220}
           stroke={colors.solutionAccent}
           strokeWidth="1.5"
           strokeDasharray="4 5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 2 ? 0.7 : 0 }}
+          initial={false}
+          animate={{
+            x1: activeColumn.x + HERO_CARD_W / 2,
+            x2: activeColumn.x + HERO_CARD_W / 2,
+          }}
           transition={transition}
         />
+        <motion.rect
+          x={activeColumn.x + 38}
+          y={164}
+          width={88}
+          height={24}
+          rx={5}
+          fill={colors.surface}
+          stroke={colors.borderSoft}
+          initial={false}
+          animate={{ x: activeColumn.x + 38 }}
+          transition={transition}
+        />
+        <motion.text
+          x={activeColumn.x + HERO_CARD_W / 2}
+          y={180}
+          fontSize="10"
+          fontFamily="monospace"
+          fill={colors.textTertiary}
+          textAnchor="middle"
+          initial={false}
+          animate={{ x: activeColumn.x + HERO_CARD_W / 2 }}
+          transition={transition}
+        >
+          same moment
+        </motion.text>
 
-        {HERO_EXEC_TXS.map((tx, index) => (
-          <g key={tx.id}>
-            <text
-              x={224}
-              y={tx.y + 4}
-              fontSize="10"
-              fontFamily="monospace"
-              fill={colors.textTertiary}
-              textAnchor="end"
-            >
-              {tx.id}
-            </text>
-            <rect
-              x={HERO_BAR_START}
-              y={tx.y - 8}
-              width={HERO_BAR_W}
-              height={16}
-              rx={8}
-              fill={colors.borderSoft}
-            />
-            <motion.rect
-              x={HERO_BAR_START}
-              y={tx.y - 8}
-              height={16}
-              rx={8}
-              fill={colors.solutionAccentLight}
-              initial={{ width: 0, opacity: 0 }}
-              animate={{
-                width: tick >= 2 ? tx.width : 0,
-                opacity: tick >= 2 ? 1 : 0,
-              }}
-              transition={{ ...transition, delay: shouldReduceMotion ? 0 : index * 0.08 }}
-            />
-            {tx.retry && (
-              <motion.g
-                initial={{ opacity: 0, scale: 0.88 }}
-                animate={{
-                  opacity: tick === 3 ? 1 : 0,
-                  scale: tick === 3 ? 1 : 0.88,
-                }}
-                transition={transition}
-              >
-                <rect
-                  x={HERO_BAR_START + 82}
-                  y={tx.y - 14}
-                  width={48}
-                  height={28}
-                  rx={5}
-                  fill={colors.problemBg}
-                  stroke={colors.problemAccentStrong}
-                />
-                <text
-                  x={HERO_BAR_START + 106}
-                  y={tx.y + 4}
-                  fontSize="9"
-                  fontFamily="monospace"
-                  fill={colors.problemAccentStrong}
-                  textAnchor="middle"
-                >
-                  retry
-                </text>
-              </motion.g>
-            )}
+        {HERO_COLUMNS.slice(0, -1).map((column, index) => (
+          <g key={`lane-arrow-${column.consensusOffset}`}>
             <motion.line
-              x1={HERO_BAR_START + tx.width + 5}
-              x2={tx.commitX}
-              y1={tx.y}
-              y2={HERO_COMMIT_Y}
+              x1={column.x + HERO_CARD_W + 10}
+              x2={HERO_COLUMNS[index + 1].x - 10}
+              y1={113}
+              y2={113}
               stroke={colors.textTertiary}
-              strokeWidth="1"
-              strokeDasharray="3 5"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: tick >= 3 ? 0.42 : 0 }}
-              transition={transition}
+              strokeWidth="1.3"
+              strokeDasharray="5 7"
+              markerEnd="url(#hero-arrow)"
+              opacity={0.52}
+              animate={{ strokeDashoffset: shouldReduceMotion ? 0 : -24 }}
+              transition={flowTransition}
+            />
+            <motion.line
+              x1={column.x + HERO_CARD_W + 10}
+              x2={HERO_COLUMNS[index + 1].x - 10}
+              y1={247}
+              y2={247}
+              stroke={colors.textTertiary}
+              strokeWidth="1.3"
+              strokeDasharray="5 7"
+              markerEnd="url(#hero-arrow)"
+              opacity={0.52}
+              animate={{ strokeDashoffset: shouldReduceMotion ? 0 : -24 }}
+              transition={flowTransition}
             />
           </g>
         ))}
 
-        <motion.g
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: tick >= 3 ? 1 : 0, y: tick >= 3 ? 0 : 10 }}
-          transition={transition}
-        >
-          <line
-            x1={476}
-            x2={614}
-            y1={HERO_COMMIT_Y}
-            y2={HERO_COMMIT_Y}
-            stroke={colors.textPrimary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          {HERO_EXEC_TXS.map((tx, index) => (
-            <g key={`${tx.id}-commit`}>
-              <circle
-                cx={tx.commitX}
-                cy={HERO_COMMIT_Y}
-                r={12}
-                fill={colors.surfaceElevated}
-                stroke={colors.textPrimary}
-                strokeWidth="1.5"
-              />
-              <text
-                x={tx.commitX}
-                y={HERO_COMMIT_Y + 4}
-                fontSize="10"
-                fontFamily="monospace"
-                fill={colors.textPrimary}
-                textAnchor="middle"
+        {HERO_COLUMNS.map((column, index) => {
+          const isActive = index === activeIndex;
+          const isPast = index < activeIndex;
+          const consensusBlock = blockLabel(column.consensusOffset);
+          const executionBlock = blockLabel(column.consensusOffset - 1);
+
+          return (
+            <g key={consensusBlock}>
+              <motion.g
+                initial={false}
+                animate={{
+                  opacity: isActive ? 1 : isPast ? 0.42 : 0.66,
+                  y: isActive ? -3 : 0,
+                }}
+                transition={transition}
               >
-                {index + 1}
-              </text>
+                <rect
+                  x={column.x}
+                  y={82}
+                  width={HERO_CARD_W}
+                  height={HERO_CARD_H}
+                  rx={7}
+                  fill={isActive ? colors.userBg : colors.surfaceElevated}
+                  stroke={isActive ? colors.userAccent : colors.border}
+                  strokeWidth={isActive ? 1.6 : 1}
+                />
+                <text
+                  x={column.x + HERO_CARD_W / 2}
+                  y={108}
+                  fontSize="12"
+                  fontFamily="monospace"
+                  fill={isActive ? colors.userAccent : colors.textPrimary}
+                  textAnchor="middle"
+                >
+                  order Block {consensusBlock}
+                </text>
+                <text
+                  x={column.x + HERO_CARD_W / 2}
+                  y={127}
+                  fontSize="9"
+                  fontFamily="monospace"
+                  fill={colors.textTertiary}
+                  textAnchor="middle"
+                >
+                  official transaction order
+                </text>
+              </motion.g>
+
+              <motion.g
+                initial={false}
+                animate={{
+                  opacity: isActive ? 1 : isPast ? 0.42 : 0.66,
+                  y: isActive ? 3 : 0,
+                }}
+                transition={transition}
+              >
+                <rect
+                  x={column.x}
+                  y={216}
+                  width={HERO_CARD_W}
+                  height={HERO_CARD_H}
+                  rx={7}
+                  fill={isActive ? colors.solutionBg : colors.surfaceElevated}
+                  stroke={isActive ? colors.solutionAccent : colors.border}
+                  strokeWidth={isActive ? 1.6 : 1}
+                />
+                <text
+                  x={column.x + HERO_CARD_W / 2}
+                  y={242}
+                  fontSize="12"
+                  fontFamily="monospace"
+                  fill={isActive ? colors.solutionAccent : colors.textPrimary}
+                  textAnchor="middle"
+                >
+                  execute Block {executionBlock}
+                </text>
+                <text
+                  x={column.x + HERO_CARD_W / 2}
+                  y={261}
+                  fontSize="9"
+                  fontFamily="monospace"
+                  fill={colors.textTertiary}
+                  textAnchor="middle"
+                >
+                  deterministic EVM result
+                </text>
+              </motion.g>
             </g>
-          ))}
-        </motion.g>
+          );
+        })}
 
-        <motion.g
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{
-            opacity: tick >= 4 ? 1 : 0,
-            scale: tick >= 4 ? 1 : 0.96,
-          }}
-          transition={transition}
-        >
-          <rect
-            x={496}
-            y={232}
-            width={144}
-            height={62}
-            rx={8}
-            fill={colors.solutionBg}
-            stroke={colors.solutionAccent}
-          />
-          <text
-            x={568}
-            y={258}
-            fontSize="12"
-            fontFamily="monospace"
-            fill={colors.solutionAccent}
-            textAnchor="middle"
-          >
-            canonical state
-          </text>
-          <text
-            x={568}
-            y={276}
-            fontSize="9"
-            fontFamily="monospace"
-            fill={colors.textTertiary}
-            textAnchor="middle"
-          >
-            same serial EVM result
-          </text>
-        </motion.g>
-
-        <motion.line
-          x1={568}
-          x2={568}
-          y1={302}
-          y2={328}
-          stroke={colors.solutionAccent}
-          strokeWidth="1.5"
+        <line
+          x1={72}
+          x2={878}
+          y1={324}
+          y2={324}
+          stroke={colors.border}
+          strokeWidth="1"
           markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 4 ? 0.75 : 0 }}
-          transition={transition}
         />
-
+        <text
+          x={475}
+          y={336}
+          fontSize="10"
+          fontFamily="monospace"
+          fill={colors.textTertiary}
+          textAnchor="middle"
+        >
+          time moves right; each vertical pair is work happening in parallel
+        </text>
       </svg>
     </div>
   );
