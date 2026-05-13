@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useInView } from "@/components/useInView";
@@ -249,505 +249,641 @@ function BlockStatesDiagram() {
   );
 }
 
-// Tick-driven hero animation. The loop tells one story:
-// familiar EVM-shaped txs enter, consensus orders a block, execution fans
-// out beside the next consensus slot, then results merge into one EVM state.
-const HERO_TICK_MS = 1150;
-const HERO_TICKS = 6;
-const HERO_BAR_START = 250;
-const HERO_BAR_W = 198;
-const HERO_COMMIT_Y = 344;
 const HERO_EASE = [0.16, 1, 0.3, 1] as const;
+const SLIDE_W = 640;
+const SLIDE_H = 360;
+const SLIDE_DURATION_MS = 8000;
 
-const HERO_INPUT_TXS = [
-  { id: "swap", y: 88, tone: colors.userAccent },
-  { id: "mint", y: 116, tone: colors.solutionAccent },
-  { id: "send", y: 144, tone: colors.problemAccentStrong },
-  { id: "call", y: 172, tone: colors.textTertiary },
-];
+type SlideProps = { shouldReduceMotion: boolean };
 
-const HERO_EXEC_TXS = [
-  { id: "swap", y: 240, width: 176, commitX: 476, retry: true },
-  { id: "mint", y: 266, width: 164, commitX: 522 },
-  { id: "send", y: 292, width: 190, commitX: 568 },
-  { id: "call", y: 318, width: 154, commitX: 614 },
+const SLIDES: {
+  key: string;
+  title: string;
+  note: string;
+  Component: (props: SlideProps) => React.ReactNode;
+}[] = [
+  {
+    key: "raptorcast",
+    title: "RaptorCast",
+    note: "one block, erasure-coded chunks, every validator",
+    Component: RaptorCastSlide,
+  },
+  {
+    key: "parallel",
+    title: "Parallel execution",
+    note: "transactions run in parallel, commits stay serial",
+    Component: ParallelSlide,
+  },
+  {
+    key: "pipeline",
+    title: "Async execution pipeline",
+    note: "consensus orders the next block while execution runs the last",
+    Component: PipelineSlide,
+  },
 ];
 
 function PipelineHeroVisual() {
   const shouldReduceMotion = !!useReducedMotion();
-  const [frame, setFrame] = useState(0);
+  const [slide, setSlide] = useState(0);
 
   useEffect(() => {
-    if (shouldReduceMotion) {
-      const id = setTimeout(() => setFrame(4), 0);
-      return () => clearTimeout(id);
-    }
+    if (shouldReduceMotion) return;
     const id = setInterval(() => {
-      setFrame((current) => current + 1);
-    }, HERO_TICK_MS);
+      setSlide((s) => (s + 1) % SLIDES.length);
+    }, SLIDE_DURATION_MS);
     return () => clearInterval(id);
   }, [shouldReduceMotion]);
 
-  const tick = frame % HERO_TICKS;
-  const cycle = Math.floor(frame / HERO_TICKS);
-  const transition = shouldReduceMotion
-    ? { duration: 0 }
-    : { duration: 0.58, ease: HERO_EASE };
-
-  const statusByTick = [
-    { label: "EVM-shaped txs enter", color: colors.problemAccentStrong },
-    { label: "consensus orders Block N", color: colors.userAccent },
-    { label: "Block N executes beside Block N+1", color: colors.solutionAccent },
-    { label: "parallel results merge in order", color: colors.solutionAccent },
-    { label: "one canonical EVM state", color: colors.solutionAccent },
-    { label: "the next block keeps moving", color: colors.userAccent },
-  ];
+  const current = SLIDES[slide];
+  const Current = current.Component;
 
   return (
     <div className="bg-surface-elevated rounded-xl p-5 sm:p-6 shadow-sm border border-border">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <motion.span
-            className="w-2 h-2 rounded-full shrink-0"
-            animate={{ backgroundColor: statusByTick[tick].color }}
-            transition={transition}
-          />
-          <p className="font-mono text-[11px] text-text-tertiary truncate">
-            {statusByTick[tick].label}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 font-mono text-[10px] text-text-tertiary shrink-0">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block bg-user-accent" />
-            consensus
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block bg-solution-accent" />
-            execution
-          </span>
-        </div>
+      <div className="flex items-center gap-3 mb-4 min-h-[18px] overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`label-${current.key}`}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-3 min-w-0"
+          >
+            <p className="font-mono text-[11px] text-text-primary shrink-0">
+              {current.title}
+            </p>
+            <span className="font-mono text-[11px] text-text-tertiary truncate">
+              {current.note}
+            </span>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      <svg
-        key={cycle}
-        role="img"
-        aria-label="A pipeline diagram showing familiar EVM transactions entering Monad, consensus ordering Block N, execution running in parallel beside consensus for Block N plus one, results merging serially, and one canonical EVM state being produced."
-        viewBox="0 0 680 380"
-        className="relative aspect-[1.79] w-full"
-      >
-        <defs>
-          <marker
-            id="hero-arrow"
-            viewBox="0 0 10 10"
-            refX="8"
-            refY="5"
-            markerWidth="5"
-            markerHeight="5"
-            orient="auto-start-reverse"
+      <div className="relative w-full" style={{ aspectRatio: `${SLIDE_W} / ${SLIDE_H}` }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current.key}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill={colors.textTertiary} />
-          </marker>
-        </defs>
+            <Current shouldReduceMotion={shouldReduceMotion} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-        <rect
-          x={8}
-          y={8}
-          width={664}
-          height={360}
-          rx={10}
-          fill={colors.surface}
-          stroke={colors.borderSoft}
-        />
+      <div className="mt-4 flex items-center justify-center gap-2">
+        {SLIDES.map((s, i) => (
+          <span
+            key={s.key}
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              i === slide ? "w-6 bg-solution-accent" : "w-1.5 bg-border"
+            }`}
+            aria-hidden
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        <motion.rect
-          x={20}
-          y={36}
-          width={640}
-          height={148}
-          rx={8}
-          fill={colors.userBg}
-          initial={{ opacity: 0.12 }}
-          animate={{ opacity: tick >= 1 && tick <= 2 ? 0.52 : 0.16 }}
-          transition={transition}
-        />
-        <motion.rect
-          x={20}
-          y={202}
-          width={640}
-          height={158}
-          rx={8}
-          fill={colors.solutionBg}
-          initial={{ opacity: 0.12 }}
-          animate={{ opacity: tick >= 2 && tick <= 4 ? 0.52 : 0.16 }}
-          transition={transition}
-        />
+function RaptorCastSlide({ shouldReduceMotion }: SlideProps) {
+  const centerX = SLIDE_W / 2;
+  const centerY = SLIDE_H / 2;
+  const validatorCount = 8;
+  const validatorRadius = 134;
+  const validators = Array.from({ length: validatorCount }, (_, i) => {
+    const angle = (i / validatorCount) * Math.PI * 2 - Math.PI / 2;
+    return {
+      id: i,
+      x: centerX + Math.cos(angle) * validatorRadius,
+      y: centerY + Math.sin(angle) * validatorRadius,
+    };
+  });
 
+  const blockW = 84;
+  const blockH = 50;
+  const chunksPerLane = 3;
+  const chunkPeriod = 1.6;
+  const chunkSize = 5;
+
+  const chunks = validators.flatMap((v) =>
+    Array.from({ length: chunksPerLane }, (_, i) => {
+      const phaseOffset = (v.id * 0.213) % 1;
+      const inLanePhase = i / chunksPerLane;
+      const delay = ((inLanePhase + phaseOffset) % 1) * chunkPeriod;
+      return {
+        key: `${v.id}-${i}`,
+        dx: v.x - centerX,
+        dy: v.y - centerY,
+        delay,
+      };
+    })
+  );
+
+  return (
+    <svg
+      role="img"
+      aria-label="A central leader block emits a continuous stream of small erasure-coded chunks that fan out to a ring of eight validators."
+      viewBox={`0 0 ${SLIDE_W} ${SLIDE_H}`}
+      className="w-full h-full"
+    >
+      {validators.map((v) => (
         <line
-          x1={32}
-          x2={648}
-          y1={190}
-          y2={190}
+          key={`line-${v.id}`}
+          x1={centerX}
+          y1={centerY}
+          x2={v.x}
+          y2={v.y}
           stroke={colors.borderSoft}
-          strokeWidth="1"
-          strokeDasharray="3 4"
+          strokeWidth="0.6"
+          strokeDasharray="2 5"
+          opacity={0.55}
         />
+      ))}
 
-        <text
-          x={32}
-          y={62}
-          fontSize="11"
-          fontFamily="monospace"
-          fill={colors.textTertiary}
-        >
-          EVM input
-        </text>
-        <text
-          x={226}
-          y={62}
-          fontSize="11"
-          fontFamily="monospace"
-          fill={colors.userAccent}
-        >
-          Consensus
-        </text>
-        <text
-          x={226}
-          y={222}
-          fontSize="11"
-          fontFamily="monospace"
-          fill={colors.solutionAccent}
-        >
-          Execution
-        </text>
-        <text
-          x={500}
-          y={222}
-          fontSize="11"
-          fontFamily="monospace"
-          fill={colors.textTertiary}
-        >
-          Commit
-        </text>
-
-        {HERO_INPUT_TXS.map((tx, index) => (
-          <motion.g
-            key={tx.id}
-            initial={{ opacity: 0, x: -18 }}
-            animate={{
-              opacity: tick <= 2 ? 1 : 0.16,
-              x: tick >= 1 ? 10 : 0,
-            }}
-            transition={{ ...transition, delay: shouldReduceMotion ? 0 : index * 0.04 }}
-          >
-            <rect
-              x={32}
-              y={tx.y - 11}
-              width={104}
-              height={22}
-              rx={5}
-              fill={colors.surfaceElevated}
-              stroke={tx.tone}
-            />
-            <circle cx={48} cy={tx.y} r={4} fill={tx.tone} />
-            <text
-              x={60}
-              y={tx.y + 4}
-              fontSize="10"
-              fontFamily="monospace"
-              fill={colors.textPrimary}
-            >
-              {tx.id}
-            </text>
-          </motion.g>
-        ))}
-
-        <motion.line
-          x1={146}
-          x2={208}
-          y1={144}
-          y2={108}
-          stroke={colors.textTertiary}
-          strokeWidth="1.5"
-          strokeDasharray="4 5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 1 ? 0.65 : 0 }}
-          transition={transition}
-        />
-
-        <motion.g
-          initial={{ opacity: 0.42, y: 0 }}
-          animate={{
-            opacity: tick >= 1 ? 1 : 0.42,
-            y: tick >= 1 ? 0 : 2,
-          }}
-          transition={transition}
-        >
-          <rect
-            x={220}
-            y={78}
-            width={152}
-            height={58}
-            rx={7}
-            fill={colors.userBg}
-            stroke={colors.userAccent}
-          />
-          <text
-            x={296}
-            y={101}
-            fontSize="12"
-            fontFamily="monospace"
-            fill={colors.userAccent}
-            textAnchor="middle"
-          >
-            Block N
-          </text>
-          <text
-            x={296}
-            y={119}
-            fontSize="9"
-            fontFamily="monospace"
-            fill={colors.textTertiary}
-            textAnchor="middle"
-          >
-            ordered in consensus
-          </text>
-        </motion.g>
-
-        <motion.g
-          initial={{ opacity: 0.36, y: 0 }}
-          animate={{
-            opacity: tick >= 2 ? 1 : 0.36,
-            y: tick >= 2 ? 0 : 2,
-          }}
-          transition={transition}
-        >
-          <rect
-            x={414}
-            y={78}
-            width={152}
-            height={58}
-            rx={7}
-            fill={tick >= 2 ? colors.userBg : colors.surfaceElevated}
-            stroke={tick >= 2 ? colors.userAccent : colors.border}
-          />
-          <text
-            x={490}
-            y={101}
-            fontSize="12"
-            fontFamily="monospace"
-            fill={tick >= 2 ? colors.userAccent : colors.textPrimary}
-            textAnchor="middle"
-          >
-            Block N+1
-          </text>
-          <text
-            x={490}
-            y={119}
-            fontSize="9"
-            fontFamily="monospace"
-            fill={colors.textTertiary}
-            textAnchor="middle"
-          >
-            ordering starts
-          </text>
-        </motion.g>
-
-        <motion.line
-          x1={372}
-          x2={414}
-          y1={108}
-          y2={108}
-          stroke={colors.border}
-          strokeWidth="1.5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 2 ? 0.9 : 0 }}
-          transition={transition}
-        />
-
-        <motion.path
-          d="M296 136 C306 174 324 210 350 232"
-          fill="none"
-          stroke={colors.solutionAccent}
-          strokeWidth="1.5"
-          strokeDasharray="4 5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 2 ? 0.7 : 0 }}
-          transition={transition}
-        />
-
-        {HERO_EXEC_TXS.map((tx, index) => (
-          <g key={tx.id}>
-            <text
-              x={224}
-              y={tx.y + 4}
-              fontSize="10"
-              fontFamily="monospace"
-              fill={colors.textTertiary}
-              textAnchor="end"
-            >
-              {tx.id}
-            </text>
-            <rect
-              x={HERO_BAR_START}
-              y={tx.y - 8}
-              width={HERO_BAR_W}
-              height={16}
-              rx={8}
-              fill={colors.borderSoft}
-            />
-            <motion.rect
-              x={HERO_BAR_START}
-              y={tx.y - 8}
-              height={16}
-              rx={8}
-              fill={colors.solutionAccentLight}
-              initial={{ width: 0, opacity: 0 }}
-              animate={{
-                width: tick >= 2 ? tx.width : 0,
-                opacity: tick >= 2 ? 1 : 0,
-              }}
-              transition={{ ...transition, delay: shouldReduceMotion ? 0 : index * 0.08 }}
-            />
-            {tx.retry && (
-              <motion.g
-                initial={{ opacity: 0, scale: 0.88 }}
-                animate={{
-                  opacity: tick === 3 ? 1 : 0,
-                  scale: tick === 3 ? 1 : 0.88,
-                }}
-                transition={transition}
-              >
-                <rect
-                  x={HERO_BAR_START + 82}
-                  y={tx.y - 14}
-                  width={48}
-                  height={28}
-                  rx={5}
-                  fill={colors.problemBg}
-                  stroke={colors.problemAccentStrong}
-                />
-                <text
-                  x={HERO_BAR_START + 106}
-                  y={tx.y + 4}
-                  fontSize="9"
-                  fontFamily="monospace"
-                  fill={colors.problemAccentStrong}
-                  textAnchor="middle"
-                >
-                  retry
-                </text>
-              </motion.g>
-            )}
-            <motion.line
-              x1={HERO_BAR_START + tx.width + 5}
-              x2={tx.commitX}
-              y1={tx.y}
-              y2={HERO_COMMIT_Y}
-              stroke={colors.textTertiary}
-              strokeWidth="1"
-              strokeDasharray="3 5"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: tick >= 3 ? 0.42 : 0 }}
-              transition={transition}
-            />
-          </g>
-        ))}
-
-        <motion.g
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: tick >= 3 ? 1 : 0, y: tick >= 3 ? 0 : 10 }}
-          transition={transition}
-        >
-          <line
-            x1={476}
-            x2={614}
-            y1={HERO_COMMIT_Y}
-            y2={HERO_COMMIT_Y}
-            stroke={colors.textPrimary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          {HERO_EXEC_TXS.map((tx, index) => (
-            <g key={`${tx.id}-commit`}>
-              <circle
-                cx={tx.commitX}
-                cy={HERO_COMMIT_Y}
-                r={12}
-                fill={colors.surfaceElevated}
-                stroke={colors.textPrimary}
-                strokeWidth="1.5"
-              />
-              <text
-                x={tx.commitX}
-                y={HERO_COMMIT_Y + 4}
-                fontSize="10"
-                fontFamily="monospace"
-                fill={colors.textPrimary}
-                textAnchor="middle"
-              >
-                {index + 1}
-              </text>
-            </g>
-          ))}
-        </motion.g>
-
-        <motion.g
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{
-            opacity: tick >= 4 ? 1 : 0,
-            scale: tick >= 4 ? 1 : 0.96,
-          }}
-          transition={transition}
-        >
-          <rect
-            x={496}
-            y={232}
-            width={144}
-            height={62}
-            rx={8}
+      {validators.map((v) => (
+        <g key={`v-${v.id}`}>
+          <circle
+            cx={v.x}
+            cy={v.y}
+            r={16}
             fill={colors.solutionBg}
             stroke={colors.solutionAccent}
+            strokeWidth="1.4"
           />
           <text
-            x={568}
-            y={258}
-            fontSize="12"
+            x={v.x}
+            y={v.y + 4}
+            fontSize="11"
             fontFamily="monospace"
             fill={colors.solutionAccent}
             textAnchor="middle"
           >
-            canonical state
+            v{v.id + 1}
           </text>
+        </g>
+      ))}
+
+      {!shouldReduceMotion &&
+        chunks.map((c) => (
+          <motion.rect
+            key={c.key}
+            x={centerX - chunkSize / 2}
+            y={centerY - chunkSize / 2}
+            width={chunkSize}
+            height={chunkSize}
+            rx={1.2}
+            fill={colors.solutionAccent}
+            initial={{ x: 0, y: 0, opacity: 0 }}
+            animate={{
+              x: [0, c.dx * 0.02, c.dx * 0.98, c.dx],
+              y: [0, c.dy * 0.02, c.dy * 0.98, c.dy],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: chunkPeriod,
+              delay: c.delay,
+              repeat: Infinity,
+              ease: "linear",
+              times: [0, 0.06, 0.9, 1],
+            }}
+          />
+        ))}
+
+      <motion.g
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.55, ease: HERO_EASE }}
+      >
+        <rect
+          x={centerX - blockW / 2}
+          y={centerY - blockH / 2}
+          width={blockW}
+          height={blockH}
+          rx={8}
+          fill={colors.userAccent}
+        />
+        <text
+          x={centerX}
+          y={centerY + 5}
+          fontSize="14"
+          fontFamily="monospace"
+          fill={colors.surface}
+          textAnchor="middle"
+        >
+          block
+        </text>
+      </motion.g>
+    </svg>
+  );
+}
+
+function ParallelSlide({ shouldReduceMotion }: SlideProps) {
+  const lanes = [
+    { id: "A", retry: false },
+    { id: "B", retry: true },
+    { id: "C", retry: false },
+    { id: "D", retry: false },
+  ];
+
+  const laneStartX = 86;
+  const laneEndX = 460;
+  const laneWidth = laneEndX - laneStartX;
+  const laneHeight = 26;
+  const laneGap = 30;
+  const totalLanesH = lanes.length * (laneHeight + laneGap) - laneGap;
+  const lanesStartY = (SLIDE_H - totalLanesH) / 2;
+  const commitX = 520;
+  const commitW = 56;
+
+  const cycleSec = 3.6;
+
+  return (
+    <svg
+      role="img"
+      aria-label="Four transaction lanes running in parallel, with one lane re-running due to a conflict, then committing in serial order on the right."
+      viewBox={`0 0 ${SLIDE_W} ${SLIDE_H}`}
+      className="w-full h-full"
+    >
+      <text
+        x={(laneStartX + laneEndX) / 2}
+        y={lanesStartY - 20}
+        fontSize="11"
+        fontFamily="monospace"
+        fill={colors.textTertiary}
+        textAnchor="middle"
+      >
+        parallel
+      </text>
+      <text
+        x={commitX + commitW / 2}
+        y={lanesStartY - 20}
+        fontSize="11"
+        fontFamily="monospace"
+        fill={colors.textTertiary}
+        textAnchor="middle"
+      >
+        serial commit
+      </text>
+
+      {lanes.map((lane, i) => {
+        const y = lanesStartY + i * (laneHeight + laneGap);
+        const cy = y + laneHeight / 2;
+        const commitTime = 0.62 + i * 0.06;
+        return (
+          <g key={lane.id}>
+            <text
+              x={laneStartX - 12}
+              y={cy + 4}
+              fontSize="12"
+              fontFamily="monospace"
+              fill={colors.textPrimary}
+              textAnchor="end"
+            >
+              tx {lane.id}
+            </text>
+
+            <rect
+              x={laneStartX}
+              y={y}
+              width={laneWidth}
+              height={laneHeight}
+              rx={laneHeight / 2}
+              fill={colors.borderSoft}
+              opacity={0.55}
+            />
+
+            {lane.retry ? (
+              <>
+                <motion.rect
+                  x={laneStartX}
+                  y={y}
+                  height={laneHeight}
+                  rx={laneHeight / 2}
+                  fill={colors.problemAccentLight}
+                  initial={{ width: 0 }}
+                  animate={
+                    shouldReduceMotion
+                      ? { width: 0 }
+                      : { width: [0, laneWidth * 0.45, laneWidth * 0.45, 0, 0] }
+                  }
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : {
+                          duration: cycleSec,
+                          times: [0, 0.22, 0.30, 0.34, 1],
+                          delay: i * 0.07,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }
+                  }
+                />
+                <motion.rect
+                  x={laneStartX}
+                  y={y}
+                  height={laneHeight}
+                  rx={laneHeight / 2}
+                  fill={colors.solutionAccent}
+                  initial={{ width: 0 }}
+                  animate={
+                    shouldReduceMotion
+                      ? { width: laneWidth }
+                      : { width: [0, 0, laneWidth, laneWidth, 0] }
+                  }
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : {
+                          duration: cycleSec,
+                          times: [0, 0.38, 0.62, 0.88, 1],
+                          delay: i * 0.07,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }
+                  }
+                />
+              </>
+            ) : (
+              <motion.rect
+                x={laneStartX}
+                y={y}
+                height={laneHeight}
+                rx={laneHeight / 2}
+                fill={colors.solutionAccent}
+                initial={{ width: 0 }}
+                animate={
+                  shouldReduceMotion
+                    ? { width: laneWidth }
+                    : { width: [0, laneWidth, laneWidth, 0] }
+                }
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : {
+                        duration: cycleSec,
+                        times: [0, 0.55, 0.88, 1],
+                        delay: i * 0.07,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }
+                }
+              />
+            )}
+
+            {lane.retry && !shouldReduceMotion && (
+              <motion.g
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0, 1, 1, 0, 0] }}
+                transition={{
+                  duration: cycleSec,
+                  times: [0, 0.20, 0.24, 0.34, 0.38, 1],
+                  delay: i * 0.07,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <rect
+                  x={laneStartX + laneWidth * 0.42}
+                  y={y - 9}
+                  width={62}
+                  height={laneHeight + 18}
+                  rx={5}
+                  fill={colors.problemBg}
+                  stroke={colors.problemAccentStrong}
+                  strokeWidth="1"
+                />
+                <text
+                  x={laneStartX + laneWidth * 0.42 + 31}
+                  y={cy + 4}
+                  fontSize="10"
+                  fontFamily="monospace"
+                  fill={colors.problemAccentStrong}
+                  textAnchor="middle"
+                >
+                  re-run
+                </text>
+              </motion.g>
+            )}
+
+            <line
+              x1={laneEndX + 6}
+              x2={commitX - 6}
+              y1={cy}
+              y2={cy}
+              stroke={colors.borderSoft}
+              strokeWidth="1"
+              strokeDasharray="2 4"
+            />
+
+            <motion.g
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={
+                shouldReduceMotion
+                  ? { opacity: 1, scale: 1 }
+                  : {
+                      opacity: [0, 0, 1, 1, 0],
+                      scale: [0.85, 0.85, 1, 1, 0.85],
+                    }
+              }
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : {
+                      duration: cycleSec,
+                      times: [0, 0.55, commitTime, 0.92, 1],
+                      repeat: Infinity,
+                      ease: "easeOut",
+                    }
+              }
+            >
+              <rect
+                x={commitX}
+                y={y}
+                width={commitW}
+                height={laneHeight}
+                rx={6}
+                fill={colors.solutionBg}
+                stroke={colors.solutionAccent}
+                strokeWidth="1.2"
+              />
+              <text
+                x={commitX + commitW / 2}
+                y={cy + 4}
+                fontSize="12"
+                fontFamily="monospace"
+                fill={colors.solutionAccent}
+                textAnchor="middle"
+              >
+                {lane.id}
+              </text>
+            </motion.g>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function PipelineSlide({ shouldReduceMotion }: SlideProps) {
+  const slotW = 96;
+  const slotGap = 16;
+  const startX = 116;
+  const slotX = (i: number) => startX + i * (slotW + slotGap);
+  const blockH = 76;
+  const consensusY = 70;
+  const executionY = 200;
+
+  const consensusBlocks = [
+    { col: 0, label: "N−1" },
+    { col: 1, label: "N" },
+    { col: 2, label: "N+1" },
+    { col: 3, label: "N+2" },
+  ];
+  const executionBlocks = [
+    { col: 1, label: "N−1" },
+    { col: 2, label: "N" },
+    { col: 3, label: "N+1" },
+  ];
+
+  const transition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.5, ease: HERO_EASE };
+
+  return (
+    <svg
+      role="img"
+      aria-label="Top consensus track shows blocks N minus 1, N, N plus 1, and N plus 2; bottom execution track shows the same blocks shifted right by one slot, so execution trails consensus by one block."
+      viewBox={`0 0 ${SLIDE_W} ${SLIDE_H}`}
+      className="w-full h-full"
+    >
+      <text
+        x={28}
+        y={consensusY + blockH / 2 + 5}
+        fontSize="14"
+        fontFamily="monospace"
+        fill={colors.userAccent}
+      >
+        consensus
+      </text>
+      <text
+        x={28}
+        y={executionY + blockH / 2 + 5}
+        fontSize="14"
+        fontFamily="monospace"
+        fill={colors.solutionAccent}
+      >
+        execution
+      </text>
+
+      {consensusBlocks.map((b, i) => (
+        <motion.g
+          key={`c-${b.label}`}
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...transition, delay: shouldReduceMotion ? 0 : i * 0.08 }}
+        >
+          <rect
+            x={slotX(b.col)}
+            y={consensusY}
+            width={slotW}
+            height={blockH}
+            rx={10}
+            fill={colors.userBg}
+            stroke={colors.userAccent}
+            strokeWidth="1.5"
+          />
           <text
-            x={568}
-            y={276}
-            fontSize="9"
+            x={slotX(b.col) + slotW / 2}
+            y={consensusY + blockH / 2 + 7}
+            fontSize="18"
             fontFamily="monospace"
-            fill={colors.textTertiary}
             textAnchor="middle"
+            fill={colors.userAccent}
           >
-            same serial EVM result
+            {b.label}
           </text>
         </motion.g>
+      ))}
 
-        <motion.line
-          x1={568}
-          x2={568}
-          y1={302}
-          y2={328}
-          stroke={colors.solutionAccent}
-          strokeWidth="1.5"
-          markerEnd="url(#hero-arrow)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: tick >= 4 ? 0.75 : 0 }}
-          transition={transition}
+      {executionBlocks.map((b, i) => (
+        <motion.g
+          key={`e-${b.label}`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...transition, delay: shouldReduceMotion ? 0 : i * 0.08 + 0.25 }}
+        >
+          <rect
+            x={slotX(b.col)}
+            y={executionY}
+            width={slotW}
+            height={blockH}
+            rx={10}
+            fill={colors.solutionBg}
+            stroke={colors.solutionAccent}
+            strokeWidth="1.5"
+          />
+          <text
+            x={slotX(b.col) + slotW / 2}
+            y={executionY + blockH / 2 + 7}
+            fontSize="18"
+            fontFamily="monospace"
+            textAnchor="middle"
+            fill={colors.solutionAccent}
+          >
+            {b.label}
+          </text>
+        </motion.g>
+      ))}
+
+      <motion.g
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.75 }}
+        transition={{ ...transition, delay: shouldReduceMotion ? 0 : 0.7 }}
+      >
+        <line
+          x1={slotX(2) + slotW / 2}
+          x2={slotX(2) + slotW / 2}
+          y1={consensusY + blockH + 4}
+          y2={executionY - 4}
+          stroke={colors.textTertiary}
+          strokeWidth="1"
+          strokeDasharray="3 4"
         />
+        <text
+          x={slotX(2) + slotW / 2 + 10}
+          y={(consensusY + blockH + executionY) / 2 + 4}
+          fontSize="11"
+          fontFamily="monospace"
+          fill={colors.textTertiary}
+        >
+          + 1 block
+        </text>
+      </motion.g>
 
-      </svg>
-    </div>
+      <line
+        x1={startX - 12}
+        x2={slotX(3) + slotW + 12}
+        y1={SLIDE_H - 32}
+        y2={SLIDE_H - 32}
+        stroke={colors.borderSoft}
+        strokeWidth="1"
+        strokeDasharray="2 4"
+      />
+      <text
+        x={slotX(3) + slotW + 12}
+        y={SLIDE_H - 14}
+        fontSize="10"
+        fontFamily="monospace"
+        fill={colors.textTertiary}
+        textAnchor="end"
+      >
+        time →
+      </text>
+    </svg>
   );
 }
 
