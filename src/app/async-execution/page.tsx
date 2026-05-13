@@ -20,6 +20,16 @@ export const metadata: Metadata = {
 export default function AsyncExecutionPage() {
   return (
     <main>
+      <div className="bg-problem-bg border-b border-problem-cell-hover">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-problem-accent-strong border border-problem-accent-strong rounded px-2 py-1">
+            Deprecated
+          </span>
+          <p className="text-sm text-text-secondary">
+            This page is being reworked and is not live yet. Content may not reflect the current Monad design.
+          </p>
+        </div>
+      </div>
       <AsyncExecutionHeroSection />
       <BudgetComparisonSection />
       <DelayedRootSection />

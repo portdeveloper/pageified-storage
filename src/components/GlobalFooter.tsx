@@ -10,12 +10,6 @@ export default function GlobalFooter() {
           <div className="flex items-center gap-1 font-mono text-[11px] flex-wrap">
             <span className="text-surface/25 mr-2">Experimental</span>
             <Link
-              href="/async-execution"
-              className="inline-flex items-center text-surface/40 hover:text-surface transition-colors px-3 py-2.5 rounded min-h-11"
-            >
-              Asynchronous Execution
-            </Link>
-            <Link
               href="/spam-mev"
               className="inline-flex items-center text-surface/40 hover:text-surface transition-colors px-3 py-2.5 rounded min-h-11"
             >

@@ -366,7 +366,7 @@ function RaptorCastSlide({ shouldReduceMotion }: SlideProps) {
   const blockW = 84;
   const blockH = 50;
   const chunksPerLane = 3;
-  const chunkPeriod = 1.6;
+  const chunkPeriod = 1.25;
   const chunkSize = 5;
 
   const chunks = validators.flatMap((v) =>
@@ -499,7 +499,7 @@ function ParallelSlide({ shouldReduceMotion }: SlideProps) {
   const commitX = 520;
   const commitW = 56;
 
-  const cycleSec = 3.6;
+  const cycleSec = 2.8;
 
   return (
     <svg
@@ -751,7 +751,7 @@ function PipelineSlide({ shouldReduceMotion }: SlideProps) {
 
   const transition = shouldReduceMotion
     ? { duration: 0 }
-    : { duration: 0.5, ease: HERO_EASE };
+    : { duration: 0.38, ease: HERO_EASE };
 
   return (
     <svg
@@ -1258,12 +1258,7 @@ function NextSteps() {
             Where next
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <NextCard
-            href="/async-execution"
-            title="Understand the pipeline"
-            body="Consensus first, execution beside."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <NextCard
             href="/mip-4"
             title="See a developer edge"
