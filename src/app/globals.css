@@ -144,6 +144,16 @@ p {
   animation: playground-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Presenter mode — toggled by adding `.presenter-mode` to <html> */
+html.presenter-mode {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+html.presenter-mode section.slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

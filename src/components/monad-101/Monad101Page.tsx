@@ -1,55 +1,355 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import {
+  animate,
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+} from "framer-motion";
+import type { ReactNode, RefObject } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useInView } from "@/components/useInView";
 import { colors } from "@/lib/colors";
 
-const METRICS = [
+type PresenterCtx = {
+  presenterMode: boolean;
+  currentSlide: number;
+  totalSlides: number;
+  helpOpen: boolean;
+  closeHelp: () => void;
+};
+
+const PresenterContext = createContext<PresenterCtx>({
+  presenterMode: false,
+  currentSlide: 0,
+  totalSlides: 0,
+  helpOpen: false,
+  closeHelp: () => {},
+});
+
+function usePresenter() {
+  return useContext(PresenterContext);
+}
+
+function useEnterCount(threshold = 0.4): {
+  ref: RefObject<HTMLDivElement | null>;
+  enterCount: number;
+} {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [enterCount, setEnterCount] = useState(0);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    let wasVisible = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries[0]?.isIntersecting ?? false;
+        if (visible && !wasVisible) {
+          setEnterCount((c) => c + 1);
+        }
+        wasVisible = visible;
+      },
+      { threshold }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, enterCount };
+}
+
+function toggleFullscreen() {
+  if (typeof document === "undefined") return;
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+const REFERENCES: { id: number; title: string; url: string }[] = [
+  {
+    id: 1,
+    title: "Monad for Developers — performance overview (10k tps, 400 ms blocks, 800 ms finality)",
+    url: "https://docs.monad.xyz/introduction/monad-for-developers",
+  },
+  {
+    id: 2,
+    title: "MonadBFT — pipelined consensus and the tail-fork problem",
+    url: "https://docs.monad.xyz/monad-arch/consensus/monad-bft",
+  },
+  {
+    id: 3,
+    title: "RaptorCast — erasure-coded block propagation",
+    url: "https://docs.monad.xyz/monad-arch/consensus/raptorcast",
+  },
+  {
+    id: 4,
+    title: "Asynchronous Execution — pipelining consensus with execution",
+    url: "https://docs.monad.xyz/monad-arch/consensus/asynchronous-execution",
+  },
+  {
+    id: 5,
+    title: "Parallel Execution — optimistic concurrent transaction processing",
+    url: "https://docs.monad.xyz/monad-arch/execution/parallel-execution",
+  },
+  {
+    id: 6,
+    title: "Block States — Proposed, Voted, Finalized, Verified",
+    url: "https://docs.monad.xyz/monad-arch/consensus/block-states",
+  },
+  {
+    id: 7,
+    title: "Gas Pricing — gas charged by limit, not consumption",
+    url: "https://docs.monad.xyz/developer-essentials/gas-pricing",
+  },
+  {
+    id: 8,
+    title: "Differences between Monad and Ethereum",
+    url: "https://docs.monad.xyz/developer-essentials/differences",
+  },
+  {
+    id: 9,
+    title: "MonadDb — Ethereum state storage",
+    url: "https://docs.monad.xyz/monad-arch/execution/monaddb",
+  },
+  {
+    id: 10,
+    title: "Reserve Balance — newly funded account timing",
+    url: "https://docs.monad.xyz/developer-essentials/reserve-balance",
+  },
+  {
+    id: 11,
+    title: "JIT Compilation — native-code compilation of hot EVM contracts",
+    url: "https://docs.monad.xyz/monad-arch/execution/native-compilation",
+  },
+];
+
+function DocsQRBadge({
+  src,
+  href,
+  label = "scan · docs",
+  size = 72,
+}: {
+  src: string;
+  href: string;
+  label?: string;
+  size?: number;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group inline-flex flex-col items-center gap-1.5 select-none"
+      aria-label={label}
+    >
+      <img
+        src={src}
+        alt={label}
+        width={size}
+        height={size}
+        className="block opacity-80 group-hover:opacity-100 transition-opacity"
+      />
+      <span className="font-mono text-[9px] text-text-tertiary group-hover:text-text-primary transition-colors uppercase tracking-wide">
+        {label}
+      </span>
+    </a>
+  );
+}
+
+function Cite({ n }: { n: number | number[] }) {
+  const { presenterMode } = usePresenter();
+  if (presenterMode) return null;
+  const ids = Array.isArray(n) ? n : [n];
+  return (
+    <sup className="font-mono text-[10px] text-text-tertiary ml-0.5 whitespace-nowrap">
+      {ids.map((id, i) => (
+        <span key={id}>
+          {i > 0 && <span className="text-text-tertiary/60">,</span>}
+          <a
+            href={`#ref-${id}`}
+            className="hover:text-solution-accent transition-colors"
+          >
+            [{id}]
+          </a>
+        </span>
+      ))}
+    </sup>
+  );
+}
+
+type Metric = {
+  label: string;
+  ethereum: string;
+  target: number;
+  format: (v: number) => string;
+  suffix: string;
+  note: string;
+  width: number;
+};
+
+const METRICS: Metric[] = [
   {
     label: "Throughput",
     ethereum: "~10 tx/s",
-    monad: "10,000 tx/s",
+    target: 10000,
+    format: (v) => Math.round(v).toLocaleString(),
+    suffix: " tx/s",
     note: "More onchain interactions fit inside one product flow.",
     width: 92,
   },
   {
     label: "Block frequency",
     ethereum: "12 sec",
-    monad: "400 ms",
+    target: 400,
+    format: (v) => Math.round(v).toString(),
+    suffix: " ms",
     note: "Fast enough for subsecond feedback instead of loading screens.",
     width: 78,
   },
   {
     label: "Finality",
     ethereum: "12-18 min",
-    monad: "800 ms",
+    target: 800,
+    format: (v) => Math.round(v).toString(),
+    suffix: " ms",
     note: "Irreversible product decisions can settle quickly.",
     width: 86,
   },
   {
     label: "Gas throughput",
     ethereum: "2.5M gas/s",
-    monad: "500M gas/s",
+    target: 500,
+    format: (v) => `${Math.round(v)}M`,
+    suffix: " gas/s",
     note: "More contract work can happen without hiding chain latency.",
     width: 82,
   },
 ];
 
+const METRICS_CYCLE_SEC = 7;
+const METRICS_FILL_SEC = 2.6;
+
 export default function Monad101Page() {
+  const [presenterMode, setPresenterMode] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [totalSlides, setTotalSlides] = useState(6);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("monad101-present") === "1";
+    const url = new URLSearchParams(window.location.search);
+    if (url.get("present") === "1" || saved) setPresenterMode(true);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("monad101-present", presenterMode ? "1" : "0");
+    const html = document.documentElement;
+    if (presenterMode) html.classList.add("presenter-mode");
+    else html.classList.remove("presenter-mode");
+    return () => html.classList.remove("presenter-mode");
+  }, [presenterMode]);
+
+  useEffect(() => {
+    const sections = document.querySelectorAll<HTMLElement>("section.slide");
+    setTotalSlides(sections.length);
+    if (sections.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const idx = Array.from(sections).indexOf(visible.target as HTMLElement);
+        if (idx !== -1) setCurrentSlide(idx);
+      },
+      { threshold: [0.35, 0.55, 0.75] }
+    );
+    sections.forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
+  }, [presenterMode]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target && target.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.key === "Escape") {
+        if (helpOpen) {
+          e.preventDefault();
+          setHelpOpen(false);
+        }
+        return;
+      }
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setHelpOpen((h) => !h);
+        return;
+      }
+      if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        setPresenterMode((p) => !p);
+        return;
+      }
+      if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+      if (!presenterMode) return;
+      const isNext =
+        e.key === "ArrowDown" ||
+        e.key === "ArrowRight" ||
+        e.key === "PageDown" ||
+        e.key === " " ||
+        e.key === "Enter";
+      const isPrev =
+        e.key === "ArrowUp" ||
+        e.key === "ArrowLeft" ||
+        e.key === "PageUp";
+      if (!isNext && !isPrev) return;
+      e.preventDefault();
+      const sections = document.querySelectorAll<HTMLElement>("section.slide");
+      const next = isNext
+        ? Math.min(currentSlide + 1, sections.length - 1)
+        : Math.max(currentSlide - 1, 0);
+      sections[next]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [presenterMode, currentSlide, helpOpen]);
+
   return (
-    <main className="bg-surface text-text-primary">
-      <Hero />
+    <PresenterContext.Provider
+      value={{
+        presenterMode,
+        currentSlide,
+        totalSlides,
+        helpOpen,
+        closeHelp: () => setHelpOpen(false),
+      }}
+    >
+      <main className="bg-surface text-text-primary">
+        <Hero />
 
       <VisualSection
+        tone="alt"
+        eyebrow="01 / Identity"
         title="Same EVM surface, new engine underneath"
         copy={
           <p>
-            Contracts, wallets, accounts, and RPC integrations stay familiar.
-            Underneath, Monad is its own Layer 1 with its own validators, state,
-            and ordered blocks.
+            Contracts, wallets, accounts, and RPC integrations stay
+            familiar<Cite n={8} />. Underneath, Monad is its own Layer 1 with
+            its own validators, state, and ordered blocks<Cite n={2} />.
           </p>
         }
       >
@@ -57,50 +357,51 @@ export default function Monad101Page() {
       </VisualSection>
 
       <VisualSection
-        title="The old path makes execution fight consensus for time"
+        tone="surface"
+        eyebrow="02 / Mechanics"
+        title="Inside the engine: order, run parallel, commit serial, repeat"
         copy={
-          <p>
-            If execution sits on the consensus hot path, every block must leave
-            room for compute, propagation, and voting. Monad separates those
-            jobs into a pipeline.
-          </p>
+          <>
+            <p>
+              Consensus orders the next block while execution runs the previous
+              one<Cite n={[2, 4]} />. Inside each execution slot, transactions
+              fan out across workers and merge back in the block&apos;s original
+              order<Cite n={5} />.
+            </p>
+            <p className="mt-3">
+              The outer pipeline and the inner parallelism compose.
+              Verification of the state root lands later still, on a
+              delay<Cite n={[4, 6]} />.
+            </p>
+          </>
         }
       >
-        <PipelineComparison />
+        <EngineDiagram />
       </VisualSection>
 
-      <VisualSection
-        title="Parallel work still commits to one serial answer"
-        copy={
-          <p>
-            Execution can fan out across many workers, but results merge in the
-            original transaction order. Conflicts re-run; contract semantics
-            stay serial.
-          </p>
-        }
-      >
-        <ParallelExecutionDiagram />
-      </VisualSection>
-
-      <VisualSection
+      <WideSection
+        tone="alt"
+        eyebrow="03 / Block states"
         title="Use block states as product confidence levels"
         copy={
           <p>
             Monad gives applications earlier signals for feedback and stronger
             signals for settlement, accounting, and delayed state-root
-            assurance.
+            assurance<Cite n={6} />.
           </p>
         }
       >
         <BlockStatesDiagram />
-      </VisualSection>
+      </WideSection>
 
       <VisualSection
+        tone="surface"
+        eyebrow="04 / Numbers"
         title="Read the numbers as UX constraints"
         copy={
           <p>
             The headline metrics matter because they change what product teams
-            can show immediately, settle quickly, and keep onchain.
+            can show immediately, settle quickly, and keep onchain<Cite n={1} />.
           </p>
         }
       >
@@ -108,39 +409,706 @@ export default function Monad101Page() {
       </VisualSection>
 
       <VisualSection
-        title="The surface carries over; assumptions need a pass"
+        tone="alt"
+        eyebrow="06 / Edge"
+        title="No tail-forks. Always-fresh state on RPC."
+        copy={
+          <>
+            <p>
+              MonadBFT proves leaders can&apos;t fork away their predecessor.
+              Reorder-based MEV doesn&apos;t apply<Cite n={2} />.
+            </p>
+            <p className="mt-3">
+              Meanwhile, RPC reads (<span className="font-mono">eth_call</span>,
+              <span className="font-mono"> eth_estimateGas</span>) hit the
+              freshest proposed block — not the last finalized one<Cite n={4} />.
+            </p>
+          </>
+        }
+      >
+        <EdgeDiagram />
+      </VisualSection>
+
+      <VisualSection
+        tone="surface"
+        eyebrow="07 / Data out"
+        title="Events stream out of execution as they happen"
         copy={
           <p>
-            Start from normal EVM code, then re-check timing, gas, indexing,
-            mempool, and block-state assumptions before shipping.
+            Indexers, dashboards, and MEV bots don&apos;t poll for blocks — they
+            subscribe to a shared-memory event ring as the EVM executes, and to
+            <span className="font-mono"> monadNewHeads</span> over WebSocket.
           </p>
         }
       >
-        <CompatibilityGrid />
+        <RealtimeDataDiagram />
       </VisualSection>
 
-      <NextSteps />
-    </main>
+      <VisualSection
+        tone="alt"
+        eyebrow="08 / Build today"
+        title="Mainnet is live. Same tools, new RPC."
+        copy={
+          <p>
+            Chain 143, currency MON. Foundry, Hardhat, Remix, Etherscan-style
+            explorers all work — point them at{" "}
+            <span className="font-mono">rpc.monad.xyz</span>.
+          </p>
+        }
+      >
+        <BuildTodayDiagram />
+      </VisualSection>
+
+      <ClosingSection />
+
+      <QASlide />
+
+      <ReferencesList />
+      </main>
+      <PresenterChrome />
+    </PresenterContext.Provider>
+  );
+}
+
+function PresenterChrome() {
+  const { presenterMode, currentSlide, totalSlides, helpOpen, closeHelp } =
+    usePresenter();
+  return (
+    <>
+      <HelpOverlay open={helpOpen} onClose={closeHelp} />
+      {presenterMode && (
+        <div className="fixed top-6 right-6 z-50 font-mono text-sm px-3 py-1.5 rounded-full bg-surface-elevated/90 border border-border backdrop-blur-sm tabular-nums pointer-events-none">
+          <span className="text-text-primary">{currentSlide + 1}</span>
+          <span className="text-text-tertiary"> / {totalSlides}</span>
+        </div>
+      )}
+      {presenterMode && totalSlides > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 pointer-events-none">
+          {Array.from({ length: totalSlides }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === currentSlide
+                  ? "w-6 bg-solution-accent"
+                  : "w-1.5 bg-border"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+      <div className="fixed bottom-4 right-6 z-50 font-mono text-[10px] text-text-tertiary px-2.5 py-1 rounded-full bg-surface-elevated/70 border border-border backdrop-blur-sm pointer-events-none uppercase tracking-wide">
+        {presenterMode ? (
+          <>
+            <kbd className="text-text-primary">P</kbd> exit ·{" "}
+            <kbd className="text-text-primary">F</kbd> fullscreen ·{" "}
+            <kbd className="text-text-primary">?</kbd> help
+          </>
+        ) : (
+          <>
+            Press <kbd className="text-text-primary">P</kbd> for presenter mode
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+function HelpOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  const rows: [string, string][] = [
+    ["P", "toggle presenter mode"],
+    ["F", "toggle fullscreen"],
+    ["→ · Space · PageDown", "next slide"],
+    ["← · PageUp", "previous slide"],
+    ["?", "show this help"],
+    ["Esc", "close help"],
+  ];
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-text-primary/70 backdrop-blur-sm flex items-center justify-center px-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-elevated border border-border rounded-2xl p-6 sm:p-8 max-w-md w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="font-mono text-[11px] text-text-tertiary tracking-wide mb-5 uppercase">
+          Keyboard shortcuts
+        </p>
+        <ul className="space-y-3">
+          {rows.map(([keys, label]) => (
+            <li
+              key={keys}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4"
+            >
+              <span className="text-sm text-text-secondary">{label}</span>
+              <span className="font-mono text-xs text-text-primary text-right">
+                {keys}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 w-full font-mono text-[10px] text-text-tertiary hover:text-text-primary transition-colors uppercase tracking-wide"
+        >
+          press esc or click outside to close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EdgeDiagram() {
+  const shouldReduceMotion = !!useReducedMotion();
+  const { ref, enterCount } = useEnterCount(0.3);
+
+  return (
+    <div
+      ref={ref}
+      className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6"
+    >
+      <TailForkPanel
+        enterCount={enterCount}
+        shouldReduceMotion={shouldReduceMotion}
+      />
+      <div className="my-5 h-px bg-border" />
+      <SpeculativeExecPanel
+        enterCount={enterCount}
+        shouldReduceMotion={shouldReduceMotion}
+      />
+      <div className="mt-5 flex justify-end">
+        <DocsQRBadge
+          src="/qr-monad-bft.svg"
+          href="https://docs.monad.xyz/monad-arch/consensus/monad-bft"
+        />
+      </div>
+    </div>
+  );
+}
+
+function TailForkPanel({
+  enterCount,
+  shouldReduceMotion,
+}: {
+  enterCount: number;
+  shouldReduceMotion: boolean;
+}) {
+  const ease = [0.16, 1, 0.3, 1] as const;
+  return (
+    <div>
+      <p className="font-mono text-[10px] text-text-tertiary mb-3 tracking-wide uppercase">
+        Tail-fork resistance
+      </p>
+      <div className="relative pl-2">
+        <div className="flex items-center gap-2">
+          {["N−2", "N−1", "N", "N+1"].map((label, i) => (
+            <div key={label} className="flex items-center gap-2">
+              <motion.div
+                key={`block-${i}-${enterCount}`}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.5, delay: i * 0.18, ease }
+                }
+                className="h-9 px-3 rounded-lg border-2 flex items-center"
+                style={{
+                  backgroundColor: colors.userBg,
+                  borderColor: colors.userAccent,
+                }}
+              >
+                <span
+                  className="font-mono text-xs"
+                  style={{ color: colors.userAccent }}
+                >
+                  {label}
+                </span>
+              </motion.div>
+              {i < 3 && (
+                <span className="text-text-tertiary font-mono text-xs">→</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {!shouldReduceMotion && (
+          <motion.div
+            key={`fork-${enterCount}`}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: [0, 1, 1, 0.3, 0.3], y: [-4, 0, 0, 0, 0] }}
+            transition={{
+              duration: 5,
+              times: [0, 0.25, 0.5, 0.65, 1],
+              ease: "easeOut",
+            }}
+            className="mt-3 flex items-center gap-2 pl-[40%]"
+          >
+            <span className="text-text-tertiary font-mono text-xs">↳</span>
+            <div
+              className="h-9 px-3 rounded-lg border-2 border-dashed flex items-center relative"
+              style={{
+                borderColor: colors.problemAccentStrong,
+                backgroundColor: colors.problemBg,
+              }}
+            >
+              <span
+                className="font-mono text-xs"
+                style={{ color: colors.problemAccentStrong }}
+              >
+                fork attempt
+              </span>
+              <motion.span
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: [0, 0, 1, 1, 1] }}
+                transition={{
+                  duration: 5,
+                  times: [0, 0.45, 0.55, 1, 1],
+                  ease: "easeOut",
+                }}
+                className="absolute left-0 right-0 top-1/2 h-[2px] origin-left"
+                style={{ backgroundColor: colors.problemAccentStrong }}
+              />
+            </div>
+            <span
+              className="font-mono text-[10px]"
+              style={{ color: colors.problemAccentStrong }}
+            >
+              ✗ rejected by MonadBFT
+            </span>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SpeculativeExecPanel({
+  enterCount,
+  shouldReduceMotion,
+}: {
+  enterCount: number;
+  shouldReduceMotion: boolean;
+}) {
+  const ease = [0.16, 1, 0.3, 1] as const;
+  return (
+    <div>
+      <p className="font-mono text-[10px] text-text-tertiary mb-3 tracking-wide uppercase">
+        Speculative execution
+      </p>
+      <div className="grid grid-cols-[80px_minmax(0,1fr)_110px] items-center gap-3">
+        <div className="rounded-lg border border-border bg-surface px-3 py-2 text-center">
+          <p className="font-mono text-[10px] text-text-tertiary">your app</p>
+          <p className="font-mono text-xs text-text-primary">wallet</p>
+        </div>
+
+        <div className="relative h-9 rounded-full bg-border/50 overflow-hidden">
+          {!shouldReduceMotion && (
+            <>
+              <motion.div
+                key={`call-${enterCount}`}
+                initial={{ left: "-10%", width: "20%" }}
+                animate={{ left: ["-10%", "85%"] }}
+                transition={{
+                  duration: 1.6,
+                  delay: 0.3,
+                  repeat: Infinity,
+                  repeatDelay: 2,
+                  ease: "easeInOut",
+                }}
+                className="absolute inset-y-1 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: colors.userAccent }}
+              >
+                <span
+                  className="font-mono text-[10px]"
+                  style={{ color: colors.surface }}
+                >
+                  eth_call
+                </span>
+              </motion.div>
+              <motion.div
+                key={`return-${enterCount}`}
+                initial={{ right: "-10%", width: "20%" }}
+                animate={{ right: ["-10%", "85%"] }}
+                transition={{
+                  duration: 1.4,
+                  delay: 2.2,
+                  repeat: Infinity,
+                  repeatDelay: 2.2,
+                  ease: "easeInOut",
+                }}
+                className="absolute inset-y-1 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: colors.solutionAccent }}
+              >
+                <span
+                  className="font-mono text-[10px]"
+                  style={{ color: colors.surface }}
+                >
+                  fresh
+                </span>
+              </motion.div>
+            </>
+          )}
+        </div>
+
+        <div
+          className="rounded-lg border-2 px-3 py-2 text-center"
+          style={{
+            borderColor: colors.solutionAccent,
+            backgroundColor: colors.solutionBg,
+          }}
+        >
+          <p
+            className="font-mono text-[10px]"
+            style={{ color: colors.solutionAccent }}
+          >
+            proposed
+          </p>
+          <p
+            className="font-mono text-xs"
+            style={{ color: colors.solutionAccent }}
+          >
+            block N
+          </p>
+        </div>
+      </div>
+      <p className="font-mono text-[10px] text-text-tertiary mt-3 text-center">
+        latest, not last-finalized · seconds fresher
+      </p>
+    </div>
+  );
+}
+
+function RealtimeDataDiagram() {
+  const shouldReduceMotion = !!useReducedMotion();
+  const { ref, enterCount } = useEnterCount(0.3);
+
+  const consumers = ["indexer", "dashboard", "MEV bot", "WS subscriber"];
+
+  return (
+    <div
+      ref={ref}
+      className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6"
+    >
+      <div className="grid grid-cols-[110px_minmax(0,1fr)_120px] items-center gap-4">
+        <div
+          className="rounded-xl border-2 p-3 text-center"
+          style={{
+            borderColor: colors.solutionAccent,
+            backgroundColor: colors.solutionBg,
+          }}
+        >
+          <p
+            className="font-mono text-[10px] mb-1"
+            style={{ color: colors.solutionAccent }}
+          >
+            executing
+          </p>
+          <p
+            className="font-mono text-sm"
+            style={{ color: colors.solutionAccent }}
+          >
+            block N
+          </p>
+        </div>
+
+        <div className="relative h-32 overflow-hidden">
+          {!shouldReduceMotion &&
+            Array.from({ length: 14 }).map((_, i) => {
+              const lane = i % 4;
+              const yPct = 12 + lane * 22;
+              return (
+                <motion.div
+                  key={`evt-${i}-${enterCount}`}
+                  initial={{ left: "-5%", opacity: 0 }}
+                  animate={{
+                    left: ["-5%", "100%"],
+                    opacity: [0, 1, 1, 0],
+                  }}
+                  transition={{
+                    duration: 2.2,
+                    delay: i * 0.28,
+                    times: [0, 0.1, 0.85, 1],
+                    repeat: Infinity,
+                    repeatDelay: 0,
+                    ease: "linear",
+                  }}
+                  className="absolute h-1.5 w-3 rounded-full"
+                  style={{
+                    top: `${yPct}%`,
+                    backgroundColor: colors.solutionAccent,
+                  }}
+                />
+              );
+            })}
+        </div>
+
+        <div className="space-y-1.5">
+          {consumers.map((c, i) => (
+            <motion.div
+              key={c}
+              className="rounded-md border border-border bg-surface px-2.5 py-1.5"
+              animate={
+                shouldReduceMotion
+                  ? undefined
+                  : { borderColor: [colors.border, colors.solutionAccent, colors.border] }
+              }
+              transition={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      duration: 0.6,
+                      delay: 1 + i * 0.18,
+                      repeat: Infinity,
+                      repeatDelay: 2.5,
+                      ease: "easeInOut",
+                    }
+              }
+            >
+              <p className="font-mono text-[10px] text-text-primary text-center">
+                {c}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-lg bg-surface border border-border p-3">
+          <p className="font-mono text-[10px] text-text-tertiary mb-1">
+            shared-memory IPC
+          </p>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            <span className="font-mono">libmonad_event</span> /{" "}
+            <span className="font-mono">monad-exec-events</span> for high-throughput consumers
+          </p>
+        </div>
+        <div className="rounded-lg bg-surface border border-border p-3">
+          <p className="font-mono text-[10px] text-text-tertiary mb-1">
+            WebSocket extension
+          </p>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            <span className="font-mono">monadNewHeads</span> /{" "}
+            <span className="font-mono">monadLogs</span> tracks block-state progression
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <DocsQRBadge
+          src="/qr-realtime.svg"
+          href="https://docs.monad.xyz/monad-arch/realtime-data"
+        />
+      </div>
+    </div>
+  );
+}
+
+function BuildTodayDiagram() {
+  const shouldReduceMotion = !!useReducedMotion();
+  const { ref, enterCount } = useEnterCount(0.3);
+
+  const facts: { label: string; value: string }[] = [
+    { label: "Chain ID", value: "143" },
+    { label: "Currency", value: "MON" },
+    { label: "RPC", value: "rpc.monad.xyz" },
+    { label: "WS", value: "wss://rpc.monad.xyz" },
+    { label: "Explorer", value: "monadvision.com" },
+    { label: "Tools", value: "Foundry · Hardhat · Remix" },
+  ];
+
+  return (
+    <div
+      ref={ref}
+      className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6"
+    >
+      <div className="rounded-xl bg-surface border border-border p-4 mb-4 font-mono text-xs leading-relaxed">
+        <span className="text-text-tertiary">$ </span>
+        <motion.span
+          key={`cmd-${enterCount}`}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={
+            shouldReduceMotion ? { duration: 0 } : { duration: 0.6, delay: 0.3 }
+          }
+          className="text-text-primary"
+        >
+          forge create --rpc-url{" "}
+          <span style={{ color: colors.solutionAccent }}>
+            https://rpc.monad.xyz
+          </span>{" "}
+          src/Counter.sol:Counter
+        </motion.span>
+        <motion.span
+          key={`reply-${enterCount}`}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={
+            shouldReduceMotion
+              ? { duration: 0 }
+              : { duration: 0.6, delay: 1.4, ease: [0.16, 1, 0.3, 1] }
+          }
+          className="block mt-2"
+          style={{ color: colors.solutionAccent }}
+        >
+          ✓ Deployer · 0x… · txHash · block 8421317
+        </motion.span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {facts.map((fact, i) => (
+          <motion.div
+            key={`${fact.label}-${enterCount}`}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 0.5, delay: 0.6 + i * 0.08, ease: [0.16, 1, 0.3, 1] }
+            }
+            className="rounded-lg bg-surface border border-border px-3 py-2"
+          >
+            <p className="font-mono text-[10px] text-text-tertiary">
+              {fact.label}
+            </p>
+            <p
+              className="font-mono text-xs"
+              style={{ color: colors.solutionAccent }}
+            >
+              {fact.value}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="rounded-lg bg-solution-bg border border-solution-accent-light px-3 py-2 mb-4 text-center">
+        <p
+          className="font-mono text-xs"
+          style={{ color: colors.solutionAccent }}
+        >
+          mainnet · live · same Solidity, new RPC
+        </p>
+      </div>
+
+      <div className="flex justify-end">
+        <DocsQRBadge
+          src="/qr-network.svg"
+          href="https://docs.monad.xyz/developer-essentials/network-information"
+          label="scan · network info"
+        />
+      </div>
+    </div>
+  );
+}
+
+function QASlide() {
+  const { presenterMode } = usePresenter();
+  if (!presenterMode) return null;
+  return (
+    <section className="slide min-h-screen flex flex-col items-center justify-center px-6 bg-surface text-center">
+      <motion.h2
+        className="text-6xl sm:text-7xl md:text-8xl font-light mb-12 leading-tight tracking-tight"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        Questions?
+      </motion.h2>
+      <motion.a
+        href="https://docs.monad.xyz"
+        target="_blank"
+        rel="noopener noreferrer"
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false }}
+        transition={{ duration: 0.7, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        className="group flex flex-col items-center gap-4"
+      >
+        <img
+          src="/qr-docs.svg"
+          alt="QR code to docs.monad.xyz"
+          width={320}
+          height={320}
+          className="block"
+        />
+        <span className="font-mono text-lg text-text-tertiary group-hover:text-solution-accent transition-colors">
+          docs.monad.xyz
+        </span>
+      </motion.a>
+    </section>
+  );
+}
+
+function ReferencesList() {
+  const { presenterMode } = usePresenter();
+  if (presenterMode) return null;
+  return (
+    <section
+      id="references"
+      className="bg-surface border-t border-border px-6 py-14 scroll-mt-24"
+    >
+      <div className="max-w-4xl mx-auto">
+        <p className="font-mono text-[11px] text-text-tertiary tracking-wide mb-5 uppercase">
+          References
+        </p>
+        <ol className="space-y-2.5 text-sm text-text-secondary font-light">
+          {REFERENCES.map((ref) => (
+            <li
+              key={ref.id}
+              id={`ref-${ref.id}`}
+              className="grid grid-cols-[28px_minmax(0,1fr)] gap-2 leading-relaxed scroll-mt-24"
+            >
+              <span className="font-mono text-text-tertiary tabular-nums">
+                {ref.id}.
+              </span>
+              <a
+                href={ref.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-primary hover:text-solution-accent transition-colors underline-offset-2 hover:underline"
+              >
+                {ref.title}
+                <span className="font-mono text-[10px] text-text-tertiary ml-2">
+                  docs.monad.xyz
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
   );
 }
 
 function Hero() {
+  const { presenterMode } = usePresenter();
   return (
-    <section className="min-h-[82vh] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <section className="slide min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="text-center max-w-3xl relative z-10 mt-30"
       >
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-tight mb-6">
+        <h1
+          className={`${
+            presenterMode
+              ? "text-5xl sm:text-6xl md:text-7xl"
+              : "text-4xl sm:text-5xl md:text-6xl"
+          } font-light leading-[1.1] tracking-tight mb-6`}
+        >
           A shared computer,{" "}
           <span className="font-semibold italic">rebuilt around throughput.</span>
         </h1>
-        <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
-          EVM compatible surface. Pipelined consensus, parallel execution,
-          fast state.
-        </p>
+        {!presenterMode && (
+          <p className="text-lg sm:text-xl text-text-secondary font-light max-w-xl mx-auto leading-relaxed">
+            EVM compatible surface. Pipelined consensus, parallel execution,
+            fast state.
+          </p>
+        )}
       </motion.div>
 
       <motion.div
@@ -155,30 +1123,68 @@ function Hero() {
   );
 }
 
+function SectionEyebrow({
+  children,
+  large,
+}: {
+  children: ReactNode;
+  large?: boolean;
+}) {
+  return (
+    <p
+      className={`font-mono ${
+        large ? "text-sm mb-4" : "text-[11px] mb-3"
+      } text-text-tertiary tracking-wide uppercase`}
+    >
+      {children}
+    </p>
+  );
+}
+
 function VisualSection({
   title,
   copy,
   children,
+  tone = "alt",
+  eyebrow,
 }: {
   title: string;
   copy: ReactNode;
   children: ReactNode;
+  tone?: "alt" | "surface";
+  eyebrow?: string;
 }) {
+  const { presenterMode } = usePresenter();
   const { ref, isVisible } = useInView(0.12);
 
   return (
-    <section className="px-6 py-16 bg-surface-alt">
+    <section
+      className={`slide min-h-screen px-6 py-20 flex items-center ${tone === "alt" ? "bg-surface-alt" : "bg-surface"}`}
+    >
       <div
         ref={ref}
-        className={`max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] gap-9 lg:gap-14 items-center section-reveal ${
+        className={`w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] gap-9 lg:gap-14 items-center section-reveal ${
           isVisible ? "visible" : ""
         }`}
       >
         <div>
-          <h2 className="text-3xl sm:text-4xl font-semibold mb-4">{title}</h2>
-          <div className="text-base text-text-secondary font-light leading-relaxed">
-            {copy}
-          </div>
+          {eyebrow && (
+            <SectionEyebrow large={presenterMode}>{eyebrow}</SectionEyebrow>
+          )}
+          <h2
+            className={`${
+              presenterMode
+                ? "text-4xl sm:text-5xl md:text-6xl mb-6"
+                : "text-3xl sm:text-4xl mb-4"
+            } font-semibold leading-tight`}
+          >
+            {title}
+          </h2>
+          {!presenterMode && (
+            <div className="text-base text-text-secondary font-light leading-relaxed">
+              {copy}
+            </div>
+          )}
         </div>
         <div>{children}</div>
       </div>
@@ -186,64 +1192,193 @@ function VisualSection({
   );
 }
 
+function WideSection({
+  title,
+  copy,
+  children,
+  tone = "alt",
+  eyebrow,
+}: {
+  title: string;
+  copy: ReactNode;
+  children: ReactNode;
+  tone?: "alt" | "surface";
+  eyebrow?: string;
+}) {
+  const { presenterMode } = usePresenter();
+  const { ref, isVisible } = useInView(0.12);
+
+  return (
+    <section
+      className={`slide min-h-screen px-6 py-20 flex items-center ${tone === "alt" ? "bg-surface-alt" : "bg-surface"}`}
+    >
+      <div
+        ref={ref}
+        className={`w-full max-w-6xl mx-auto section-reveal ${
+          isVisible ? "visible" : ""
+        }`}
+      >
+        <div className="max-w-3xl mb-10">
+          {eyebrow && (
+            <SectionEyebrow large={presenterMode}>{eyebrow}</SectionEyebrow>
+          )}
+          <h2
+            className={`${
+              presenterMode
+                ? "text-4xl sm:text-5xl md:text-6xl mb-6"
+                : "text-3xl sm:text-4xl mb-4"
+            } font-semibold leading-tight`}
+          >
+            {title}
+          </h2>
+          {!presenterMode && (
+            <div className="text-base text-text-secondary font-light leading-relaxed">
+              {copy}
+            </div>
+          )}
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+const BLOCK_STATES_CYCLE_SEC = 8;
+const BLOCK_STATES_PULSE_SEC = 0.7;
+
 function BlockStatesDiagram() {
-  const states = [
+  const shouldReduceMotion = !!useReducedMotion();
+  const { ref, enterCount } = useEnterCount(0.4);
+  const states: {
+    label: string;
+    rpcTag: string | null;
+    timing: string;
+    body: string;
+    example: string;
+    color: string;
+  }[] = [
     {
       label: "Proposed",
-      time: "latest",
+      rpcTag: "latest",
+      timing: "< 400 ms",
       body: "Fast UI feedback",
+      example: "Echo that the tap landed before the user retries.",
       color: colors.userAccent,
     },
     {
       label: "Voted",
-      time: "safe",
+      rpcTag: "safe",
+      timing: "~400 ms",
       body: "Stronger confidence",
+      example: "Reveal the next step in a multi-step flow.",
       color: colors.problemAccentStrong,
     },
     {
       label: "Finalized",
-      time: "finalized",
+      rpcTag: "finalized",
+      timing: "~800 ms",
       body: "Settlement decisions",
+      example: "Record an irreversible payment or transfer.",
       color: colors.solutionAccent,
     },
     {
       label: "Verified",
-      time: "finalized - D",
+      rpcTag: null,
+      timing: "~2 s",
       body: "Delayed root assurance",
+      example: "Release escrow against a verified state root.",
       color: colors.textPrimary,
     },
   ];
 
+  const repeatDelay = BLOCK_STATES_CYCLE_SEC - BLOCK_STATES_PULSE_SEC;
+
   return (
-    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="relative grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="hidden sm:block absolute left-[10%] right-[10%] top-[35px] h-px bg-border" />
+    <div ref={ref} className="relative">
+      <div className="hidden sm:block absolute left-[12.5%] right-[12.5%] top-[28px] h-px bg-border" />
+      {!shouldReduceMotion && (
+        <motion.div
+          key={`line-${enterCount}`}
+          className="hidden sm:block absolute left-[12.5%] right-[12.5%] top-[28px] h-px origin-left"
+          style={{ backgroundColor: colors.solutionAccent }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: [0, 1, 1, 0] }}
+          transition={{
+            duration: BLOCK_STATES_CYCLE_SEC,
+            times: [0, 0.6, 0.85, 1],
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 relative">
         {states.map((state, index) => (
-          <motion.div
-            key={state.label}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.45, delay: index * 0.08 }}
-            className="relative rounded-xl border border-border bg-surface p-4"
-          >
-            <div
-              className="relative z-10 mb-5 h-9 w-9 rounded-full border-4 border-surface flex items-center justify-center"
-              style={{ backgroundColor: state.color }}
-            >
-              <span className="font-mono text-[10px] font-semibold text-surface">
-                {index + 1}
-              </span>
+          <div key={state.label} className="flex flex-col">
+            <div className="flex justify-center mb-4">
+              <motion.div
+                key={`marker-${index}-${enterCount}`}
+                className="relative z-10 h-14 w-14 rounded-full border-4 border-surface-alt flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: state.color }}
+                animate={
+                  shouldReduceMotion
+                    ? undefined
+                    : { scale: [1, 1.18, 1] }
+                }
+                transition={
+                  shouldReduceMotion
+                    ? undefined
+                    : {
+                        duration: BLOCK_STATES_PULSE_SEC,
+                        delay: index * 1.6,
+                        repeat: Infinity,
+                        repeatDelay,
+                        ease: "easeInOut",
+                      }
+                }
+              >
+                <span className="font-mono text-sm font-semibold text-surface">
+                  {index + 1}
+                </span>
+              </motion.div>
             </div>
-            <p className="font-mono text-[10px] text-text-tertiary mb-1">
-              {state.time}
-            </p>
-            <h3 className="text-lg font-semibold mb-2">{state.label}</h3>
-            <p className="text-sm text-text-secondary font-light leading-relaxed">
-              {state.body}
-            </p>
-          </motion.div>
+            <div className="rounded-xl border border-border bg-surface-elevated p-5 flex-1">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                {state.rpcTag ? (
+                  <span
+                    className="font-mono text-[10px] px-2 py-0.5 rounded border"
+                    style={{
+                      color: colors.solutionAccent,
+                      backgroundColor: colors.solutionBg,
+                      borderColor: colors.solutionAccentLight,
+                    }}
+                  >
+                    {state.rpcTag}
+                  </span>
+                ) : (
+                  <span className="font-mono text-[10px] text-text-tertiary">
+                    no RPC tag
+                  </span>
+                )}
+                <span className="font-mono text-[10px] text-text-tertiary tabular-nums">
+                  {state.timing}
+                </span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">{state.label}</h3>
+              <p className="text-sm text-text-primary font-medium mb-3">
+                {state.body}
+              </p>
+              <p className="text-sm text-text-secondary font-light leading-relaxed">
+                {state.example}
+              </p>
+            </div>
+          </div>
         ))}
+      </div>
+      <div className="mt-6 flex justify-end">
+        <DocsQRBadge
+          src="/qr-block-states.svg"
+          href="https://docs.monad.xyz/monad-arch/consensus/block-states"
+        />
       </div>
     </div>
   );
@@ -888,306 +2023,68 @@ function PipelineSlide({ shouldReduceMotion }: SlideProps) {
 }
 
 function LayerMap() {
+  const shouldReduceMotion = !!useReducedMotion();
+
   return (
-    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="grid grid-cols-1 gap-3">
-        <LayerRow
-          title="EVM surface"
-          subtitle="Solidity bytecode, ECDSA accounts, wallets, and RPC shape"
-          muted
-        />
-        <LayerRow
-          title="Monad L1 engine"
-          subtitle="own validators, own state, fast ordered blocks"
-          active
-        />
-        <LayerRow
-          title="Canonical block result"
-          subtitle="parallel work still lands as one serial EVM answer"
-          muted
+    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6 space-y-3">
+      <SurfaceRow shouldReduceMotion={shouldReduceMotion} />
+      <Connector label="compiled / called" shouldReduceMotion={shouldReduceMotion} />
+      <EngineCard shouldReduceMotion={shouldReduceMotion} />
+      <Connector label="canonical block" shouldReduceMotion={shouldReduceMotion} />
+      <ResultRow shouldReduceMotion={shouldReduceMotion} />
+      <div className="flex justify-end pt-2">
+        <DocsQRBadge
+          src="/qr-identity.svg"
+          href="https://docs.monad.xyz/introduction/monad-for-developers"
         />
       </div>
-      <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {["EVM bytecode", "RPC shape", "ECDSA accounts", "Solidity tools"].map((item) => (
-          <div
-            key={item}
-            className="rounded-lg border border-solution-accent-light bg-solution-bg p-3"
-          >
-            <p className="font-mono text-[10px] text-solution-accent leading-snug">
-              {item}
-            </p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
 
-function LayerRow({
-  title,
-  subtitle,
-  active,
-  muted,
-}: {
-  title: string;
-  subtitle: string;
-  active?: boolean;
-  muted?: boolean;
-}) {
+const SURFACE_ITEMS = [
+  { label: "tx", glyph: "▦" },
+  { label: "contract", glyph: "◇" },
+  { label: "RPC", glyph: "⇄" },
+  { label: "wallet", glyph: "◉" },
+];
+
+function SurfaceRow({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
   return (
-    <div
-      className={`rounded-xl border p-4 ${
-        active
-          ? "border-solution-accent bg-solution-bg"
-          : muted
-            ? "border-border bg-surface"
-            : "border-border bg-surface-elevated"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p
-            className={`font-mono text-xs mb-1 ${
-              active ? "text-solution-accent" : "text-text-primary"
-            }`}
-          >
-            {title}
-          </p>
-          <p className="text-sm text-text-secondary font-light leading-relaxed">
-            {subtitle}
-          </p>
-        </div>
-        {active && (
-          <span className="font-mono text-[10px] text-solution-accent border border-solution-accent-light rounded-full px-2 py-1">
-            this page
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PipelineComparison() {
-  const { ref, isVisible } = useInView(0.2);
-
-  return (
-    <div ref={ref} className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <TimelineCard title="Interleaved" subtitle="execute before voting">
-          <div className="space-y-4">
-            <SegmentedBar
-              isVisible={isVisible}
-              segments={[
-                ["execute", 26, colors.problemAccentLight],
-                ["propose", 22, colors.userAccent],
-                ["execute", 24, colors.problemAccentLight],
-                ["vote", 28, colors.textTertiary],
-              ]}
-            />
-            <p className="text-sm text-text-secondary font-light leading-relaxed">
-              Execution shares the same interval with network communication and
-              voting.
-            </p>
-          </div>
-        </TimelineCard>
-
-        <TimelineCard title="Monad pipeline" subtitle="order first, execute beside">
-          <div className="space-y-3">
-            {[
-              ["consensus orders block N", colors.userAccent, 0],
-              ["execution processes block N-1", colors.solutionAccent, 0.12],
-              ["finalized block verifies N-D root", colors.problemAccentStrong, 0.24],
-            ].map(([label, color, delay]) => (
-              <motion.div
-                key={label}
-                initial={{ scaleX: 0 }}
-                animate={isVisible ? { scaleX: 1 } : {}}
-                transition={{ duration: 0.78, delay: Number(delay), ease: [0.16, 1, 0.3, 1] }}
-                className="h-10 origin-left rounded-lg border border-border flex items-center px-3"
-                style={{ backgroundColor: String(color) }}
-              >
-                <span className="font-mono text-[10px] text-surface font-semibold">
-                  {label}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </TimelineCard>
-      </div>
-      <div className="mt-5 grid grid-cols-3 gap-2">
-        {["order", "execute", "verify"].map((step, index) => (
-          <div key={step} className="rounded-lg bg-surface border border-border p-3">
-            <p className="font-mono text-lg text-text-primary tabular-nums">
-              {index + 1}
-            </p>
-            <p className="font-mono text-[10px] text-text-tertiary">
-              {step}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TimelineCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-xl bg-surface border border-border p-4">
-      <p className="font-mono text-xs text-text-primary mb-1">{title}</p>
-      <p className="font-mono text-[10px] text-text-tertiary mb-4">
-        {subtitle}
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function SegmentedBar({
-  segments,
-  isVisible,
-}: {
-  segments: [string, number, string][];
-  isVisible: boolean;
-}) {
-  return (
-    <div className="h-14 rounded-lg overflow-hidden border border-border bg-surface-elevated flex">
-      {segments.map(([label, width, color], index) => (
-        <motion.div
-          key={`${label}-${index}`}
-          initial={{ width: 0 }}
-          animate={isVisible ? { width: `${width}%` } : {}}
-          transition={{ duration: 0.62, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className="relative border-r border-surface-elevated last:border-r-0"
-          style={{ backgroundColor: color }}
-        >
-          <span className="absolute inset-x-1 top-1/2 -translate-y-1/2 text-center font-mono text-[9px] text-text-primary/75">
-            {width > 20 ? label : ""}
-          </span>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-function ParallelExecutionDiagram() {
-  const { ref, isVisible } = useInView(0.22);
-  const transactions = [
-    { label: "A", lane: "profile", conflict: false },
-    { label: "B", lane: "pool", conflict: true },
-    { label: "C", lane: "badge", conflict: false },
-    { label: "D", lane: "pool", conflict: true },
-    { label: "E", lane: "order", conflict: false },
-    { label: "F", lane: "game", conflict: false },
-  ];
-
-  return (
-    <div ref={ref} className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="grid grid-cols-1 gap-3">
-        {transactions.map((tx, index) => (
-          <div key={tx.label} className="grid grid-cols-[42px_minmax(0,1fr)_86px] items-center gap-3">
-            <div className="rounded-lg bg-surface border border-border h-10 flex items-center justify-center">
-              <span className="font-mono text-xs text-text-primary">tx {tx.label}</span>
-            </div>
-            <div className="h-7 rounded-full bg-border/60 overflow-hidden">
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={isVisible ? { scaleX: tx.conflict ? 0.72 : 1 } : {}}
-                transition={{ duration: 0.75, delay: index * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                className="h-full origin-left rounded-full"
-                style={{
-                  backgroundColor: tx.conflict
-                    ? colors.problemAccentLight
-                    : colors.solutionAccentLight,
-                }}
-              />
-            </div>
-            <div
-              className={`rounded-lg border p-2 text-center ${
-                tx.conflict
-                  ? "border-problem-cell-hover bg-problem-bg"
-                  : "border-solution-accent-light bg-solution-bg"
-              }`}
-            >
-              <p
-                className={`font-mono text-[10px] ${
-                  tx.conflict ? "text-problem-accent-strong" : "text-solution-accent"
-                }`}
-              >
-                {tx.conflict ? "re-run" : "commit"}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-5 rounded-xl bg-surface border border-border p-4">
-        <p className="font-mono text-[10px] text-text-tertiary mb-2">
-          commit order
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-mono text-[10px] text-text-tertiary tracking-wide uppercase">
+          EVM surface
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {transactions.map((tx, index) => (
-            <div key={`${tx.label}-order`} className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-md bg-text-primary text-surface font-mono text-xs flex items-center justify-center">
-                {tx.label}
-              </div>
-              {index < transactions.length - 1 && (
-                <div className="h-px w-4 bg-border" />
-              )}
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-sm text-text-secondary font-light leading-relaxed">
-          Parallel work produces candidates. Serial commit preserves the block&apos;s
-          official transaction order.
-        </p>
+        <span className="font-mono text-[10px] text-text-tertiary">
+          Fusaka fork
+        </span>
       </div>
-    </div>
-  );
-}
-
-function MetricsDiagram() {
-  return (
-    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="space-y-4">
-        {METRICS.map((metric, index) => (
+      <div className="grid grid-cols-4 gap-2">
+        {SURFACE_ITEMS.map((item, i) => (
           <motion.div
-            key={metric.label}
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.35 }}
-            transition={{ duration: 0.45, delay: index * 0.06 }}
-            className="rounded-xl bg-surface border border-border p-4"
+            key={item.label}
+            className="rounded-lg border border-solution-accent-light bg-solution-bg px-2 py-2 text-center"
+            animate={
+              shouldReduceMotion
+                ? undefined
+                : { scale: [1, 1.06, 1] }
+            }
+            transition={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    duration: 0.7,
+                    delay: i * 0.25,
+                    repeat: Infinity,
+                    repeatDelay: 5,
+                    ease: "easeInOut",
+                  }
+            }
           >
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-3">
-              <div>
-                <p className="font-mono text-xs text-text-primary">{metric.label}</p>
-                <p className="font-mono text-[10px] text-text-tertiary">
-                  Ethereum reference: {metric.ethereum}
-                </p>
-              </div>
-              <p className="font-mono text-xl font-semibold text-solution-accent tabular-nums">
-                {metric.monad}
-              </p>
-            </div>
-            <div className="h-2 rounded-full bg-border overflow-hidden mb-3">
-              <motion.div
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: metric.width / 100 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.1 + index * 0.06 }}
-                className="h-full origin-left rounded-full bg-solution-accent"
-              />
-            </div>
-            <p className="text-sm text-text-secondary font-light leading-relaxed">
-              {metric.note}
-            </p>
+            <span className="font-mono text-[11px] text-solution-accent">
+              {item.glyph} {item.label}
+            </span>
           </motion.div>
         ))}
       </div>
@@ -1195,81 +2092,1036 @@ function MetricsDiagram() {
   );
 }
 
-function CompatibilityGrid() {
+function Connector({
+  label,
+  shouldReduceMotion,
+}: {
+  label: string;
+  shouldReduceMotion: boolean;
+}) {
   return (
-    <div className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-xl bg-solution-bg border border-solution-accent-light p-5">
-          <h3 className="text-lg font-semibold text-solution-accent mb-4">
-            Carries over
-          </h3>
-          <List
-            items={[
-              "Solidity and EVM bytecode model",
-              "ECDSA accounts and existing wallets",
-              "JSON-RPC integration shape",
-              "Linear block transaction order",
-            ]}
-          />
-        </div>
-        <div className="rounded-xl bg-problem-bg border border-problem-cell-hover p-5">
-          <h3 className="text-lg font-semibold text-problem-accent-strong mb-4">
-            Re-check
-          </h3>
-          <List
-            items={[
-              "Gas is charged by gas limit",
-              "Block tags map to Monad states",
-              "Local mempool and propagation",
-              "Indexer and historical-data assumptions",
-              "Newly funded account timing",
-            ]}
-          />
-        </div>
-      </div>
-      <div className="mt-4 rounded-xl bg-surface border border-border p-4">
-        <p className="text-sm text-text-secondary font-light leading-relaxed">
-          Port the EVM app. Re-audit the timing model before treating it as production-ready.
+    <div className="flex items-center justify-center py-1">
+      <motion.span
+        className="font-mono text-[10px] text-text-tertiary flex items-center gap-2"
+        animate={shouldReduceMotion ? undefined : { opacity: [0.5, 1, 0.5] }}
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }
+        }
+      >
+        <span>↓</span>
+        <span>{label}</span>
+      </motion.span>
+    </div>
+  );
+}
+
+function EngineCard({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
+  return (
+    <div
+      className="rounded-xl border-2 p-4 sm:p-5"
+      style={{
+        borderColor: colors.solutionAccent,
+        backgroundColor: colors.solutionBg,
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <p className="font-mono text-xs text-solution-accent tracking-wide uppercase">
+          Monad L1 engine
         </p>
+        <span className="font-mono text-[10px] text-solution-accent border border-solution-accent-light rounded-full px-2 py-0.5">
+          this page
+        </span>
+      </div>
+
+      <div className="space-y-3.5">
+        <EngineSubsystem
+          label={
+            <>
+              validators (BFT)<Cite n={2} />
+            </>
+          }
+        >
+          <ValidatorDots shouldReduceMotion={shouldReduceMotion} />
+        </EngineSubsystem>
+        <EngineSubsystem
+          label={
+            <>
+              RaptorCast<Cite n={3} />
+            </>
+          }
+        >
+          <RaptorCastChunks shouldReduceMotion={shouldReduceMotion} />
+        </EngineSubsystem>
+        <EngineSubsystem
+          label={
+            <>
+              parallel exec<Cite n={5} />
+            </>
+          }
+        >
+          <ParallelLanes shouldReduceMotion={shouldReduceMotion} />
+        </EngineSubsystem>
+        <EngineSubsystem
+          label={
+            <>
+              JIT compile<Cite n={11} />
+            </>
+          }
+        >
+          <JITStream shouldReduceMotion={shouldReduceMotion} />
+        </EngineSubsystem>
+        <EngineSubsystem
+          label={
+            <>
+              MonadDb<Cite n={9} />
+            </>
+          }
+        >
+          <MonadDbGrid shouldReduceMotion={shouldReduceMotion} />
+        </EngineSubsystem>
       </div>
     </div>
   );
 }
 
-function List({ items }: { items: string[] }) {
+function EngineSubsystem({
+  label,
+  children,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 items-center">
+      <span className="font-mono text-[10px] text-solution-accent">
+        {label}
+      </span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function ValidatorDots({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
+  const count = 7;
+  const cycleSec = 5;
+  return (
+    <div className="flex gap-1.5">
+      {Array.from({ length: count }).map((_, i) => {
+        const peak = 0.05 + (i / count) * 0.75;
+        return (
+          <motion.div
+            key={i}
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: colors.solutionAccent, opacity: 0.4 }}
+            animate={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    scale: [1, 1, 1.7, 1, 1],
+                    opacity: [0.4, 0.4, 1, 0.4, 0.4],
+                  }
+            }
+            transition={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    duration: cycleSec,
+                    times: [0, Math.max(0.001, peak - 0.02), peak, peak + 0.02, 1],
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function RaptorCastChunks({
+  shouldReduceMotion,
+}: {
+  shouldReduceMotion: boolean;
+}) {
+  const count = 4;
+  const cycleSec = 3.2;
+  return (
+    <div className="relative h-2 rounded-full overflow-hidden bg-solution-accent-light/40">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute top-0 h-2 rounded-full"
+          style={{ backgroundColor: colors.solutionAccent, width: 14 }}
+          initial={{ left: "-15%" }}
+          animate={
+            shouldReduceMotion
+              ? undefined
+              : { left: ["-15%", "115%"] }
+          }
+          transition={
+            shouldReduceMotion
+              ? undefined
+              : {
+                  duration: cycleSec,
+                  delay: i * (cycleSec / count),
+                  repeat: Infinity,
+                  ease: "linear",
+                }
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+function ParallelLanes({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
+  const cycleSec = 4;
+  return (
+    <div className="space-y-1">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="h-1 rounded-full overflow-hidden"
+          style={{ backgroundColor: `${colors.solutionAccentLight}` }}
+        >
+          <motion.div
+            className="h-full origin-left rounded-full"
+            style={{ backgroundColor: colors.solutionAccent }}
+            initial={{ scaleX: 0 }}
+            animate={
+              shouldReduceMotion
+                ? { scaleX: 1 }
+                : { scaleX: [0, 1, 1, 0] }
+            }
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : {
+                    duration: cycleSec,
+                    delay: i * 0.18,
+                    times: [0, 0.45, 0.85, 1],
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+            }
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function JITStream({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
+  const totalBytes = 18;
+  const cycleSec = 4;
+  return (
+    <div className="flex items-end gap-[3px] h-3">
+      {Array.from({ length: totalBytes }).map((_, i) => {
+        const peak = 0.05 + (i / totalBytes) * 0.7;
+        return (
+          <motion.div
+            key={i}
+            className="w-1 rounded-sm origin-bottom"
+            style={{ backgroundColor: colors.solutionAccentLight, height: 6 }}
+            animate={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    backgroundColor: [
+                      colors.solutionAccentLight,
+                      colors.solutionAccentLight,
+                      colors.solutionAccent,
+                      colors.solutionAccent,
+                      colors.solutionAccentLight,
+                    ],
+                    scaleY: [1, 1, 2, 2, 1],
+                  }
+            }
+            transition={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    duration: cycleSec,
+                    times: [
+                      0,
+                      Math.max(0.001, peak - 0.02),
+                      peak,
+                      peak + 0.04,
+                      1,
+                    ],
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function MonadDbGrid({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
+  const cols = 12;
+  const rows = 2;
+  const total = cols * rows;
+  const cycleSec = 5;
+  return (
+    <div
+      className="grid gap-0.5"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {Array.from({ length: total }).map((_, i) => {
+        const peak = 0.05 + (i / total) * 0.75;
+        return (
+          <motion.div
+            key={i}
+            className="aspect-square rounded-sm"
+            style={{ backgroundColor: colors.solutionAccentLight }}
+            animate={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    backgroundColor: [
+                      colors.solutionAccentLight,
+                      colors.solutionAccentLight,
+                      colors.solutionAccent,
+                      colors.solutionAccentLight,
+                      colors.solutionAccentLight,
+                    ],
+                  }
+            }
+            transition={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    duration: cycleSec,
+                    times: [0, Math.max(0.001, peak - 0.015), peak, peak + 0.015, 1],
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ResultRow({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="font-mono text-[10px] text-text-tertiary mb-3 tracking-wide uppercase">
+        Canonical block result
+      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        {[1, 2, 3, 4].map((n, i) => (
+          <div key={n} className="flex items-center gap-2">
+            <motion.div
+              className="h-7 w-7 rounded-md flex items-center justify-center"
+              style={{
+                backgroundColor: colors.textPrimary,
+                color: colors.surface,
+              }}
+              animate={
+                shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }
+              }
+              transition={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      duration: 0.6,
+                      delay: i * 0.35,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                      ease: "easeInOut",
+                    }
+              }
+            >
+              <span className="font-mono text-xs">{n}</span>
+            </motion.div>
+            {i < 3 && (
+              <span className="font-mono text-xs text-text-tertiary">→</span>
+            )}
+          </div>
+        ))}
+        <span className="font-mono text-[10px] text-text-tertiary ml-1">
+          … serial
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const ENGINE_CYCLE_MS = 13000;
+
+function EngineDiagram() {
+  const shouldReduceMotion = !!useReducedMotion();
+  const { ref, isVisible } = useInView(0.18);
+  const [cycle, setCycle] = useState(0);
+
+  useEffect(() => {
+    if (!isVisible || shouldReduceMotion) return;
+    const id = setInterval(() => setCycle((c) => c + 1), ENGINE_CYCLE_MS);
+    return () => clearInterval(id);
+  }, [isVisible, shouldReduceMotion]);
+
+  const slots = [0, 1, 2, 3];
+  const consensusBlocks = ["N−1", "N", "N+1", "N+2"];
+  const executionBlocks = [null, "N−1", "N", "N+1"] as const;
+  const verifyBlocks = [null, null, null, "N−3"] as const;
+
+  const txs = [
+    { label: "tx 1", retry: false },
+    { label: "tx 2", retry: true },
+    { label: "tx 3", retry: false },
+    { label: "tx 4", retry: false },
+  ];
+
+  return (
+    <div
+      ref={ref}
+      className="bg-surface-elevated border border-border rounded-2xl p-5 sm:p-6"
+    >
+      <InterleavedBar cycle={cycle} shouldReduceMotion={shouldReduceMotion} />
+
+      <div className="mb-4 mt-3 flex items-center gap-3">
+        <div className="flex-1 h-px bg-border" />
+        <span className="font-mono text-[10px] text-text-tertiary">
+          ↓ Monad: separate swim-lanes, full block time for each
+        </span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      <div className="space-y-2">
+        <PipelineRow
+          label="consensus"
+          tone="user"
+          slots={slots}
+          values={consensusBlocks}
+          cycle={cycle}
+          shouldReduceMotion={shouldReduceMotion}
+          delayBase={0}
+        />
+        <PipelineRow
+          label="execution"
+          tone="solution"
+          slots={slots}
+          values={[...executionBlocks]}
+          cycle={cycle}
+          shouldReduceMotion={shouldReduceMotion}
+          delayBase={0.7}
+          highlightSlot={2}
+        />
+        <PipelineRow
+          label="verify"
+          tone="dark"
+          slots={slots}
+          values={[...verifyBlocks]}
+          cycle={cycle}
+          shouldReduceMotion={shouldReduceMotion}
+          delayBase={1.4}
+          trailingNote="3-block delay · ~1.2 s"
+        />
+        <div className="pl-[92px] flex items-center justify-between pt-1">
+          <span className="font-mono text-[10px] text-text-tertiary">
+            time →
+          </span>
+          <span className="font-mono text-[10px] text-text-tertiary">
+            one slot ≈ 400 ms
+          </span>
+        </div>
+      </div>
+
+      <div className="my-5 flex items-center gap-3">
+        <div className="flex-1 h-px bg-border" />
+        <span className="font-mono text-[10px] text-text-tertiary">
+          ↓ inside execution of block N
+        </span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      <div className="rounded-xl bg-surface border border-border p-4">
+        <div className="grid grid-cols-[56px_minmax(0,1fr)_72px] gap-3 mb-3">
+          <span className="font-mono text-[10px] text-text-tertiary">
+            block N
+          </span>
+          <span className="font-mono text-[10px] text-text-tertiary">
+            parallel
+          </span>
+          <span className="font-mono text-[10px] text-text-tertiary text-center">
+            serial commit
+          </span>
+        </div>
+        <div className="space-y-2.5">
+          {txs.map((tx, i) => (
+            <ParallelRow
+              key={tx.label}
+              label={tx.label}
+              retry={tx.retry}
+              commitLabel={String(i + 1)}
+              cycle={cycle}
+              shouldReduceMotion={shouldReduceMotion}
+              delay={4 + i * 0.4}
+            />
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-text-tertiary font-light leading-relaxed">
+          Workers race; conflicts re-run. The block&apos;s recorded order is
+          still 1 → 2 → 3 → 4.
+        </p>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <DocsQRBadge
+          src="/qr-mechanics.svg"
+          href="https://docs.monad.xyz/monad-arch/consensus/asynchronous-execution"
+        />
+      </div>
+    </div>
+  );
+}
+
+function InterleavedBar({
+  cycle,
+  shouldReduceMotion,
+}: {
+  cycle: number;
+  shouldReduceMotion: boolean;
+}) {
+  const segments: { label: string; w: number; color: string }[] = [
+    { label: "exec", w: 12, color: colors.problemAccentLight },
+    { label: "propose", w: 24, color: colors.userBg },
+    { label: "exec", w: 12, color: colors.problemAccentLight },
+    { label: "vote", w: 28, color: colors.problemCell },
+  ];
+
+  return (
+    <div className="grid grid-cols-[80px_minmax(0,1fr)] items-center gap-3">
+      <span
+        className="font-mono text-xs"
+        style={{ color: colors.problemAccentStrong }}
+      >
+        interleaved
+      </span>
+      <div
+        className="relative h-9 rounded-lg overflow-hidden border flex"
+        style={{ borderColor: colors.border }}
+      >
+        {segments.map((seg, i) => (
+          <motion.div
+            key={`${i}-${cycle}`}
+            initial={shouldReduceMotion ? false : { width: 0 }}
+            animate={{ width: `${seg.w}%` }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : {
+                    duration: 0.45,
+                    delay: i * 0.12,
+                    ease: [0.16, 1, 0.3, 1],
+                  }
+            }
+            className="h-full flex items-center justify-center"
+            style={{ backgroundColor: seg.color }}
+          >
+            <span
+              className="font-mono text-[9px] whitespace-nowrap"
+              style={{ color: colors.textPrimary }}
+            >
+              {seg.w >= 18 ? seg.label : ""}
+            </span>
+          </motion.div>
+        ))}
+        <div className="flex-1 flex items-center justify-end pr-3">
+          <span className="font-mono text-[10px] text-text-tertiary">
+            ~100 ms exec budget per block
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PipelineRow({
+  label,
+  tone,
+  slots,
+  values,
+  cycle,
+  shouldReduceMotion,
+  delayBase,
+  highlightSlot,
+  trailingNote,
+}: {
+  label: string;
+  tone: "user" | "solution" | "dark";
+  slots: number[];
+  values: (string | null)[];
+  cycle: number;
+  shouldReduceMotion: boolean;
+  delayBase: number;
+  highlightSlot?: number;
+  trailingNote?: string;
+}) {
+  const toneStyles = {
+    user: {
+      labelColor: colors.userAccent,
+      blockBg: colors.userBg,
+      blockBorder: colors.userAccent,
+      textColor: colors.userAccent,
+    },
+    solution: {
+      labelColor: colors.solutionAccent,
+      blockBg: colors.solutionBg,
+      blockBorder: colors.solutionAccent,
+      textColor: colors.solutionAccent,
+    },
+    dark: {
+      labelColor: colors.textPrimary,
+      blockBg: colors.surface,
+      blockBorder: colors.textPrimary,
+      textColor: colors.textPrimary,
+    },
+  }[tone];
+
+  return (
+    <div className="grid grid-cols-[80px_minmax(0,1fr)] items-center gap-3">
+      <span
+        className="font-mono text-xs"
+        style={{ color: toneStyles.labelColor }}
+      >
+        {label}
+      </span>
+      <div className="grid grid-cols-4 gap-2">
+        {slots.map((slot) => {
+          const value = values[slot];
+          if (!value) {
+            return <div key={slot} className="h-10" />;
+          }
+          return (
+            <motion.div
+              key={`${slot}-${cycle}`}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : {
+                      duration: 1.5,
+                      delay: delayBase + slot * 0.25,
+                      ease: [0.16, 1, 0.3, 1],
+                    }
+              }
+              className="h-10 rounded-lg border flex items-center justify-center"
+              style={{
+                backgroundColor: toneStyles.blockBg,
+                borderColor: toneStyles.blockBorder,
+                borderWidth: highlightSlot === slot ? 2 : 1,
+              }}
+            >
+              <span
+                className="font-mono text-sm"
+                style={{ color: toneStyles.textColor }}
+              >
+                {value}
+              </span>
+            </motion.div>
+          );
+        })}
+      </div>
+      {trailingNote && (
+        <div className="col-start-2 flex justify-end">
+          <span className="font-mono text-[9px] text-text-tertiary mt-0.5">
+            {trailingNote}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParallelRow({
+  label,
+  retry,
+  commitLabel,
+  cycle,
+  shouldReduceMotion,
+  delay,
+}: {
+  label: string;
+  retry: boolean;
+  commitLabel: string;
+  cycle: number;
+  shouldReduceMotion: boolean;
+  delay: number;
+}) {
+  const ease = [0.16, 1, 0.3, 1] as const;
+  const reduced = shouldReduceMotion;
+
+  return (
+    <div className="grid grid-cols-[56px_minmax(0,1fr)_72px] items-center gap-3">
+      <span className="font-mono text-xs text-text-primary">{label}</span>
+      <div className="relative h-6 rounded-full bg-border/50 overflow-hidden">
+        {retry && (
+          <motion.div
+            key={`retry-${cycle}`}
+            initial={reduced ? false : { width: 0 }}
+            animate={{ width: reduced ? "100%" : "44%" }}
+            transition={
+              reduced ? { duration: 0 } : { duration: 1.7, delay, ease }
+            }
+            className="absolute inset-y-0 left-0 origin-left rounded-full"
+            style={{ backgroundColor: colors.problemAccentLight }}
+          />
+        )}
+        <motion.div
+          key={`main-${cycle}`}
+          initial={reduced ? false : { width: 0 }}
+          animate={{ width: "100%" }}
+          transition={
+            reduced
+              ? { duration: 0 }
+              : {
+                  duration: 2.3,
+                  delay: retry ? delay + 1.2 : delay,
+                  ease,
+                }
+          }
+          className="absolute inset-y-0 left-0 origin-left rounded-full"
+          style={{ backgroundColor: colors.solutionAccent }}
+        />
+        {retry && !reduced && (
+          <motion.span
+            key={`label-${cycle}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 1, 0] }}
+            transition={{
+              duration: 1.4,
+              delay: delay + 0.85,
+              times: [0, 0.2, 0.75, 1],
+            }}
+            className="absolute top-1/2 left-[46%] -translate-y-1/2 font-mono text-[9px] text-surface px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: colors.problemAccentStrong }}
+          >
+            re-run
+          </motion.span>
+        )}
+      </div>
+      <motion.div
+        key={`commit-${cycle}`}
+        initial={reduced ? false : { opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={
+          reduced
+            ? { duration: 0 }
+            : {
+                duration: 1.2,
+                delay: retry ? delay + 3.7 : delay + 2.4,
+                ease,
+              }
+        }
+        className="h-7 rounded-md flex items-center justify-center"
+        style={{
+          backgroundColor: colors.solutionBg,
+          border: `1px solid ${colors.solutionAccent}`,
+        }}
+      >
+        <span
+          className="font-mono text-xs"
+          style={{ color: colors.solutionAccent }}
+        >
+          {commitLabel}
+        </span>
+      </motion.div>
+    </div>
+  );
+}
+
+function MetricsDiagram() {
+  const shouldReduceMotion = !!useReducedMotion();
+  const { ref, enterCount } = useEnterCount(0.4);
+
+  return (
+    <div ref={ref} className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {METRICS.map((metric, index) => (
+          <MetricCard
+            key={metric.label}
+            metric={metric}
+            index={index}
+            shouldReduceMotion={shouldReduceMotion}
+            enterCount={enterCount}
+          />
+        ))}
+      </div>
+      <div className="flex justify-end">
+        <DocsQRBadge
+          src="/qr-identity.svg"
+          href="https://docs.monad.xyz/introduction/monad-for-developers"
+        />
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({
+  metric,
+  index,
+  shouldReduceMotion,
+  enterCount,
+}: {
+  metric: Metric;
+  index: number;
+  shouldReduceMotion: boolean;
+  enterCount: number;
+}) {
+  const delay = index * 0.35;
+  const fillEnd = METRICS_FILL_SEC / METRICS_CYCLE_SEC;
+  const holdEnd = 0.88;
+
+  return (
+    <div className="rounded-xl bg-surface-elevated border border-border p-5">
+      <p className="font-mono text-[10px] text-text-tertiary mb-1">
+        {metric.label}
+      </p>
+      <p className="text-2xl font-semibold text-solution-accent tabular-nums mb-1">
+        <AnimatedCount
+          metric={metric}
+          delay={delay}
+          fillEnd={fillEnd}
+          holdEnd={holdEnd}
+          shouldReduceMotion={shouldReduceMotion}
+          enterCount={enterCount}
+        />
+        {metric.suffix}
+      </p>
+      <p className="font-mono text-[10px] text-text-tertiary mb-3">
+        vs Ethereum {metric.ethereum}
+      </p>
+      <div className="h-1.5 rounded-full bg-border overflow-hidden mb-3">
+        <motion.div
+          key={`bar-${enterCount}`}
+          initial={{ scaleX: 0 }}
+          animate={
+            shouldReduceMotion
+              ? { scaleX: metric.width / 100 }
+              : {
+                  scaleX: [0, metric.width / 100, metric.width / 100, 0],
+                }
+          }
+          transition={
+            shouldReduceMotion
+              ? { duration: 0 }
+              : {
+                  duration: METRICS_CYCLE_SEC,
+                  delay,
+                  times: [0, fillEnd, holdEnd, 1],
+                  repeat: Infinity,
+                  ease: [0.16, 1, 0.3, 1],
+                }
+          }
+          className="h-full origin-left rounded-full bg-solution-accent"
+        />
+      </div>
+      <p className="text-xs text-text-secondary font-light leading-relaxed">
+        {metric.note}
+      </p>
+    </div>
+  );
+}
+
+function AnimatedCount({
+  metric,
+  delay,
+  fillEnd,
+  holdEnd,
+  shouldReduceMotion,
+  enterCount,
+}: {
+  metric: Metric;
+  delay: number;
+  fillEnd: number;
+  holdEnd: number;
+  shouldReduceMotion: boolean;
+  enterCount: number;
+}) {
+  const mv = useMotionValue(shouldReduceMotion ? metric.target : 0);
+  const [text, setText] = useState(metric.format(shouldReduceMotion ? metric.target : 0));
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      mv.set(metric.target);
+      setText(metric.format(metric.target));
+      return;
+    }
+    mv.set(0);
+    setText(metric.format(0));
+    const unsubscribe = mv.on("change", (v) => setText(metric.format(v)));
+    const controls = animate(mv, [0, metric.target, metric.target, 0], {
+      duration: METRICS_CYCLE_SEC,
+      delay,
+      times: [0, fillEnd, holdEnd, 1],
+      repeat: Infinity,
+      ease: [0.16, 1, 0.3, 1],
+    });
+    return () => {
+      controls.stop();
+      unsubscribe();
+    };
+  }, [mv, metric, delay, fillEnd, holdEnd, shouldReduceMotion, enterCount]);
+
+  return <>{text}</>;
+}
+
+const LIST_CYCLE_SEC = 8;
+const LIST_WAVE_SPAN = 5;
+
+function List({ items }: { items: ReactNode[] }) {
+  const shouldReduceMotion = !!useReducedMotion();
+  const slotDuration = LIST_WAVE_SPAN / items.length;
+  const pulseHalf = 0.4;
+
   return (
     <ul className="space-y-3">
-      {items.map((item) => (
-        <li key={item} className="flex gap-3 text-sm text-text-secondary leading-relaxed">
-          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-text-tertiary shrink-0" />
-          <span>{item}</span>
-        </li>
-      ))}
+      {items.map((item, i) => {
+        const peakSec = i * slotDuration + slotDuration / 2;
+        const startSec = Math.max(0.01, peakSec - pulseHalf);
+        const endSec = peakSec + pulseHalf;
+        const times = [
+          0,
+          startSec / LIST_CYCLE_SEC,
+          peakSec / LIST_CYCLE_SEC,
+          endSec / LIST_CYCLE_SEC,
+          1,
+        ];
+
+        return (
+          <li
+            key={i}
+            className="flex gap-3 text-sm text-text-secondary leading-relaxed"
+          >
+            <motion.span
+              className="mt-1.5 h-1.5 w-1.5 rounded-full bg-text-tertiary shrink-0"
+              animate={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      scale: [1, 1, 1.6, 1, 1],
+                      backgroundColor: [
+                        colors.textTertiary,
+                        colors.textTertiary,
+                        colors.solutionAccent,
+                        colors.textTertiary,
+                        colors.textTertiary,
+                      ],
+                    }
+              }
+              transition={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      duration: LIST_CYCLE_SEC,
+                      times,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }
+              }
+            />
+            <span>{item}</span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-function NextSteps() {
+function ClosingSection() {
+  const { presenterMode } = usePresenter();
   return (
-    <section className="px-6 py-16">
-      <div className="max-w-5xl mx-auto">
-        <div className="max-w-3xl mb-8">
-          <h2 className="text-3xl sm:text-4xl font-semibold mb-5">
-            Where next
-          </h2>
+    <section className="slide min-h-screen px-6 py-20 flex items-center bg-surface">
+      <div className="w-full max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] gap-8 lg:gap-14 mb-14">
+          <div>
+            <SectionEyebrow large={presenterMode}>05 / Porting</SectionEyebrow>
+            <h2
+              className={`${
+                presenterMode
+                  ? "text-4xl sm:text-5xl md:text-6xl mb-6"
+                  : "text-3xl sm:text-4xl mb-4"
+              } font-semibold leading-tight`}
+            >
+              Before you ship, re-audit these
+            </h2>
+            {!presenterMode && (
+              <p className="text-base text-text-secondary font-light leading-relaxed">
+                The EVM surface carries over. The assumptions underneath it need
+                a second pass — timing, gas, indexing, mempool, and the meaning
+                of block tags.
+              </p>
+            )}
+          </div>
+          <div className="rounded-xl bg-surface-elevated border border-border p-5 sm:p-6 space-y-4">
+            <List
+              items={[
+                <>
+                  Gas is charged by limit, not by usage<Cite n={7} />
+                </>,
+                <>
+                  Block tags map to states:{" "}
+                  <span className="font-mono text-[11px] text-solution-accent">
+                    latest
+                  </span>{" "}
+                  /{" "}
+                  <span className="font-mono text-[11px] text-solution-accent">
+                    safe
+                  </span>{" "}
+                  /{" "}
+                  <span className="font-mono text-[11px] text-solution-accent">
+                    finalized
+                  </span>
+                  <Cite n={6} />
+                </>,
+                <>
+                  Newly funded accounts wait ~1.2 s before spending<Cite n={10} />
+                </>,
+                <>
+                  EIP-4844 blob transactions are not supported<Cite n={8} />
+                </>,
+                <>
+                  Contract size up to 128 KB (Ethereum: 24 KB)<Cite n={8} />
+                </>,
+                <>
+                  EIP-7702 delegated EOAs keep a 10 MON reserve<Cite n={10} />
+                </>,
+              ]}
+            />
+            <div className="flex justify-end pt-1">
+              <DocsQRBadge
+                src="/qr-differences.svg"
+                href="https://docs.monad.xyz/developer-essentials/differences"
+              />
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <NextCard
-            href="/mip-4"
-            title="See a developer edge"
-            body="Reserve balance and deferred execution."
-          />
-          <NextCard
-            href="https://docs.monad.xyz/developer-essentials/summary"
-            title="Deploy deliberately"
-            body="Port contracts and infra assumptions."
-            external
-          />
+
+        <div className="border-t border-border pt-10">
+          <h3 className="text-2xl font-semibold mb-6">Where next</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <NextCard
+              href="/mip-4"
+              title="See a developer edge"
+              body="Reserve balance and deferred execution."
+              index={0}
+            />
+            <NextCard
+              href="https://docs.monad.xyz/developer-essentials/summary"
+              title="Deploy deliberately"
+              body="Port contracts and infra assumptions."
+              external
+              index={1}
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -1281,12 +3133,15 @@ function NextCard({
   title,
   body,
   external,
+  index,
 }: {
   href: string;
   title: string;
   body: string;
   external?: boolean;
+  index: number;
 }) {
+  const shouldReduceMotion = !!useReducedMotion();
   const className =
     "group block rounded-xl bg-surface-elevated border border-border p-5 hover:border-text-tertiary/50 transition-colors h-full";
   const content = (
@@ -1297,8 +3152,27 @@ function NextCard({
       <p className="text-sm text-text-secondary font-light leading-relaxed mb-4">
         {body}
       </p>
-      <span className="font-mono text-xs text-text-tertiary group-hover:text-text-primary transition-colors">
-        Open -&gt;
+      <span className="font-mono text-xs text-text-tertiary group-hover:text-text-primary transition-colors inline-flex items-center gap-1">
+        Open
+        <motion.span
+          className="inline-block"
+          animate={
+            shouldReduceMotion ? undefined : { x: [0, 4, 0] }
+          }
+          transition={
+            shouldReduceMotion
+              ? undefined
+              : {
+                  duration: 3.5,
+                  delay: index * 1.4,
+                  times: [0, 0.4, 1],
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }
+          }
+        >
+          →
+        </motion.span>
       </span>
     </>
   );
